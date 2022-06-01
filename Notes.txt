@@ -1,3 +1,18 @@
 sensitivity analysis
 custom_source: arbitrary time field!
 symmetry exploitation (!)
+
+Dimensions are normalized to micron in meep
+For 2D simulations, the z direction has size 0. 
+By default epsilon = 1
+
+Sources:
+volume [Volume] — A meep.Volume can be used to specify the flux region instead of a center and a size.
+
+PML:
+Around half the wavelength, typically. (Note that the boundary condition, metallic or periodic, is essentially irrelevant to the operation of the PML.) PML allows inhomogeneous materials like waveguides as long as the materials are only varying in the boundary-parallel directions; wave media that are inhomogeneous in the boundary-normal directions (e.g., gratings or other periodic structures, oblique waveguides, etc.) as well as unusual waveguides with backward-wave modes cause PML to break down, in which case one alternative is a thicker non-PML absorber.
+
+Simulation:
+The first argument to in_volume is a volume which applies to all of the nested output functions. Note that to_appended, at_every, and in_volume are cumulative regardless of what order you put them in. This creates the output file ez-slice.h5 which contains a dataset of size 162x330 corresponding to the desired x×t slice.
+
+We are outputting the dielectric function ε but have wrapped its output function which would otherwise run at every time step in at_beginning, which does just what it says. There are several other such functions to modify the output behavior — and you can, of course, write your own, and in fact you can do any computation or output you want at any time during the time evolution and even modify the simulation while it is running.
