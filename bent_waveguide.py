@@ -61,11 +61,11 @@ sources = [mp.GaussianBeamSource(src=gaussian_src,
 """
 Initialize the simulation: cell, boundary_layers (for the cell, the boudnary conditions inside the cell is set by
 the geometry), the geometry (list), sources (list), and the resolution (int) 
-"""
 
-# spatial resolution (pixels / um), or (pixels / distance unit) that is used in the simulation, the courant parameter
-# (S dx = c dt) is used to determine the time step, suggestion is at least 8 pixels / wavelength in the highest
-# dielectric
+spatial resolution of the simulation grid is given in (pixels / um), or (pixels / distance unit), the courant 
+parameter ( S dx = c dt) is used to determine the time step, suggestion is at least 8 pixels / wavelength in the 
+highest dielectric """
+
 resolution = 10
 
 sim = mp.Simulation(cell_size=cell,
@@ -94,5 +94,5 @@ with h5py.File('sim_output/scratch1-ez.h5', 'r') as f:
 fig, ax = plt.subplots(1, 1)
 for n in range(data.shape[-1]):
     ax.clear()
-    ax.imshow(data[:, :, n].T, vmax=np.max(data), vmin=np.min(data), cmap='nipy_spectral')
+    ax.imshow(data[:, :, n].T, vmax=np.max(data), cmap='jet')
     plt.pause(.001)

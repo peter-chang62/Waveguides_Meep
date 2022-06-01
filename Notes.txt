@@ -16,3 +16,9 @@ Simulation:
 The first argument to in_volume is a volume which applies to all of the nested output functions. Note that to_appended, at_every, and in_volume are cumulative regardless of what order you put them in. This creates the output file ez-slice.h5 which contains a dataset of size 162x330 corresponding to the desired x×t slice.
 
 We are outputting the dielectric function ε but have wrapped its output function which would otherwise run at every time step in at_beginning, which does just what it says. There are several other such functions to modify the output behavior — and you can, of course, write your own, and in fact you can do any computation or output you want at any time during the time evolution and even modify the simulation while it is running.
+
+Symmetries:
+H-field is a PSEUDOVECTOR!
+
+Here, you may notice a strange thing: we have specified phase=-1 for both mirror planes corresponding to odd symmetry. However, it may seem at first glance that an Hz dipole at the origin has even symmetry! The subtlety here is that the magnetic field is a pseudovector, and is multiplied by −1 under mirror flips, so it is odd when it looks even and vice versa. We aren't just being pedantic here — if you don't realize the difference between vectors, such as electric fields and currents, and pseudovectors, such as magnetic fields and currents, then you will have endless confusion because the electric and magnetic fields will seem to have different symmetry. See also Exploiting Symmetry.
+
