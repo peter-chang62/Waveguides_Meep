@@ -2,7 +2,6 @@ sensitivity analysis
 custom_source: arbitrary time field!
 symmetry exploitation (!)
 
-Dimensions are normalized to micron in meep
 For 2D simulations, the z direction has size 0. 
 By default epsilon = 1
 
