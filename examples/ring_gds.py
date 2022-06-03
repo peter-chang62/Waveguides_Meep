@@ -87,7 +87,7 @@ def find_modes(filename,wvl=1.55,bw=0.05):
                         boundary_layers=[mp.PML(dpml)],
                         default_material=SiO2)
 
-    h = mp.Harminv(mp.Hz,mon_vol.center,fcen,df)
+    h = mp.Harminv(mp.Hz, mon_vol.center_wvgd, fcen, df)
 
     sim.run(mp.after_sources(h),
             until_after_sources=100)

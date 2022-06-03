@@ -47,18 +47,18 @@ def main(args):
     if args.d != default_d:
         delta_y = 0.5*(args.d-default_d)
         delta = mp.Vector3(y=delta_y)
-        p1.center += delta
-        p2.center -= delta
-        p3.center += delta
-        p4.center -= delta
-        src_vol.center += delta
+        p1.center_wvgd += delta
+        p2.center_wvgd -= delta
+        p3.center_wvgd += delta
+        p4.center_wvgd -= delta
+        src_vol.center_wvgd += delta
         cell.size += 2*delta
         for np in range(len(lower_branch)):
-            lower_branch[np].center -= delta
+            lower_branch[np].center_wvgd -= delta
             for nv in range(len(lower_branch[np].vertices)):
                 lower_branch[np].vertices[nv] -= delta
         for np in range(len(upper_branch)):
-            upper_branch[np].center += delta
+            upper_branch[np].center_wvgd += delta
             for nv in range(len(upper_branch[np].vertices)):
                 upper_branch[np].vertices[nv] += delta
 
