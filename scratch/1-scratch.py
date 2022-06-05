@@ -9,6 +9,8 @@ import utilities as util
 import h5py
 import clipboard_and_style_sheet
 
+clipboard_and_style_sheet.style_sheet()
+
 # %% Set up the geometry of the problem. One waveguide laid out in the x direction
 wl_wvgd = 3.5
 n_center_wvl = mt.LiNbO3.epsilon(1 / wl_wvgd)[2, 2]  # z polarization
@@ -63,7 +65,7 @@ sim.run(mp.to_appended("ez", mp.at_every(0.6, mp.output_efield_z)),
         mp.at_beginning(mp.output_epsilon()),
         until_after_sources=mp.stop_when_fields_decayed(50, mp.Ez, pt, 1e-3))
 
-# %%
+# %% Done! Look at simulation results!
 with h5py.File('sim_output/1-scratch-ez.h5', 'r') as f:
     data = np.array(f[util.get_key(f)])
 
@@ -71,7 +73,7 @@ with h5py.File('sim_output/1-scratch-eps-000000.00.h5', 'r') as f:
     eps = np.array(f[util.get_key(f)])
 
 # %%
-save = True
+save = False
 
 fig, ax = plt.subplots(1, 1)
 for n in range(0, data.shape[2], 1):
