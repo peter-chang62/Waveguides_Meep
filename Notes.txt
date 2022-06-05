@@ -8,6 +8,16 @@ Is mode overlap an issue? (1.5 um undergoes multimode while 3.5 um undergoes sin
 
 _________________________________________________________________
 
+Items lef to do / learn:
+
+1. how to use Harminv
+	a. do you know what it does?
+
+2. extend to three dimensions to provide 2D confinement (this affects the waveguide dispersion)
+	a. can you add the silica substrate? (this should also affect the waveguide dispersion)
+
+_________________________________________________________________
+
 Sources:
 volume [Volume] — A meep.Volume can be used to specify the flux region instead of a center and a size.
 
