@@ -2,8 +2,11 @@ sensitivity analysis
 custom_source: arbitrary time field!
 symmetry exploitation (!)
 
-For 2D simulations, the z direction has size 0. 
 By default epsilon = 1
+
+Is mode overlap an issue? (1.5 um undergoes multimode while 3.5 um undergoes single mode)
+
+_________________________________________________________________
 
 Sources:
 volume [Volume] — A meep.Volume can be used to specify the flux region instead of a center and a size.
@@ -23,3 +26,7 @@ Here, you may notice a strange thing: we have specified phase=-1 for both mirror
 
 Dimensions:
 There are two possible explanations: (1) the simulation run time may be too short or the resolution may be too low and thus your results have not sufficiently converged, or (2) you may be using a higher-dimensional cell with multiple periods (a supercell) which introduces unwanted additional modes due to band folding. One indication that band folding is present is that small changes in the resolution produce large and unexpected changes in the frequency spectra. Modeling flat/planar structures typically requires a 1d cell and periodic structures a single unit cell in 2d/3d. For more details, see Section 4.6 ("Sources in Supercells") in Chapter 4 ("Electromagnetic Wave Source Conditions") of Advances in FDTD Computational Electrodynamics: Photonics and Nanotechnology. Note that a 1d cell must be along the z direction with only the Ex and Hy field components permitted.
+
+Materials:
+In defining the epsilon tensor:
+## NOTE: ordinary (o) axes in X and Y, extraordinary (e) axis in Z
