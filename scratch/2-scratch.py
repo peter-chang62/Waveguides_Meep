@@ -1,4 +1,4 @@
-"""Getting started: 2D simulation in a straight LiNbO3 waveguide"""
+"""Using Eigenmode Source """
 
 import meep as mp
 import meep.materials as mt
@@ -22,7 +22,9 @@ sx = 16  # size of the cell in the x direction
 sy = 6  # size of the cell in y direction
 
 # %% create the geometric objects from the above
-blk = mp.Block(size=mp.Vector3(mp.inf, w_wvgd, mp.inf), center=center_wvgd)
+blk = mp.Block(size=mp.Vector3(mp.inf, w_wvgd, mp.inf),
+               center=center_wvgd
+               )
 cell = mp.Vector3(sx, sy, 0)
 PML = mp.PML(dpml)
 
@@ -38,14 +40,17 @@ Sources = []
 
 # %% create a gaussian source instance and place it at the front of the waveguide
 wl_src = 1.5
-src = mp.GaussianSource(wavelength=wl_src, width=5)
+src = mp.GaussianSource(wavelength=wl_src,
+                        width=5
+                        )
 pt = mp.Vector3() + center_wvgd
-src_pt = pt + mp.Vector3(0, 0.0 * w_wvgd)
+src_pt = pt + mp.Vector3(-0.5 * sx + dpml, 0.0 * w_wvgd)
 
-source = mp.Source(src=src,
-                   component=mp.Ez,
-                   center=src_pt,
-                   size=mp.Vector3())
+source = mp.EigenModeSource(src=src,
+                            center=src_pt,
+                            size=mp.Vector3(0, sy - 2 * dpml),
+                            eig_match_freq=True,
+                            )
 Sources.append(source)
 
 # %% Done with sources, initialize the simulation instance
@@ -53,24 +58,26 @@ sim = mp.Simulation(cell_size=cell,
                     geometry=geometry,
                     sources=Sources,
                     boundary_layers=boundary_layers,
-                    resolution=30)
+                    resolution=35
+                    )
 sim.use_output_directory('sim_output')
 
 # %% symmetries to exploit
-Sym = [mp.Mirror(direction=mp.X)]
-
-sim.symmetries = Sym
+# Sym = [mp.Mirror(direction=mp.X)]
+# sim.symmetries = Sym
 
 # %%
-sim.run(mp.to_appended("ez", mp.at_every(0.6, mp.output_efield_z)),
-        mp.at_beginning(mp.output_epsilon()),
-        until_after_sources=mp.stop_when_fields_decayed(50, mp.Ez, pt, 1e-3))
+sim.run(
+    mp.to_appended("ez", mp.at_every(0.6, mp.output_efield_z)),
+    mp.at_beginning(mp.output_epsilon()),
+    until_after_sources=mp.stop_when_fields_decayed(50, mp.Ez, pt, 1e-3)
+)
 
 # %% Done! Look at simulation results!
-with h5py.File('sim_output/1-scratch-ez.h5', 'r') as f:
+with h5py.File('sim_output/2-scratch-ez.h5', 'r') as f:
     data = np.array(f[util.get_key(f)])
 
-with h5py.File('sim_output/1-scratch-eps-000000.00.h5', 'r') as f:
+with h5py.File('sim_output/2-scratch-eps-000000.00.h5', 'r') as f:
     eps = np.array(f[util.get_key(f)])
 
 # %%

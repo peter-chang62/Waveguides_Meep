@@ -6,6 +6,8 @@ By default epsilon = 1
 
 Is mode overlap an issue? (1.5 um undergoes multimode while 3.5 um undergoes single mode)
 
+I want to know exactly what "width" or "fwidth" is in the Gaussian Source, is it specific to what time step you've specified for the simulation? That would be kind of annoying...
+
 _________________________________________________________________
 
 Items lef to do / learn:
