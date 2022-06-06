@@ -38,7 +38,7 @@ boundary_layers = [PML]
 Sources = []
 
 # %% create a gaussian source instance and place it at the front of the waveguide
-wl_src = 3.5
+wl_src = 1.5
 src = mp.GaussianSource(wavelength=wl_src, width=5)
 pt = mp.Vector3() + center_wvgd
 source = mp.Source(src=src,
