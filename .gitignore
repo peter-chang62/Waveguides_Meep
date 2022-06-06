@@ -1,9 +1,5 @@
 /sim_output/
 /scratch/sim_output/
 /fig/
-
 .idea/
-
-notebooks/sim_output/
-
 __pycache__/

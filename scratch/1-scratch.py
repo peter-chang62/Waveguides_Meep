@@ -20,7 +20,7 @@ dpml = 1  # PML thickness
 
 center_wvgd = mp.Vector3(0, 0, 0)  # where the waveguide is centered
 sx = 16  # size of the cell in the x direction
-sy = w_wvgd * 10  # size of the cell in y direction
+sy = 6  # size of the cell in y direction
 
 # %% create the geometric objects from the above
 blk = mp.Block(size=mp.Vector3(mp.inf, w_wvgd, mp.inf), center=center_wvgd)
