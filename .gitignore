@@ -3,3 +3,7 @@
 /fig/
 
 .idea/
+
+notebooks/sim_output/
+
+__pycache__/
