@@ -23,23 +23,50 @@ _________________________________________________________________
 Sources:
 volume [Volume] — A meep.Volume can be used to specify the flux region instead of a center and a size.
 
+EigenModeSource: Note that the length of the EigenModeSource must be large enough that it captures the entire guided mode (i.e., the fields should decay to roughly zero at the edges). The line source does not need to span the entire length of the cell but should be slightly larger than the waveguide width. 
+
+EigenModeSource is useful for calculating reflection, transmission and scattering losses in a waveguide, but for waveguide dispersion use a point source!
+_________________________________________________________________
+
 PML:
 Around half the wavelength, typically. (Note that the boundary condition, metallic or periodic, is essentially irrelevant to the operation of the PML.) PML allows inhomogeneous materials like waveguides as long as the materials are only varying in the boundary-parallel directions; wave media that are inhomogeneous in the boundary-normal directions (e.g., gratings or other periodic structures, oblique waveguides, etc.) as well as unusual waveguides with backward-wave modes cause PML to break down, in which case one alternative is a thicker non-PML absorber.
+
+_________________________________________________________________
 
 Simulation:
 The first argument to in_volume is a volume which applies to all of the nested output functions. Note that to_appended, at_every, and in_volume are cumulative regardless of what order you put them in. This creates the output file ez-slice.h5 which contains a dataset of size 162x330 corresponding to the desired x×t slice.
 
 We are outputting the dielectric function ε but have wrapped its output function which would otherwise run at every time step in at_beginning, which does just what it says. There are several other such functions to modify the output behavior — and you can, of course, write your own, and in fact you can do any computation or output you want at any time during the time evolution and even modify the simulation while it is running.
 
+_________________________________________________________________
+
 Symmetries:
 H-field is a PSEUDOVECTOR!
 
 Here, you may notice a strange thing: we have specified phase=-1 for both mirror planes corresponding to odd symmetry. However, it may seem at first glance that an Hz dipole at the origin has even symmetry! The subtlety here is that the magnetic field is a pseudovector, and is multiplied by −1 under mirror flips, so it is odd when it looks even and vice versa. We aren't just being pedantic here — if you don't realize the difference between vectors, such as electric fields and currents, and pseudovectors, such as magnetic fields and currents, then you will have endless confusion because the electric and magnetic fields will seem to have different symmetry. See also Exploiting Symmetry.
 
+_________________________________________________________________
+
 Dimensions:
 Why are there strange peaks in my reflectance/transmittance spectrum when modeling planar or periodic structures?:
 There are two possible explanations: (1) the simulation run time may be too short or the resolution may be too low and thus your results have not sufficiently converged, or (2) you may be using a higher-dimensional cell with multiple periods (a supercell) which introduces unwanted additional modes due to band folding. One indication that band folding is present is that small changes in the resolution produce large and unexpected changes in the frequency spectra. Modeling flat/planar structures typically requires a 1d cell and periodic structures a single unit cell in 2d/3d. For more details, see Section 4.6 ("Sources in Supercells") in Chapter 4 ("Electromagnetic Wave Source Conditions") of Advances in FDTD Computational Electrodynamics: Photonics and Nanotechnology. Note that a 1d cell must be along the z direction with only the Ex and Hy field components permitted.
 
+_________________________________________________________________
+
 Materials:
 In defining the epsilon tensor:
 ## NOTE: ordinary (o) axes in X and Y, extraordinary (e) axis in Z
+
+_________________________________________________________________
+
+Useful Miscellaneous Items:
+
+How do I model a 2d structure involving an out-of-plane wavevector?:
+To model e.g., fiber waveguides with 2d claddings, diffractive binary gratings with arbitrary incident planewaves in 3d, etc. in Cartesian coordinates, you would create a 2d cell in the xy
+plane and specify a k_point with non-zero component in z. The resulting 3d simulation involves all electromagnetic fields (rather than a 2d simulation which involves a subset of the fields determined by the polarization of the current source). Performance can be improved by specifying special_kz=True in the Simulation constructor; this results in a 2d simulation with real rather than complex fields (as long as the x and y components of k_point are zero).
+
+_________________________________________________________________
+
+Boundary Conditions:
+
+For periodic boundary conditions, make sure to remove the PML layer in the periodic direction
