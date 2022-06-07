@@ -18,6 +18,9 @@ Items lef to do / learn:
 2. extend to three dimensions to provide 2D confinement (this affects the waveguide dispersion)
 	a. can you add the silica substrate? (this should also affect the waveguide dispersion)
 
+
+3. are x and y dimensions independent? In other words, can tuning the width of the waveguide in the simulation effectively tune the height?
+
 _________________________________________________________________
 
 Sources:
