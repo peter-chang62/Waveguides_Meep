@@ -6,7 +6,7 @@ large simulation to run! """
 
 import sys
 
-sys.path.append('../')
+sys.path.append('/')
 import meep as mp
 import meep.materials as mt
 import numpy as np
