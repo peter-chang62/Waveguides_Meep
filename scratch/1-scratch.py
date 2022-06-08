@@ -33,20 +33,17 @@ blk.material = mt.LiNbO3
 geometry = [blk]
 boundary_layers = [PML]
 
-# %% Done with geometry, moving on to sources, initialize an empty list for sources and append sources as you go
-Sources = []
-
 # %% create a gaussian source instance and place it at the front of the waveguide
 wl_src = 1.5
 src = mp.GaussianSource(wavelength=wl_src, width=5)
 pt = mp.Vector3() + center_wvgd
-src_pt = pt + mp.Vector3(0, 0.0 * w_wvgd)
+src_pt = pt + mp.Vector3(0, 0.25 * w_wvgd)
 
 source = mp.Source(src=src,
                    component=mp.Ez,
                    center=src_pt,
                    size=mp.Vector3())
-Sources.append(source)
+Sources = [source]
 
 # %% Done with sources, initialize the simulation instance
 sim = mp.Simulation(cell_size=cell,
@@ -58,24 +55,18 @@ sim.use_output_directory('sim_output')
 
 # %% symmetries to exploit
 Sym = [mp.Mirror(direction=mp.X)]
-
 sim.symmetries = Sym
 
 # %%
 sim.run(mp.to_appended("ez", mp.at_every(0.6, mp.output_efield_z)),
-        mp.at_beginning(mp.output_epsilon()),
         until_after_sources=mp.stop_when_fields_decayed(50, mp.Ez, pt, 1e-3))
 
 # %% Done! Look at simulation results!
 with h5py.File('sim_output/1-scratch-ez.h5', 'r') as f:
     data = np.array(f[util.get_key(f)])
 
-with h5py.File('sim_output/1-scratch-eps-000000.00.h5', 'r') as f:
-    eps = np.array(f[util.get_key(f)])
-
 # %%
 save = False
-
 fig, ax = plt.subplots(1, 1)
 for n in range(0, data.shape[2], 1):
     ax.clear()
