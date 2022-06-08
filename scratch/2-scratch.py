@@ -8,7 +8,8 @@ import clipboard_and_style_sheet
 
 clipboard_and_style_sheet.style_sheet()
 
-# %% Set up the geometry of the problem. One waveguide laid out in the x direction
+# %%____________________________________________________________________________________________________________________
+# Set up the geometry of the problem. One waveguide laid out in the x direction
 wl_wvgd = 3.5
 n_center_wvl = mt.LiNbO3.epsilon(1 / wl_wvgd)[2, 2]  # z polarization
 w_wvgd = 0.5 * wl_wvgd / n_center_wvl  # width of the waveguide is half a wavelength wide
@@ -19,7 +20,8 @@ sx = 0
 
 dpml = 1  # PML thickness
 
-# %% create the geometric objects from the above
+# %%____________________________________________________________________________________________________________________
+# create the geometric objects from the above
 blk = mp.Block(
     size=mp.Vector3(mp.inf, w_wvgd, mp.inf),
     center=center_wvgd
@@ -27,14 +29,17 @@ blk = mp.Block(
 cell = mp.Vector3(sx, sy, 0)
 PML = mp.PML(dpml, direction=mp.Y)
 
-# %% set the appropriate media for the geometric objects
+# %%____________________________________________________________________________________________________________________
+# set the appropriate media for the geometric objects
 blk.material = mt.LiNbO3
 
-# %% create the geometry and boundary layers list
+# %%____________________________________________________________________________________________________________________
+# create the geometry and boundary layers list
 geometry = [blk]
 boundary_layers = [PML]
 
-# %% create a gaussian source instance and place it at the front of the waveguide
+# %%____________________________________________________________________________________________________________________
+# create a gaussian source instance and place it at the front of the waveguide
 bw = blk.material.valid_freq_range
 f_src = float((np.diff(bw) / 2) + bw[0])
 df_src = float(np.diff(bw) * 1)
@@ -52,7 +57,8 @@ source = mp.Source(
 
 Sources = [source]
 
-# %% Done with sources, initialize the simulation instance
+# %%____________________________________________________________________________________________________________________
+# Done with sources, initialize the simulation instance
 sim = mp.Simulation(cell_size=cell,
                     geometry=geometry,
                     sources=Sources,
@@ -61,7 +67,8 @@ sim = mp.Simulation(cell_size=cell,
                     )
 sim.use_output_directory('sim_output')
 
-# %% Exploit symmetries (if there are any)
+# %%____________________________________________________________________________________________________________________
+# Exploit symmetries (if there are any)
 symx = mp.Symmetry(
     direction=mp.X,
     phase=1
@@ -69,7 +76,8 @@ symx = mp.Symmetry(
 
 sim.symmetries = [symx]
 
-# %% Calculate Waveguide Dispersion set periodic boundary conditions
+# %%____________________________________________________________________________________________________________________
+# Calculate Waveguide Dispersion set periodic boundary conditions
 # for a given k_point, run the sim, then anlayze
 # result with Harminv repeatedly at multile k_points
 kmin, kmax = blk.material.valid_freq_range
@@ -77,7 +85,7 @@ kpts = mp.interpolate(19, [mp.Vector3(kmin), mp.Vector3(kmax)])
 kx = np.array([i.x for i in kpts])
 freq = sim.run_k_points(300, kpts)
 
-# %%
+# %%____________________________________________________________________________________________________________________
 plt.figure()
 plt.plot([kx.min(), kx.max()], [kx.min(), kx.max()], 'k', label='light line')
 for n in range(len(freq)):
