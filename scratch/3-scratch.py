@@ -1,4 +1,8 @@
-"Calculate the dispersion of a 3D LiNBO3 waveguide "
+"""Calculate the dispersion of a 3D LiNBO3 waveguide, and / or do a simulation of a 3D waveguide with absorbing 
+boundaries. 
+
+I've come to the realization that whereas there isn't anything wrong with this code per se, it is an impractically 
+large simulation to run! """
 
 import sys
 
