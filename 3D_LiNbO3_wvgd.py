@@ -1,8 +1,12 @@
-"Calculate the dispersion of a 3D LiNBO3 waveguide "
+"""Calculate the dispersion of a 3D LiNBO3 waveguide, and / or do a simulation of a 3D waveguide with absorbing 
+boundaries. 
+
+I've come to the realization that whereas there isn't anything wrong with this code per se, it is an impractically 
+large simulation to run! """
 
 import sys
 
-sys.path.append('../')
+sys.path.append('/')
 import meep as mp
 import meep.materials as mt
 import numpy as np
@@ -15,7 +19,7 @@ from mayavi import mlab
 clipboard_and_style_sheet.style_sheet()
 
 just_vslz_mayavi = False
-calculate_dispersion = True
+calculate_dispersion = False
 
 
 def plot_cross_section(Xlen, Ylen, eps, n=None):
@@ -31,26 +35,29 @@ def square_figure():
     plt.gca().set_aspect('equal', adjustable='box')
 
 
-# %%  try a narrower bandwidth source
-wl_min, wl_max = .8, 2
+# %%____________________________________________________________________________________________________________________
+# try a narrower bandwidth source
+wl_min, wl_max = .4, 0.8
 
-# %% Set up the geometry of the problem.
+# %%____________________________________________________________________________________________________________________
+# Set up the geometry of the problem.
 wl_wvgd = 3.5
 n_cntr_wl = mt.LiNbO3.epsilon(1 / wl_wvgd)[2, 2]  # X11 and X22 are no, X33 is ne
 wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl  # width of the waveguide is half a wavelength wide
 hght_wvgd = 0.5  # height of the waveguide, I recall Tsung-Han said a few hundred nanometers
-cntr_wvgd = mp.Vector3(0, 0.0, 0)  # set origin as the center of the waveguide
+cntr_wvgd = mp.Vector3(0, 0.25, 0)  # set origin as the center of the waveguide
 
-sy = 6.5  # size of the cell in the y direction
-sx = 6.5  # size of the cell in the x direction
+sy = 5  # size of the cell in the y direction
+sx = 5  # size of the cell in the x direction
 if calculate_dispersion:  # effectively 2D
     sz = 0
 else:  # extend to 3D
     sz = 5
 
-dpml = 1  # PML thickness
+dpml = wl_max  # PML thickness
 
-# %% Create the geometry using the above information
+# %%____________________________________________________________________________________________________________________
+# Create the geometry using the above information
 blk1 = mp.Block(
     size=mp.Vector3(wdth_wvgd, hght_wvgd, mp.inf),
     center=cntr_wvgd
@@ -70,7 +77,8 @@ ABSZ = mp.Absorber(dpml, direction=mp.Z)  # front and back
 ABSY = mp.Absorber(dpml, direction=mp.Y, side=mp.Low)  # bottom
 PMLY = mp.PML(dpml, direction=mp.Y, side=mp.High)  # top
 
-# %% set the dielectric constant of the geometric objects
+# %%____________________________________________________________________________________________________________________
+# set the dielectric constant of the geometric objects
 if just_vslz_mayavi:
     blk1.material = mp.Medium(epsilon=10)
     blk2.material = mp.Medium(epsilon=5)
@@ -78,7 +86,8 @@ else:
     blk1.material = mt.LiNbO3
     blk2.material = mt.SiO2
 
-# %% create the geometry and boundary_layers list for the simulation
+# %%____________________________________________________________________________________________________________________
+# create the geometry and boundary_layers list for the simulation
 geometry = [
     blk1,
     blk2
@@ -89,7 +98,8 @@ if calculate_dispersion:  # periodic in Z
 else:  # otherwise absorb the light at the end
     boundary_layers = [ABSX, PMLY, ABSY, ABSZ]
 
-# %% create the sources list for the simulation
+# %%____________________________________________________________________________________________________________________
+# create the sources list for the simulation
 
 # create a Gaussian time pulse with bandwidth such that you cover all frequencies
 # in the bandwidth of frequencies whose dispersion you want to calculate
@@ -112,12 +122,13 @@ source = mp.Source(
 
 Sources = [source]
 
-# %% create the simulation instance
+# %%____________________________________________________________________________________________________________________
+# create the simulation instance
 sim = mp.Simulation(cell_size=cell,
                     geometry=geometry,
                     sources=Sources,
                     boundary_layers=boundary_layers,
-                    resolution=75,  # fields keep blowing up :(
+                    resolution=200,  # fields keep blowing up :(
                     )
 sim.use_output_directory('sim_output')
 if not just_vslz_mayavi:
@@ -125,7 +136,8 @@ if not just_vslz_mayavi:
         # periodicity is only in the z direction, setting this flag offers a performance boost
         sim.special_kz = True
 
-# %% specify relevant symmetries and add them to the simulation
+# %%____________________________________________________________________________________________________________________
+# specify relevant symmetries and add them to the simulation
 symx = mp.Symmetry(
     direction=mp.X,
     phase=1  # E-field is a true vector
@@ -137,7 +149,7 @@ symz = mp.Symmetry(
 
 sim.symmetries = [symx, symz]
 
-# %%
+# %%____________________________________________________________________________________________________________________
 if just_vslz_mayavi:
     sim.init_sim()
     eps = sim.get_epsilon()
@@ -151,15 +163,14 @@ if just_vslz_mayavi:
         plt.axhline(sy - dpml, color='r')
     else:
         sim.plot2D()
-    plt.show()
 
-# %%
+# %%____________________________________________________________________________________________________________________
 if (not just_vslz_mayavi) and calculate_dispersion:
-    kmin, kmax = 1 / wl_max, 1 / wl_min
+    kmin, kmax = blk1.material.valid_freq_range
     kpts = mp.interpolate(5, [mp.Vector3(0, 0, kmin), mp.Vector3(0, 0, kmax)])
     kz = np.array([i.z for i in kpts])
 
-    freq = sim.run_k_points(300, kpts)
+    freq = sim.run_k_points(150, kpts)
 
     # %%
     plt.figure()
@@ -168,21 +179,19 @@ if (not just_vslz_mayavi) and calculate_dispersion:
         if len(freq[n]) > 0:
             [plt.plot(kz[n], i.real, marker='o', color='C0') for i in freq[n]]
     plt.legend(loc='best')
-    plt.savefig('sim_output/result.png')
-    plt.show()
 
-# %%
+# %%____________________________________________________________________________________________________________________
 if (not just_vslz_mayavi) and (not calculate_dispersion):
     sim.run(
         mp.to_appended("ey", mp.at_every(0.6, mp.output_efield_y)),
         until_after_sources=300
     )
 
-# %%
+# %%____________________________________________________________________________________________________________________
 # with h5py.File('sim_output/3-scratch-ey.h5', 'r') as f:
 #     data = np.array(f[util.get_key(f)])
 
-# %%
+# %%____________________________________________________________________________________________________________________
 # save = False
 # fig, ax = plt.subplots(1, 1)
 # for n in range(0, data.shape[3], 1):
@@ -197,7 +206,7 @@ if (not just_vslz_mayavi) and (not calculate_dispersion):
 #     else:
 #         plt.pause(.1)
 
-# %%
+# %%____________________________________________________________________________________________________________________
 # zero = np.zeros(data.shape[:-1])
 # mlab.quiver3d(zero, data[:, :, :, 2], zero)
 # mlab.show()
