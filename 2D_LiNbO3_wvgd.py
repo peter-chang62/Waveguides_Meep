@@ -50,7 +50,8 @@ source = mp.Source(src=src,
                    size=mp.Vector3())
 Sources = [source]
 
-# %% Done with sources, initialize the simulation instance
+# %%____________________________________________________________________________________________________________________
+# Done with sources, initialize the simulation instance
 sim = mp.Simulation(cell_size=cell,
                     geometry=geometry,
                     sources=Sources,
@@ -69,7 +70,7 @@ sim.run(mp.to_appended("ez", mp.at_every(0.6, mp.output_efield_z)),
 
 # %%____________________________________________________________________________________________________________________
 # Done! Look at simulation results!
-with h5py.File('sim_output/1-scratch-ez.h5', 'r') as f:
+with h5py.File('sim_output/2D_LiNbO3_wvgd-ez.h5', 'r') as f:
     data = np.array(f[util.get_key(f)])
 
 # %%____________________________________________________________________________________________________________________
