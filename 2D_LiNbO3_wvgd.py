@@ -61,8 +61,7 @@ sim.use_output_directory('sim_output')
 
 # %%____________________________________________________________________________________________________________________
 # symmetries to exploit
-Sym = [mp.Mirror(direction=mp.X)]
-sim.symmetries = Sym
+sim.symmetries = [mp.Mirror(direction=mp.X)]
 
 # %%____________________________________________________________________________________________________________________
 sim.run(mp.to_appended("ez", mp.at_every(0.6, mp.output_efield_z)),

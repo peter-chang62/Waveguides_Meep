@@ -95,10 +95,9 @@ sim.use_output_directory('sim_output')
 # %%____________________________________________________________________________________________________________________
 """Sources """
 
-df_src = float(np.diff(bw))
 src = mp.GaussianSource(
     frequency=f_src,
-    fwidth=df_src
+    fwidth=float(np.diff(bw))
 )
 
 pt_src_offst = mp.Vector3(0, 0.25 * wdth_wvgd, 0.25 * hght_wvgd)
