@@ -15,7 +15,7 @@ from mayavi import mlab
 clipboard_and_style_sheet.style_sheet()
 
 just_vslz_mayavi = False
-calculate_dispersion = False
+calculate_dispersion = True
 
 
 def plot_cross_section(Xlen, Ylen, eps, n=None):
@@ -32,23 +32,23 @@ def square_figure():
 
 
 # %%  try a narrower bandwidth source
-wl_min, wl_max = .4, 0.8
+wl_min, wl_max = .8, 2
 
 # %% Set up the geometry of the problem.
 wl_wvgd = 3.5
 n_cntr_wl = mt.LiNbO3.epsilon(1 / wl_wvgd)[2, 2]  # X11 and X22 are no, X33 is ne
 wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl  # width of the waveguide is half a wavelength wide
 hght_wvgd = 0.5  # height of the waveguide, I recall Tsung-Han said a few hundred nanometers
-cntr_wvgd = mp.Vector3(0, 0.25, 0)  # set origin as the center of the waveguide
+cntr_wvgd = mp.Vector3(0, 0.0, 0)  # set origin as the center of the waveguide
 
-sy = 5  # size of the cell in the y direction
-sx = 5  # size of the cell in the x direction
+sy = 6.5  # size of the cell in the y direction
+sx = 6.5  # size of the cell in the x direction
 if calculate_dispersion:  # effectively 2D
     sz = 0
 else:  # extend to 3D
     sz = 5
 
-dpml = wl_max  # PML thickness
+dpml = 1  # PML thickness
 
 # %% Create the geometry using the above information
 blk1 = mp.Block(
@@ -117,7 +117,7 @@ sim = mp.Simulation(cell_size=cell,
                     geometry=geometry,
                     sources=Sources,
                     boundary_layers=boundary_layers,
-                    resolution=200,  # fields keep blowing up :(
+                    resolution=75,  # fields keep blowing up :(
                     )
 sim.use_output_directory('sim_output')
 if not just_vslz_mayavi:
@@ -151,14 +151,15 @@ if just_vslz_mayavi:
         plt.axhline(sy - dpml, color='r')
     else:
         sim.plot2D()
+    plt.show()
 
 # %%
 if (not just_vslz_mayavi) and calculate_dispersion:
-    kmin, kmax = blk1.material.valid_freq_range
+    kmin, kmax = 1 / wl_max, 1 / wl_min
     kpts = mp.interpolate(5, [mp.Vector3(0, 0, kmin), mp.Vector3(0, 0, kmax)])
     kz = np.array([i.z for i in kpts])
 
-    freq = sim.run_k_points(150, kpts)
+    freq = sim.run_k_points(300, kpts)
 
     # %%
     plt.figure()
@@ -167,6 +168,8 @@ if (not just_vslz_mayavi) and calculate_dispersion:
         if len(freq[n]) > 0:
             [plt.plot(kz[n], i.real, marker='o', color='C0') for i in freq[n]]
     plt.legend(loc='best')
+    plt.savefig('sim_output/result.png')
+    plt.show()
 
 # %%
 if (not just_vslz_mayavi) and (not calculate_dispersion):
