@@ -16,8 +16,8 @@ clipboard_and_style_sheet.style_sheet()
 """Geometry """
 
 # minimum and maximum wavelength
-# wl_min, wl_max = 1.4, 1.6
-wl_min, wl_max = 1 / np.array(mt.LiNbO3.valid_freq_range)[::-1]
+wl_min, wl_max = .4, 1.77
+# wl_min, wl_max = 1 / np.array(mt.LiNbO3.valid_freq_range)[::-1]
 
 # %%____________________________________________________________________________________________________________________
 # parameters to calculate for the cell
@@ -61,10 +61,10 @@ boundary_layers = [*ABSList, *PMLList]
 # %%____________________________________________________________________________________________________________________
 bw = np.array([1 / wl_max, 1 / wl_min])
 f_src = float(np.diff(bw) / 2 + bw[0])
-# blk1.material = mp.Medium(epsilon=mt.LiNbO3.epsilon(f_src)[2, 2])
-# blk2.material = mp.Medium(epsilon=mt.SiO2.epsilon(f_src)[2, 2])
-blk1.material = mt.LiNbO3
-blk2.material = mt.SiO2
+blk1.material = mp.Medium(epsilon=mt.LiNbO3.epsilon(f_src)[2, 2])
+blk2.material = mp.Medium(epsilon=mt.SiO2.epsilon(f_src)[2, 2])
+# blk1.material = mt.LiNbO3
+# blk2.material = mt.SiO2
 
 # %%____________________________________________________________________________________________________________________
 # I like to think of the simulation as tied to the simulation cell
@@ -74,7 +74,7 @@ sim = mp.Simulation(
     cell_size=cell,
     geometry=geometry,
     boundary_layers=boundary_layers,
-    resolution=40)
+    resolution=20)
 
 sim.use_output_directory('sim_output')
 
@@ -104,5 +104,8 @@ plt.figure()
 plt.plot([kx.min(), kx.max()], [kx.min(), kx.max()], 'k', label='light line')
 for n in range(len(freq)):
     if len(freq[n]) > 0:
-        [plt.plot(kx[n], i.real, marker='o', color='C0') for i in freq[n]]
+        [plt.plot(kx[n], i.real, marker='.', color='C0') for i in freq[n]]
 plt.legend(loc='best')
+plt.xlabel("k ($\mathrm{\mu m}$)")
+plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
+plt.ylim(.25, 2.5)
