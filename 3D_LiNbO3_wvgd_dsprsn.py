@@ -77,7 +77,7 @@ sim = mp.Simulation(
     cell_size=cell,
     geometry=geometry,
     boundary_layers=boundary_layers,
-    resolution=50
+    resolution=40
 )
 
 sim.use_output_directory('sim_output')
