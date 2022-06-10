@@ -8,9 +8,8 @@ import meep as mp
 import meep.materials as mt
 import numpy as np
 import clipboard_and_style_sheet
-import matplotlib.pyplot as plt
 import h5py
-import utilities as util
+from mayavi import mlab
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -116,3 +115,15 @@ sim.run(
     mp.to_appended("ez", mp.at_every(.6, mp.output_efield_z)),
     until_after_sources=300
 )
+
+# %%____________________________________________________________________________________________________________________
+# Done! Look at simulation results!
+f = h5py.File('sim_output/3D_LiNbO3_wvgd-ez.h5', 'r')
+data = f.get('ez')
+mlab.figure()
+Zero = np.zeros((data.shape[:-1]))
+for n in range(data.shape[-1]):
+    mlab.quiver3d(Zero, Zero, data[:, :, :, n])
+    mlab.savefig(f'fig/{n}.png')
+    mlab.clf()
+    print(data.shape[-1] - n)
