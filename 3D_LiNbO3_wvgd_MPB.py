@@ -25,15 +25,13 @@ cntr_wvgd = mp.Vector3(0, 0, 0)  # waveguide center
 sy = 8
 sz = 8
 
-dpml = 1  # PML thickness
-
 # %%____________________________________________________________________________________________________________________
 # use the above code block to create the MEEP geometries, simulation cell, and boundary layers
 blk_wvgd = mp.Block(
     size=mp.Vector3(mp.inf, wdth_wvgd, hght_wvgd),
     center=cntr_wvgd)
 
-hght_blk2 = (sy / 2) - (hght_wvgd / 2) + cntr_wvgd.y
+hght_blk2 = (sz / 2) - (hght_wvgd / 2) + cntr_wvgd.y
 offst_blk2 = (hght_blk2 / 2) + (hght_wvgd / 2) - cntr_wvgd.y
 blk_sbstrt = mp.Block(
     size=mp.Vector3(mp.inf, mp.inf, hght_blk2),
@@ -90,15 +88,6 @@ sim = mp.Simulation(cell_size=lattice.size,
                     resolution=resolution)
 
 # %%____________________________________________________________________________________________________________________
-# plt.figure()
-# kx = np.array([i.x for i in k_points])
-# plt.plot(1 / kx, FREQ[:, 0], 'o-')
-# plt.plot(1 / kx, FREQ[:, 1], 'o-')
-# plt.plot(1 / kx, FREQ[:, 2], 'o-')
-# plt.plot(1 / kx, FREQ[:, 3], 'o-')
-# plt.plot(1 / kx, kx, 'k', label='light line')
-# plt.legend(loc='best')
-
 plt.figure()
 kx = np.array([i.x for i in k_points])
 plt.plot(kx, FREQ[:, 0], '.-')
