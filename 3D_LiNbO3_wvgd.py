@@ -75,8 +75,10 @@ boundary_layers = [
 # %%____________________________________________________________________________________________________________________
 bw = np.array([1 / wl_max, 1 / wl_min])
 f_src = float(np.diff(bw) / 2 + bw[0])
-blk1.material = mp.Medium(epsilon=mt.LiNbO3.epsilon(f_src)[2, 2])
-blk2.material = mp.Medium(epsilon=mt.SiO2.epsilon(f_src)[2, 2])
+# blk1.material = mp.Medium(epsilon=mt.LiNbO3.epsilon(f_src)[2, 2])
+# blk2.material = mp.Medium(epsilon=mt.SiO2.epsilon(f_src)[2, 2])
+blk1.material = mt.LiNbO3
+blk2.material = mt.SiO2
 
 # %%____________________________________________________________________________________________________________________
 # I like to think of the simulation as tied to the simulation cell
@@ -103,7 +105,7 @@ pt_src_offst = mp.Vector3(0, 0.25 * wdth_wvgd, 0.25 * hght_wvgd)
 pt_src = cntr_wvgd + pt_src_offst
 source = mp.Source(
     src=src,
-    component=mp.Ez,  # longitudinal is X, polarization is Z, that lies on ne for LiNbO3
+    component=mp.Ez,  # longitudinal is X, polarization is Z (that lies on ne for LiNbO3)
     center=pt_src
 )
 
@@ -118,12 +120,12 @@ sim.run(
 
 # %%____________________________________________________________________________________________________________________
 # Done! Look at simulation results!
-f = h5py.File('sim_output/3D_LiNbO3_wvgd-ez.h5', 'r')
-data = f.get('ez')
-mlab.figure()
-Zero = np.zeros((data.shape[:-1]))
-for n in range(data.shape[-1]):
-    mlab.quiver3d(Zero, Zero, data[:, :, :, n])
-    mlab.savefig(f'fig/{n}.png')
-    mlab.clf()
-    print(data.shape[-1] - n)
+# f = h5py.File('sim_output/3D_LiNbO3_wvgd-ez.h5', 'r')
+# data = f.get('ez')
+# mlab.figure()
+# Zero = np.zeros((data.shape[:-1]))
+# for n in range(data.shape[-1]):
+#     mlab.quiver3d(Zero, Zero, data[:, :, :, n])
+#     mlab.savefig(f'fig/{n}.png')
+#     mlab.clf()
+#     print(data.shape[-1] - n)
