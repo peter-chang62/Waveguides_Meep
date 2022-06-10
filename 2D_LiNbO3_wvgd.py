@@ -9,6 +9,9 @@ To calculate dispersion:
 Parameters to play with
     1. add a silica substrate -> set slc_sbstrt to True
     2. change the wavelength range that sets the bandwidth of the source (wl_min, wl_max)
+
+For 2D, it's simple enough that I put both the field-visualization and waveguide dispersion
+calculation runs in the same script
 """
 
 import meep as mp
