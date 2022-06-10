@@ -25,8 +25,8 @@ clclt_dsprsn = False
 slc_sbstrt = True
 
 # %%____________________________________________________________________________________________________________________
-# wl_min, wl_max = 1.4, 1.6
-wl_min, wl_max = 1 / np.array(mt.LiNbO3.valid_freq_range)[::-1]
+wl_min, wl_max = 1.4, 1.6
+# wl_min, wl_max = 1 / np.array(mt.LiNbO3.valid_freq_range)[::-1]
 
 # %%____________________________________________________________________________________________________________________
 # Set up the geometry of the problem. One waveguide laid out in the x direction
@@ -39,8 +39,8 @@ dpml = 1  # PML thickness
 cntr_wvgd = mp.Vector3(0, 0, 0)  # where the waveguide is centered
 sx = 0
 if not clclt_dsprsn:
-    sx += 16  # size of the cell in the x direction
-sy = 6  # size of the cell in y direction
+    sx += 12  # size of the cell in the x direction
+sy = 7  # size of the cell in y direction
 
 # %%____________________________________________________________________________________________________________________
 # create the geometric objects from the above
@@ -60,7 +60,7 @@ ABSX = mp.Absorber(dpml, direction=mp.X)
 ABSY = mp.Absorber(dpml, direction=mp.Y, side=mp.Low)
 ABSList = [ABSY]
 if not clclt_dsprsn:
-    # ABSList += [ABSX]
+    ABSList += [ABSX]
     pass  # show periodic boundaries anyway
 
 # %%____________________________________________________________________________________________________________________
@@ -68,10 +68,10 @@ if not clclt_dsprsn:
 bw = np.array([1 / wl_max, 1 / wl_min])
 f_src = float(np.diff(bw) / 2 + bw[0])
 
-blk1.material = mt.LiNbO3
-blk2.material = mt.SiO2
-# blk1.material = mp.Medium(epsilon=mt.LiNbO3.epsilon(f_src)[2, 2])
-# blk2.material = mp.Medium(epsilon=mt.SiO2.epsilon(f_src)[2, 2])
+# blk1.material = mt.LiNbO3
+# blk2.material = mt.SiO2
+blk1.material = mp.Medium(epsilon=mt.LiNbO3.epsilon(f_src)[2, 2])
+blk2.material = mp.Medium(epsilon=mt.SiO2.epsilon(f_src)[2, 2])
 
 # %%____________________________________________________________________________________________________________________
 # create the geometry and boundary layers list
@@ -99,7 +99,7 @@ sim = mp.Simulation(cell_size=cell,
                     geometry=geometry,
                     sources=Sources,
                     boundary_layers=boundary_layers,
-                    resolution=30)
+                    resolution=20)
 sim.use_output_directory('sim_output')
 
 # %%____________________________________________________________________________________________________________________
@@ -143,6 +143,6 @@ if not clclt_dsprsn:
         ax.clear()
         ax.imshow(data[:, ::-1, n].T, cmap='jet', vmax=np.max(data), vmin=data.min())
         if save:
-            plt.savefig(f'../fig/{n}.png')
+            plt.savefig(f'fig/{n}.png')
         else:
             plt.pause(.01)

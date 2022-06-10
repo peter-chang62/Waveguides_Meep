@@ -11,7 +11,6 @@ clipboard_and_style_sheet.style_sheet()
 
 # %%____________________________________________________________________________________________________________________
 # minimum and maximum wavelength
-# wl_min, wl_max = 1.4, 1.6
 wl_min, wl_max = 1 / np.array(mt.LiNbO3.valid_freq_range)[::-1]
 
 # %%____________________________________________________________________________________________________________________
@@ -64,10 +63,7 @@ blk2.material = mt.SiO2
 
 # %%____________________________________________________________________________________________________________________
 num_bands = 4
-num_k = 19
-k_min = 1 / wl_max
-k_max = 1 / wl_min
-k_points = mp.interpolate(num_k, [mp.Vector3(k_min), mp.Vector3(k_max)])
+k_points = mp.interpolate(19, [mp.Vector3(1 / wl_max), mp.Vector3(1 / wl_min)])
 
 # %%____________________________________________________________________________________________________________________
 ms = mpb.ModeSolver(
@@ -79,4 +75,7 @@ ms = mpb.ModeSolver(
 )
 
 # %%____________________________________________________________________________________________________________________
-ms.run(mpb.display_group_velocities)
+ms.run_te_yodd(mpb.display_group_velocities)
+
+for i in k_points:
+    pass
