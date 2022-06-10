@@ -1,1 +1,3 @@
 The 3D dispersion calculation was for non-dispersive materials, which allowed me to use a pretty course simulation grid of 20 pixels / um. Going by increments of ten, it appears that going to dispersive materials requires 40 pixels / um which will push the run time to the hours time scale. The 20 pixels / um finished in a few minutes. 
+
+The MPB calculation is done for dispersive materials, at 30 pixels/um, the results are pretty close for the bands that were calculated! 

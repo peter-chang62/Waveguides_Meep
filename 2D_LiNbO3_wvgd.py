@@ -1,17 +1,13 @@
 """Getting started: 2D simulation in a straight LiNbO3 waveguide
 To calculate dispersion:
     1. change wavelength range
-    2. sx = 0 -> automatic now
-    3. remove ABSX -> automatic now
-    4. remove mp.Mirror(direction=mp.X) -> automatic now
-    4. run "calculate dispersion" block instead of "visualize fields" block -> automatic now
 
 Parameters to play with
     1. add a silica substrate -> set slc_sbstrt to True
     2. change the wavelength range that sets the bandwidth of the source (wl_min, wl_max)
 
 For 2D, it's simple enough that I put both the field-visualization and waveguide dispersion
-calculation runs in the same script
+calculation (using Harminv) in the same script
 """
 
 import meep as mp
@@ -84,7 +80,7 @@ if slc_sbstrt:
 boundary_layers = [*ABSList, *PMLList]
 
 # %%____________________________________________________________________________________________________________________
-# create a gaussian source instance and place it at the front of the waveguide
+# create a gaussian source instance and place it vertically off-centered in the waveguide
 src = mp.GaussianSource(frequency=f_src, fwidth=float(np.diff(bw)))
 
 pt = mp.Vector3() + cntr_wvgd

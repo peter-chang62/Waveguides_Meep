@@ -14,7 +14,7 @@ from mayavi import mlab
 
 clipboard_and_style_sheet.style_sheet()
 
-D3 = True
+D3 = True  # 2D allows you to call sim.plot2D()
 
 # %%____________________________________________________________________________________________________________________
 """Geometry """
@@ -42,15 +42,13 @@ dpml = 1  # PML thickness
 # use the above code block to create the MEEP geometries, simulation cell, and boundary layers
 blk1 = mp.Block(
     size=mp.Vector3(mp.inf, wdth_wvgd, hght_wvgd),
-    center=cntr_wvgd
-)
+    center=cntr_wvgd)
 
 hght_blk2 = (sy / 2) - (hght_wvgd / 2) + cntr_wvgd.y
 offst_blk2 = (hght_blk2 / 2) + (hght_wvgd / 2) - cntr_wvgd.y
 blk2 = mp.Block(
     size=mp.Vector3(mp.inf, mp.inf, hght_blk2),
-    center=mp.Vector3(0, 0, -offst_blk2)
-)
+    center=mp.Vector3(0, 0, -offst_blk2))
 
 cell = mp.Vector3(sx, sy, sz)
 
@@ -58,10 +56,7 @@ cell = mp.Vector3(sx, sy, sz)
 ABSX = mp.Absorber(dpml, mp.X)  # front and back
 ABSY = mp.Absorber(dpml, mp.Y)  # left and right
 ABSZ = mp.Absorber(dpml, mp.Z, side=mp.Low)  # bottom
-ABSList = [
-    ABSY,
-    ABSZ,
-]
+ABSList = [ABSY, ABSZ, ]
 if D3:
     ABSList += [ABSX]
 
@@ -69,14 +64,8 @@ if D3:
 PMLZ = mp.PML(dpml, direction=mp.Z, side=mp.High)  # top
 PMLList = [PMLZ]
 
-geometry = [
-    blk1,
-    blk2
-]
-boundary_layers = [
-    *ABSList,
-    *PMLList
-]
+geometry = [blk1, blk2]
+boundary_layers = [*ABSList, *PMLList]
 
 # %%____________________________________________________________________________________________________________________
 bw = np.array([1 / wl_max, 1 / wl_min])
@@ -94,8 +83,7 @@ sim = mp.Simulation(
     cell_size=cell,
     geometry=geometry,
     boundary_layers=boundary_layers,
-    resolution=20
-)
+    resolution=20)
 
 sim.use_output_directory('sim_output')
 
@@ -104,16 +92,14 @@ sim.use_output_directory('sim_output')
 
 src = mp.GaussianSource(
     frequency=f_src,
-    fwidth=float(np.diff(bw))
-)
+    fwidth=float(np.diff(bw)))
 
 pt_src_offst = mp.Vector3(0, 0.25 * wdth_wvgd, 0.25 * hght_wvgd)
 pt_src = cntr_wvgd + pt_src_offst
 source = mp.Source(
     src=src,
     component=mp.Ez,  # longitudinal is X, polarization is Z (that lies on ne for LiNbO3)
-    center=pt_src
-)
+    center=pt_src)
 
 sim.sources = [source]
 
