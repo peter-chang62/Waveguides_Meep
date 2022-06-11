@@ -214,6 +214,14 @@ class RidgeWaveguide:
         :param wl_min: shortest wavelength
         :param wl_max: longest wavelength
         :param NPTS: number of k_points to interpolate from shortest -> longest wavelength
+
+        If either the substrate or the waveguide media are dispersive, then self._calc_dispersive is called,
+        otherwise if both have fixed epsilon, self._calc_non_dispersive is called.
+
+        Both functions return a result() instance containing attributes: kx (shape: kx), freq (shape: kx, num_bands).
+
+        If the dispersive calculation is called, result() also has attributes: eps_wvgd (shape: kx), and eps_sbstrt (
+        shape: kx), which give the *material* epsilons for the waveguide and the substrate at the k_points
         """
 
         if (self.wvgd_mdm.valid_freq_range[-1] == 1e20) and (self.sbstrt_mdm.valid_freq_range[-1] == 1e20):
