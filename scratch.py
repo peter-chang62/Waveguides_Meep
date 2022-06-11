@@ -14,20 +14,10 @@ clipboard_and_style_sheet.style_sheet()
 
 class RidgeWaveGuide:
     def __init__(self, width, height, substrate_medium, waveguide_medium,
-                 resolution=20, num_bands=4, sy=8, sz=8):
-        # passed as arguments from __init__()
-        assert isinstance(substrate_medium, mp.Medium), \
-            f"substrate_medium must be a mp.Medium instance but got type {type(substrate_medium)}"
-        assert isinstance(substrate_medium, mp.Medium), \
-            f"substrate_medium must be a mp.Medium instance but got type {type(waveguide_medium)}"
-        substrate_medium: mp.Medium
-        waveguide_medium: mp.Medium
+                 resolution=64, num_bands=4, sy=2, sz=2):
+
         self.wdth = width
         self.hght = height
-        self.sbstrt_mdm = substrate_medium
-        self.wvgd_mdm = waveguide_medium
-
-        # additional attributes
         self._sy = sy
         self._sz = sz
 
@@ -37,6 +27,9 @@ class RidgeWaveGuide:
         self.blk_wvgd = mp.Block(size=mp.Vector3(mp.inf, self.wdth, self.hght))
         self.blk_sbstrt = mp.Block(size=mp.Vector3(mp.inf, mp.inf, hght_sbstrt),
                                    center=mp.Vector3(0, 0, -offst_sbstrt))
+
+        self.sbstrt_mdm = substrate_medium
+        self.wvgd_mdm = waveguide_medium
 
         self._lattice = mp.Lattice(size=mp.Vector3(0, self._sy, self._sz))
         self._geometry = [self.blk_wvgd, self.blk_sbstrt]
@@ -76,7 +69,8 @@ class RidgeWaveGuide:
     @wvgd_mdm.setter
     def wvgd_mdm(self, medium):
         assert isinstance(medium, mp.Medium), \
-            f"substrate_medium must be a mp.Medium instance but got type {type(medium)}"
+            f"waveguide medium must be a mp.Medium instance but got type {type(medium)}"
+        medium: mp.Medium
 
         self.blk_wvgd.material = medium
 
@@ -87,7 +81,8 @@ class RidgeWaveGuide:
     @sbstrt_mdm.setter
     def sbstrt_mdm(self, medium):
         assert isinstance(medium, mp.Medium), \
-            f"substrate_medium must be a mp.Medium instance but got type {type(medium)}"
+            f"substrate medium must be a mp.Medium instance but got type {type(medium)}"
+        medium: mp.Medium
 
         self.blk_sbstrt.material = medium
 
