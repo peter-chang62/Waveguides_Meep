@@ -1,3 +1,7 @@
 The 3D dispersion calculation was for non-dispersive materials, which allowed me to use a pretty course simulation grid of 20 pixels / um. Going by increments of ten, it appears that going to dispersive materials requires 40 pixels / um which will push the run time to the hours time scale. The 20 pixels / um finished in a few minutes. 
 
-The MPB calculation is done for dispersive materials, at 30 pixels/um, the results are pretty close for the bands that were calculated! 
+There are two MPB calculations, the first (dispersion_waveguide_layout_for_3DSim_MPB.png) is done also at 20 pixels / um and non-dispersive. This one should match! 
+
+For the second () MPB calculation was done when I realized that I had *forgotten to make LiNbO3 birefringent!*, and is done using dispersive substrate (SiO2) and waveguide, at 40 pixels/um. We can see a slight deviation in this one from the previous calculations.
+
+

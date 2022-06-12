@@ -5,8 +5,8 @@ frequency. For example, you can imagine that for a frequency well above the cuto
 that can propagate which results in different k's. MPB solves for the modes starting with highest order and going
 down to the fundamental mode. This is because information retained from the higher order modes can be used to
 accelerate the calculations for the lower ones. You can pass arguments to ms.find_k(), for example, if you wanted it
-to retain the E and H that are calculated. This would allow you to plot the field cross-sections inside the waveguide
-for the different modes. """
+to retain the E and H fields that are calculated. This would allow you to plot the field cross-sections inside the
+waveguide for the different modes. """
 
 import meep as mp
 import meep.materials as mt
@@ -71,8 +71,8 @@ class RidgeWaveguide:
         """
 
         geometry_sim = copy.deepcopy(self.geometry)
-        geometry_sim[0].material = mp.Medium(epsilon=self.wvgd_mdm.epsilon(1 / 1.55)[2, 2])
-        geometry_sim[1].material = mp.Medium(epsilon=self.sbstrt_mdm.epsilon(1 / 1.55)[2, 2])
+        geometry_sim[0].material = mp.Medium(epsilon_diag=self.wvgd_mdm.epsilon(1 / 1.55).diagonal())
+        geometry_sim[1].material = mp.Medium(epsilon_diag=self.sbstrt_mdm.epsilon(1 / 1.55).diagonal())
         self.sim = mp.Simulation(cell_size=self.lattice.size,
                                  geometry=geometry_sim,
                                  resolution=self.resolution[0])
@@ -249,17 +249,17 @@ class RidgeWaveguide:
 
         start = time.time()
         for n, k in enumerate(k_points):
-            eps_wvgd = self.wvgd_mdm.epsilon(k.x)[2, 2]
-            eps_sbstrt = self.sbstrt_mdm.epsilon(k.x)[2, 2]
-            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
-            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
+            eps_wvgd = self.wvgd_mdm.epsilon(k.x)
+            eps_sbstrt = self.sbstrt_mdm.epsilon(k.x)
+            self.blk_wvgd.material = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
+            self.blk_sbstrt.material = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
 
             self.ms.k_points = [k]
             self.ms.run()
 
             FREQ[n] = self.ms.all_freqs[0]
-            EPS_WVGD[n] = eps_wvgd.real
-            EPS_SBSTRT[n] = eps_sbstrt.real
+            EPS_WVGD[n] = eps_wvgd.real[2, 2]
+            EPS_SBSTRT[n] = eps_sbstrt.real[2, 2]
 
             print(f'____________________________{len(k_points) - n}________________________________________')
 
@@ -297,33 +297,79 @@ class RidgeWaveguide:
         res.freq = self.ms.all_freqs
         return res
 
+    def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
+               kmag_guess, kmag_min, kmag_max, *band_funcs):
+
+        args = [p, omega, band_min, band_max, korig_and_kdir, tol,
+                kmag_guess, kmag_min, kmag_max, *band_funcs]
+
+        if (self.wvgd_mdm.valid_freq_range[-1] == 1e20) and (self.sbstrt_mdm.valid_freq_range[-1] == 1e20):
+            # materials are NON dispersive
+            return self.ms.find_k(*args)
+
+        else:
+            # materials are dispersive
+            # set the substrate and waveguide epsilon for the input wavelength
+            # then run the simulation
+            eps_wvgd = self.wvgd_mdm.epsilon(omega)
+            eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
+            self.blk_wvgd.material = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
+            self.blk_sbstrt.material = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
+            return self.ms.find_k(*args)
 
 # %%____________________________________________________________________________________________________________________
-wl_wvgd = 3.5  # um
-n_cntr_wl = mt.LiNbO3.epsilon((1 / wl_wvgd))[2, 2]  # ne polarization
-wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl
+# wl_wvgd = 3.5  # um
+# n_cntr_wl = mt.LiNbO3.epsilon((1 / wl_wvgd))[2, 2]  # ne polarization
+# wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl
+#
+# ridge = RidgeWaveguide(
+#     width=wdth_wvgd,
+#     height=.5,
+#     substrate_medium=mt.SiO2,  # dispersive
+#     waveguide_medium=mt.LiNbO3,  # dispersive
+#     resolution=40,
+#     num_bands=4,
+#     cell_width=8,
+#     cell_height=8
+# )
 
-ridge = RidgeWaveguide(
-    width=wdth_wvgd,
-    height=.5,
-    # substrate_medium=mp.Medium(index=1.45),
-    # waveguide_medium=mp.Medium(index=3.45),
-    substrate_medium=mt.SiO2,
-    waveguide_medium=mt.LiNbO3,
-    resolution=30,
-    num_bands=4,
-    cell_width=8,
-    cell_height=8
-)
+# ridge.num_bands = 4
+# res = ridge.calculate_dispersion(.4, 1.77, 19)
+#
+# plt.figure()
+# [plt.plot(res.kx, res.freq[:, n], '.-') for n in range(res.freq.shape[1])]
+# plt.plot(res.kx, res.kx, 'k', label='light line')
+# plt.legend(loc='best')
+# plt.xlabel("k ($\mathrm{\mu m}$)")
+# plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
+# plt.ylim(.25, 2.5)
 
 # %%____________________________________________________________________________________________________________________
-res = ridge.calculate_dispersion(.4, 1.77, 19)
+# set epsilon for 1.55 um
+# ridge.width = 1
 
-# %%____________________________________________________________________________________________________________________
-plt.figure()
-[plt.plot(res.kx, res.freq[:, n], '.-') for n in range(res.freq.shape[1])]
-plt.plot(res.kx, res.kx, 'k', label='light line')
-plt.legend(loc='best')
-plt.xlabel("k ($\mathrm{\mu m}$)")
-plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
-plt.ylim(.25, 2.5)
+# omega = 1 / 1.55
+# n = ridge.wvgd_mdm.epsilon(1 / 1.55)[2, 2]
+# kmag_guess = n * omega
+#
+# k = ridge.find_k(
+#     p=mp.EVEN_Y,
+#     omega=1,
+#     band_min=4,
+#     band_max=4,
+#     korig_and_kdir=mp.Vector3(1),
+#     tol=1e-6,
+#     kmag_guess=kmag_guess,
+#     kmag_min=kmag_guess * .1,
+#     kmag_max=kmag_guess * 10
+# )
+#
+# E = ridge.ms.get_efield(1, False)
+# eps = ridge.ms.get_epsilon()
+# for n, title in enumerate(['Ex', 'Ey', 'Ez']):
+#     plt.figure()
+#     x = E[:, :, 0, n].__abs__() ** 2
+#     plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+#     plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+#     plt.axis(False)
+#     plt.title(title)
