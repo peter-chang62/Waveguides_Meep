@@ -317,21 +317,22 @@ class RidgeWaveguide:
             self.blk_sbstrt.material = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
             return self.ms.find_k(*args)
 
+
 # %%____________________________________________________________________________________________________________________
-# wl_wvgd = 3.5  # um
-# n_cntr_wl = mt.LiNbO3.epsilon((1 / wl_wvgd))[2, 2]  # ne polarization
-# wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl
-#
-# ridge = RidgeWaveguide(
-#     width=wdth_wvgd,
-#     height=.5,
-#     substrate_medium=mt.SiO2,  # dispersive
-#     waveguide_medium=mt.LiNbO3,  # dispersive
-#     resolution=40,
-#     num_bands=4,
-#     cell_width=8,
-#     cell_height=8
-# )
+wl_wvgd = 3.5  # um
+n_cntr_wl = mt.LiNbO3.epsilon((1 / wl_wvgd))[2, 2]  # ne polarization
+wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl
+
+ridge = RidgeWaveguide(
+    width=wdth_wvgd,
+    height=.5,
+    substrate_medium=mt.SiO2,  # dispersive
+    waveguide_medium=mt.LiNbO3,  # dispersive
+    resolution=40,
+    num_bands=4,
+    cell_width=8,
+    cell_height=8
+)
 
 # ridge.num_bands = 4
 # res = ridge.calculate_dispersion(.4, 1.77, 19)
@@ -345,31 +346,28 @@ class RidgeWaveguide:
 # plt.ylim(.25, 2.5)
 
 # %%____________________________________________________________________________________________________________________
-# set epsilon for 1.55 um
-# ridge.width = 1
+omega = 1 / 1.55
+n = ridge.wvgd_mdm.epsilon(1 / 1.55)[2, 2]
+kmag_guess = n * omega
 
-# omega = 1 / 1.55
-# n = ridge.wvgd_mdm.epsilon(1 / 1.55)[2, 2]
-# kmag_guess = n * omega
-#
-# k = ridge.find_k(
-#     p=mp.EVEN_Y,
-#     omega=1,
-#     band_min=4,
-#     band_max=4,
-#     korig_and_kdir=mp.Vector3(1),
-#     tol=1e-6,
-#     kmag_guess=kmag_guess,
-#     kmag_min=kmag_guess * .1,
-#     kmag_max=kmag_guess * 10
-# )
-#
-# E = ridge.ms.get_efield(1, False)
-# eps = ridge.ms.get_epsilon()
-# for n, title in enumerate(['Ex', 'Ey', 'Ez']):
-#     plt.figure()
-#     x = E[:, :, 0, n].__abs__() ** 2
-#     plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-#     plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-#     plt.axis(False)
-#     plt.title(title)
+k = ridge.find_k(
+    p=mp.EVEN_Y,
+    omega=1,
+    band_min=4,
+    band_max=4,
+    korig_and_kdir=mp.Vector3(1),
+    tol=1e-6,
+    kmag_guess=kmag_guess,
+    kmag_min=kmag_guess * .1,
+    kmag_max=kmag_guess * 10
+)
+
+E = ridge.ms.get_efield(1, False)
+eps = ridge.ms.get_epsilon()
+for n, title in enumerate(['Ex', 'Ey', 'Ez']):
+    plt.figure()
+    x = E[:, :, 0, n].__abs__() ** 2
+    plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+    plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+    plt.axis(False)
+    plt.title(title)
