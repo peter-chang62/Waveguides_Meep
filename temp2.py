@@ -51,32 +51,31 @@ for mode in range(num_modes):
     plt.axis('off')
     plt.title('$E_{{y{}}}$'.format(mode))
 plt.tight_layout()
-plt.savefig('errorFields.png')
 
 # ------------------------------------------------- #
 # Solve for all the modes one by one
 # ------------------------------------------------- #
 
-plt.figure(figsize=(8, 4))
-for mode in range(num_modes):
-    k = ms.find_k(
-        p=mp.EVEN_Z,
-        omega=omega,
-        band_min=mode + 1,
-        band_max=mode + 1,
-        korig_and_kdir=mp.Vector3(1, 0, 0),
-        tol=1e-4,
-        kmag_guess=omega * 3.45,
-        kmag_min=omega * 0.1,
-        kmag_max=omega * 4
-    )
-    E = ms.get_efield(which_band=mode + 1, bloch_phase=False)
-    plt.subplot(1, num_modes, mode + 1)
-    plt.imshow(eps.transpose(), interpolation='spline36', cmap='binary')
-    plt.imshow(np.abs(np.squeeze(E[:, :, 0, 1]).transpose()) ** 2, cmap='RdBu', alpha=0.9)
-    plt.axis('off')
-    plt.title('$E_{{y{}}}$'.format(mode))
-plt.tight_layout()
-plt.savefig('correctFields.png')
-
-plt.show()
+# plt.figure(figsize=(8, 4))
+# for mode in range(num_modes):
+#     k = ms.find_k(
+#         p=mp.EVEN_Z,
+#         omega=omega,
+#         band_min=mode + 1,
+#         band_max=mode + 1,
+#         korig_and_kdir=mp.Vector3(1, 0, 0),
+#         tol=1e-4,
+#         kmag_guess=omega * 3.45,
+#         kmag_min=omega * 0.1,
+#         kmag_max=omega * 4
+#     )
+#     E = ms.get_efield(which_band=mode + 1, bloch_phase=False)
+#     plt.subplot(1, num_modes, mode + 1)
+#     plt.imshow(eps.transpose(), interpolation='spline36', cmap='binary')
+#     plt.imshow(np.abs(np.squeeze(E[:, :, 0, 1]).transpose()) ** 2, cmap='RdBu', alpha=0.9)
+#     plt.axis('off')
+#     plt.title('$E_{{y{}}}$'.format(mode))
+# plt.tight_layout()
+# plt.savefig('correctFields.png')
+#
+# plt.show()

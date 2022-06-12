@@ -34,6 +34,8 @@ class RidgeWaveguide:
     def __init__(self, width, height, substrate_medium, waveguide_medium,
                  resolution=64, num_bands=4, cell_width=2, cell_height=2):
 
+        self.init_finished = False
+
         # create the lattice (cell)
         self.lattice = mp.Lattice(size=mp.Vector3(0, cell_width, cell_height))
 
@@ -64,6 +66,8 @@ class RidgeWaveguide:
         # plotting is a useful tool to see if the dimensions are set to what
         # you had intended to
         self.redef_sim()
+
+        self.init_finished = True
 
     def redef_sim(self):
         """
@@ -187,6 +191,9 @@ class RidgeWaveguide:
         self.blk_wvgd.material = medium
         self._wvgd_mdm = medium
 
+        if self.init_finished:
+            self.redef_sim()
+
     @property
     def sbstrt_mdm(self):
         # return the substrate medium
@@ -201,6 +208,9 @@ class RidgeWaveguide:
 
         self.blk_sbstrt.material = medium
         self._sbstrt_mdm = medium
+
+        if self.init_finished:
+            self.redef_sim()
 
     def plot2D(self):
         """
@@ -359,9 +369,14 @@ ridge = RidgeWaveguide(
 # plt.ylim(.25, 2.5)
 
 # %%____________________________________________________________________________________________________________________
-omega = 1 / 1.55
+omega = 1.55
 n = ridge.wvgd_mdm.epsilon(1 / 1.55)[2, 2]
 kmag_guess = n * omega
+
+eps_wvgd = ridge.wvgd_mdm.epsilon(omega)
+eps_sbstrt = ridge.sbstrt_mdm.epsilon(omega)
+ridge.wvgd_mdm = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
+ridge.sbstrt_mdm = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
 
 k = ridge.find_k(
     p=mp.EVEN_Y,
