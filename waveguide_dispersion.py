@@ -8,9 +8,6 @@ accelerate the calculations for the lower ones. You can pass arguments to ms.fin
 to retain the E and H fields that are calculated. This would allow you to plot the field cross-sections inside the
 waveguide for the different modes. """
 
-# TODO You are calculating dispersion incorrectly! You really don't know omega until after the calculation,
-#  so it's going to require a few iterations, or repeatedly calling find_k
-
 import meep as mp
 import meep.materials as mt
 import numpy as np
@@ -285,7 +282,6 @@ class RidgeWaveguide:
         else:
             self.band_funcs = []
 
-        # TODO alright, fill this in!
         k_min, k_max = 1 / wl_max, 1 / wl_min
         f_center = (k_max - k_min) / 2 + k_min
         self.blk_wvgd.material = mp.Medium(epsilon_diag=self.wvgd_mdm.epsilon(f_center).diagonal())
