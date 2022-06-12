@@ -27,8 +27,8 @@ wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl
 hght_wvgd = 0.5  # 500 nm
 cntr_wvgd = mp.Vector3(0, 0, 0)  # waveguide center
 
-sy = 7
-sz = 7
+sy = 5
+sz = 5
 
 dpml = 1  # PML thickness
 
@@ -61,10 +61,10 @@ boundary_layers = [*ABSList, *PMLList]
 # %%____________________________________________________________________________________________________________________
 bw = np.array([1 / wl_max, 1 / wl_min])
 f_src = float(np.diff(bw) / 2 + bw[0])
-blk1.material = mp.Medium(epsilon=mt.LiNbO3.epsilon(f_src)[2, 2])
-blk2.material = mp.Medium(epsilon=mt.SiO2.epsilon(f_src)[2, 2])
-# blk1.material = mt.LiNbO3
-# blk2.material = mt.SiO2
+# blk1.material = mp.Medium(epsilon_diag=mt.LiNbO3.epsilon(f_src).diagonal())
+# blk2.material = mp.Medium(epsilon_diag=mt.SiO2.epsilon(f_src).diagonal())
+blk1.material = mt.LiNbO3
+blk2.material = mt.SiO2
 
 # %%____________________________________________________________________________________________________________________
 # I like to think of the simulation as tied to the simulation cell
@@ -74,7 +74,7 @@ sim = mp.Simulation(
     cell_size=cell,
     geometry=geometry,
     boundary_layers=boundary_layers,
-    resolution=20)
+    resolution=40)
 
 sim.use_output_directory('sim_output')
 

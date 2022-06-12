@@ -8,6 +8,9 @@ accelerate the calculations for the lower ones. You can pass arguments to ms.fin
 to retain the E and H fields that are calculated. This would allow you to plot the field cross-sections inside the
 waveguide for the different modes. """
 
+# TODO You are calculating dispersion incorrectly! You really don't know omega until after the calculation,
+#  so it's going to require a few iterations, or repeatedly calling find_k
+
 import meep as mp
 import meep.materials as mt
 import numpy as np
@@ -15,6 +18,7 @@ import copy
 import clipboard_and_style_sheet
 from meep import mpb
 import matplotlib.pyplot as plt
+from scipy.interpolate import UnivariateSpline
 import utilities as util
 import h5py
 import time
@@ -77,8 +81,8 @@ class RidgeWaveguide:
         self.redef_sim()
 
         self.band_funcs = []
-        self.run = self.ms.run
-        self.store_fields = False
+        self.run = self.ms.run_yeven
+        self.store_fields = True
         self.init_finished = True
 
     def redef_sim(self):
@@ -243,6 +247,9 @@ class RidgeWaveguide:
         return self.E[which_band::self.num_bands], self.H[which_band::self.num_bands]
 
     def plot_mode(self, which_band, which_index_k):
+        assert which_band < self.num_bands, \
+            f"which_band must be <= {self.num_bands - 1} but got {which_band}"
+
         E, H = self.get_band(which_band)
         eps = self.ms.get_epsilon()
 
@@ -262,19 +269,12 @@ class RidgeWaveguide:
             plt.axis(False)
             plt.title(title)
 
-    def calculate_dispersion(self, wl_min, wl_max, NPTS):
+    def calc_dispersion(self, wl_min, wl_max, NPTS):
         """
-        :param wl_min: shortest wavelength
-        :param wl_max: longest wavelength
-        :param NPTS: number of k_points to interpolate from shortest -> longest wavelength
-
-        If either the substrate or the waveguide media are dispersive, then self._calc_dispersive is called,
-        otherwise if both have fixed epsilon, self._calc_non_dispersive is called.
-
-        Both functions return a result() instance containing attributes: kx (shape: kx), freq (shape: kx, num_bands).
-
-        If the dispersive calculation is called, result() also has attributes: eps_wvgd (shape: kx), and eps_sbstrt (
-        shape: kx), which give the *material* epsilons for the waveguide and the substrate at the k_points
+        :param wl_min:
+        :param wl_max:
+        :param NPTS:
+        :return:
         """
 
         if self.store_fields:
@@ -282,62 +282,58 @@ class RidgeWaveguide:
             band_func = lambda ms, which_band: store_fields(ms, which_band, self)
             self.band_funcs = [band_func]
 
-        if (self.wvgd_mdm.valid_freq_range[-1] == 1e20) and (self.sbstrt_mdm.valid_freq_range[-1] == 1e20):
-            # run a NON dispersive calculation
-            return self._calc_non_dispersive(wl_min, wl_max, NPTS)
         else:
-            # otherwise run a dispersive calculation
-            return self._calc_dispersive(wl_min, wl_max, NPTS)
+            self.band_funcs = []
 
-    def _calc_dispersive(self, wl_min, wl_max, NPTS):
-        """
-        :param wl_min: shortest wavelength
-        :param wl_max: longest wavelength
-        :param NPTS: number of k_points to interpolate from shortest -> longest wavelength
-        :return: result instance with attributes kx (shape: kx), freq (shape: kx, num_bands), eps_wvgd (shape: kx),
-        and eps_sbstrt (shape: kx)
-        """
-
-        print("RUNNING A DISPERSIVE CALCULATION")
-
-        k_points = mp.interpolate(NPTS, [mp.Vector3(1 / wl_max), mp.Vector3(1 / wl_min)])
-        FREQ = np.zeros((len(k_points), self.num_bands))
-        EPS_WVGD = np.zeros(len(k_points))
-        EPS_SBSTRT = np.zeros(len(k_points))
+        # TODO alright, fill this in!
+        k_min, k_max = 1 / wl_max, 1 / wl_min
+        f_center = (k_max - k_min) / 2 + k_min
+        self.blk_wvgd.material = mp.Medium(epsilon_diag=self.wvgd_mdm.epsilon(f_center).diagonal())
+        self.blk_sbstrt.material = mp.Medium(epsilon_diag=self.sbstrt_mdm.epsilon(f_center).diagonal())
 
         start = time.time()
-        for n, k in enumerate(k_points):
-            eps_wvgd = self.wvgd_mdm.epsilon(k.x)
-            eps_sbstrt = self.sbstrt_mdm.epsilon(k.x)
-            self.blk_wvgd.material = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
-            self.blk_sbstrt.material = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
 
-            self.ms.k_points = [k]
-            self.run(*self.band_funcs)
+        res = self.calc_w_from_k(wl_min, wl_max, NPTS)
+        spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0)
 
-            FREQ[n] = self.ms.all_freqs[0]
-            EPS_WVGD[n] = eps_wvgd.real[2, 2]
-            EPS_SBSTRT[n] = eps_sbstrt.real[2, 2]
+        # fields were stored by _calc_non_dispersive
+        if self.store_fields:
+            self._initialize_E_and_H_lists()
 
-            print(f'____________________________{len(k_points) - n}________________________________________')
+        OMEGA = np.linspace(k_min, k_max, NPTS)
+        KX = []
+        for n, omega in enumerate(OMEGA):
+            self.blk_wvgd.material = mp.Medium(epsilon_diag=self.wvgd_mdm.epsilon(omega).diagonal())
+            self.blk_sbstrt.material = mp.Medium(epsilon_diag=self.sbstrt_mdm.epsilon(omega).diagonal())
 
+            kmag_guess = float(spl(omega))
+            kx = self.find_k(mp.EVEN_Y, omega, 1, self.num_bands, mp.Vector3(1), 1e-4,
+                             kmag_guess, kmag_guess * 0.1, kmag_guess * 10, *self.band_funcs)
+            KX.append(kx)
+
+            print(f'___________________________________{len(OMEGA) - n}__________________________________________')
         stop = time.time()
-        print(f'finished after {(stop - start) / 60} minutes')
-
-        class results:
-            def __init__(self):
-                self.kx = np.array([i.x for i in k_points])
-                self.freq = FREQ
-                self.eps_wvgd = EPS_WVGD
-                self.eps_sbstrt = EPS_SBSTRT
+        print(f"finished in {(stop - start) / 60} minutes")
 
         if self.store_fields:
             self.E = np.squeeze(np.array(self.E))
             self.H = np.squeeze(np.array(self.H))
 
+        class results:
+            def __init__(self):
+                parent: RidgeWaveguide
+                self.kx = np.array(KX)
+                self.freq = OMEGA
+
+            def plot_dispersion(self):
+                plt.figure()
+                [plt.plot(self.kx[:, n], self.freq, '.-') for n in range(self.kx.shape[1])]
+                plt.xlabel("k ($\mathrm{1/ \mu m}$)")
+                plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{1/ \mu m}$)")
+
         return results()
 
-    def _calc_non_dispersive(self, wl_min, wl_max, NPTS):
+    def calc_w_from_k(self, wl_min, wl_max, NPTS):
         """
         :param wl_min: shortest wavelength
         :param wl_max: longest wavelength
@@ -345,24 +341,29 @@ class RidgeWaveguide:
         :return: result instance with attributes kx (shape: kx), freq (shape: kx, num_bands)
         """
 
-        print("RUNNING WITH A FIXED EPSILON")
-
         k_points = mp.interpolate(NPTS, [mp.Vector3(1 / wl_max), mp.Vector3(1 / wl_min)])
         self.ms.k_points = k_points
         self.run(*self.band_funcs)
 
-        class results:
-            def __init__(self):
-                self.kx = np.array([i.x for i in k_points])
+        # ____________________________________ Done ___________________________________________
 
-        res = results()
-        res.freq = self.ms.all_freqs
+        class results:
+            def __init__(self, parent):
+                parent: RidgeWaveguide
+                self.kx = np.array([i.x for i in k_points])
+                self.freq = parent.ms.all_freqs
+
+            def plot_dispersion(self):
+                plt.figure()
+                [plt.plot(self.kx, self.freq[:, n], '.-') for n in range(self.freq.shape[1])]
+                plt.xlabel("k ($\mathrm{\mu m}$)")
+                plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
 
         if self.store_fields:
             self.E = np.squeeze(np.array(self.E))
             self.H = np.squeeze(np.array(self.H))
 
-        return res
+        return results(self)
 
     def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
                kmag_guess, kmag_min, kmag_max, *band_funcs):
@@ -396,65 +397,3 @@ class RidgeWaveguide:
             self.blk_wvgd.material = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
             self.blk_sbstrt.material = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
             return self.ms.find_k(*args)
-
-
-# %%____________________________________________________________________________________________________________________
-wl_wvgd = 3.5  # um
-n_cntr_wl = mt.LiNbO3.epsilon((1 / wl_wvgd))[2, 2]  # ne polarization
-wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl
-
-ridge = RidgeWaveguide(
-    width=wdth_wvgd,
-    height=.5,
-    substrate_medium=mt.SiO2,  # dispersive
-    waveguide_medium=mt.LiNbO3,  # dispersive
-    # substrate_medium=mp.Medium(index=1.45),  # non-dispersive
-    # waveguide_medium=mp.Medium(index=3.45),  # non-dispersive
-    resolution=45,
-    num_bands=4,
-    cell_width=5,
-    cell_height=5
-)
-
-ridge.store_fields = True
-res = ridge.calculate_dispersion(.4, 1.77, 19)
-
-plt.figure()
-[plt.plot(res.kx, res.freq[:, n], '.-') for n in range(res.freq.shape[1])]
-plt.xlabel("k ($\mathrm{\mu m}$)")
-plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
-plt.ylim(.25, 2.5)
-
-# %%____________________________________________________________________________________________________________________
-# omega = 1 / 1
-# n = ridge.wvgd_mdm.epsilon(1 / 1.55)[2, 2]
-# kmag_guess = n * omega
-#
-# eps_wvgd = ridge.wvgd_mdm.epsilon(omega)
-# eps_sbstrt = ridge.sbstrt_mdm.epsilon(omega)
-# ridge.wvgd_mdm = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
-# ridge.sbstrt_mdm = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
-#
-# k = ridge.find_k(
-#     p=mp.EVEN_Y,
-#     omega=1,
-#     band_min=4,
-#     band_max=4,
-#     korig_and_kdir=mp.Vector3(1),
-#     tol=1e-6,
-#     kmag_guess=kmag_guess,
-#     kmag_min=kmag_guess * .1,
-#     kmag_max=kmag_guess * 10
-# )
-#
-# # As you can see, the light line for free space isn't the constraint,
-# # it's the light line for the oxide!
-# E = ridge.ms.get_efield(1, False)
-# eps = ridge.ms.get_epsilon()
-# for n, title in enumerate(['Ex', 'Ey', 'Ez']):
-#     plt.figure()
-#     x = E[:, :, 0, n].__abs__() ** 2
-#     plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-#     plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-#     plt.axis(False)
-#     plt.title(title)
