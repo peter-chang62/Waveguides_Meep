@@ -299,6 +299,19 @@ class RidgeWaveguide:
 
     def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
                kmag_guess, kmag_min, kmag_max, *band_funcs):
+        """
+        :param p: parity
+        :param omega: frequency
+        :param band_min: minimum band index
+        :param band_max: maximum band index
+        :param korig_and_kdir: k direction (unit vector)
+        :param tol: tolerance
+        :param kmag_guess: guess for the wave-vector magnitude (n/lambda)
+        :param kmag_min: minimum wave-vector magnitude
+        :param kmag_max: maximum wave-vector magnitude
+        :param band_funcs: additional arguments to pass to ms.find_k()
+        :return: k (list of float(s))
+        """
 
         args = [p, omega, band_min, band_max, korig_and_kdir, tol,
                 kmag_guess, kmag_min, kmag_max, *band_funcs]
