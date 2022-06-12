@@ -357,19 +357,20 @@ ridge = RidgeWaveguide(
     cell_height=8
 )
 
-# ridge.num_bands = 4
-# res = ridge.calculate_dispersion(.4, 1.77, 19)
-#
-# plt.figure()
-# [plt.plot(res.kx, res.freq[:, n], '.-') for n in range(res.freq.shape[1])]
-# plt.plot(res.kx, res.kx, 'k', label='light line')
-# plt.legend(loc='best')
-# plt.xlabel("k ($\mathrm{\mu m}$)")
-# plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
-# plt.ylim(.25, 2.5)
+ridge.num_bands = 4
+res = ridge.calculate_dispersion(.4, 1.77, 19)
+
+plt.figure()
+[plt.plot(res.kx, res.freq[:, n], '.-') for n in range(res.freq.shape[1])]
+plt.plot(res.kx, res.kx, 'k', label='light line')
+plt.plot(res.kx, res.kx / res.eps_sbstrt, 'k', label='light line')
+plt.legend(loc='best')
+plt.xlabel("k ($\mathrm{\mu m}$)")
+plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
+plt.ylim(.25, 2.5)
 
 # %%____________________________________________________________________________________________________________________
-omega = 1.55
+omega = 2.5
 n = ridge.wvgd_mdm.epsilon(1 / 1.55)[2, 2]
 kmag_guess = n * omega
 
@@ -390,6 +391,8 @@ k = ridge.find_k(
     kmag_max=kmag_guess * 10
 )
 
+# As you can see, the light line for free space isn't the constraint,
+# it's the light line for the oxide!
 E = ridge.ms.get_efield(1, False)
 eps = ridge.ms.get_epsilon()
 for n, title in enumerate(['Ex', 'Ey', 'Ez']):
