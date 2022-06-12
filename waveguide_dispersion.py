@@ -22,6 +22,15 @@ import time
 clipboard_and_style_sheet.style_sheet()
 
 
+def store_fields(ms, which_band, cls):
+    assert isinstance(cls, RidgeWaveguide), \
+        f"cls must be an instance of RidgeWaveguide but got {type(cls)}"
+    cls: RidgeWaveguide
+    ms: mpb.ModeSolver
+    cls.E.append(ms.get_efield(which_band=which_band, bloch_phase=False))
+    cls.H.append(ms.get_hfield(which_band=which_band, bloch_phase=False))
+
+
 class RidgeWaveguide:
     """
     The RidgeWaveguide class is for calculating the waveguide dispersion of a rectangular waveguide sitting on top of
@@ -67,6 +76,9 @@ class RidgeWaveguide:
         # you had intended to
         self.redef_sim()
 
+        self.band_funcs = []
+        self.run = self.ms.run
+        self.store_fields = False
         self.init_finished = True
 
     def redef_sim(self):
@@ -219,6 +231,37 @@ class RidgeWaveguide:
 
         self.sim.plot2D()
 
+    def _initialize_E_and_H_lists(self):
+        self.E = []
+        self.H = []
+
+    def get_band(self, which_band):
+        """
+        :param which_band: which_band
+        :return: E, H arrays
+        """
+        return self.E[which_band::self.num_bands], self.H[which_band::self.num_bands]
+
+    def plot_mode(self, which_band, which_index_k):
+        E, H = self.get_band(which_band)
+        eps = self.ms.get_epsilon()
+
+        for n, title in enumerate(['Ex', 'Ey', 'Ez']):
+            plt.figure()
+            x = E[which_index_k][:, :, n].__abs__() ** 2
+            plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+            plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+            plt.axis(False)
+            plt.title(title)
+
+        for n, title in enumerate(['Hx', 'Hy', 'Hz']):
+            plt.figure()
+            x = H[which_index_k][:, :, n].__abs__() ** 2
+            plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+            plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+            plt.axis(False)
+            plt.title(title)
+
     def calculate_dispersion(self, wl_min, wl_max, NPTS):
         """
         :param wl_min: shortest wavelength
@@ -233,6 +276,11 @@ class RidgeWaveguide:
         If the dispersive calculation is called, result() also has attributes: eps_wvgd (shape: kx), and eps_sbstrt (
         shape: kx), which give the *material* epsilons for the waveguide and the substrate at the k_points
         """
+
+        if self.store_fields:
+            self._initialize_E_and_H_lists()
+            band_func = lambda ms, which_band: store_fields(ms, which_band, self)
+            self.band_funcs = [band_func]
 
         if (self.wvgd_mdm.valid_freq_range[-1] == 1e20) and (self.sbstrt_mdm.valid_freq_range[-1] == 1e20):
             # run a NON dispersive calculation
@@ -265,7 +313,7 @@ class RidgeWaveguide:
             self.blk_sbstrt.material = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
 
             self.ms.k_points = [k]
-            self.ms.run()
+            self.run(*self.band_funcs)
 
             FREQ[n] = self.ms.all_freqs[0]
             EPS_WVGD[n] = eps_wvgd.real[2, 2]
@@ -283,6 +331,10 @@ class RidgeWaveguide:
                 self.eps_wvgd = EPS_WVGD
                 self.eps_sbstrt = EPS_SBSTRT
 
+        if self.store_fields:
+            self.E = np.squeeze(np.array(self.E))
+            self.H = np.squeeze(np.array(self.H))
+
         return results()
 
     def _calc_non_dispersive(self, wl_min, wl_max, NPTS):
@@ -297,7 +349,7 @@ class RidgeWaveguide:
 
         k_points = mp.interpolate(NPTS, [mp.Vector3(1 / wl_max), mp.Vector3(1 / wl_min)])
         self.ms.k_points = k_points
-        self.ms.run()
+        self.run(*self.band_funcs)
 
         class results:
             def __init__(self):
@@ -305,6 +357,11 @@ class RidgeWaveguide:
 
         res = results()
         res.freq = self.ms.all_freqs
+
+        if self.store_fields:
+            self.E = np.squeeze(np.array(self.E))
+            self.H = np.squeeze(np.array(self.H))
+
         return res
 
     def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
@@ -351,54 +408,53 @@ ridge = RidgeWaveguide(
     height=.5,
     substrate_medium=mt.SiO2,  # dispersive
     waveguide_medium=mt.LiNbO3,  # dispersive
-    resolution=40,
+    # substrate_medium=mp.Medium(index=1.45),  # non-dispersive
+    # waveguide_medium=mp.Medium(index=3.45),  # non-dispersive
+    resolution=45,
     num_bands=4,
-    cell_width=8,
-    cell_height=8
+    cell_width=5,
+    cell_height=5
 )
 
-ridge.num_bands = 4
+ridge.store_fields = True
 res = ridge.calculate_dispersion(.4, 1.77, 19)
 
 plt.figure()
 [plt.plot(res.kx, res.freq[:, n], '.-') for n in range(res.freq.shape[1])]
-plt.plot(res.kx, res.kx, 'k', label='light line')
-plt.plot(res.kx, res.kx / res.eps_sbstrt, 'k', label='light line')
-plt.legend(loc='best')
 plt.xlabel("k ($\mathrm{\mu m}$)")
 plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
 plt.ylim(.25, 2.5)
 
 # %%____________________________________________________________________________________________________________________
-omega = 2.5
-n = ridge.wvgd_mdm.epsilon(1 / 1.55)[2, 2]
-kmag_guess = n * omega
-
-eps_wvgd = ridge.wvgd_mdm.epsilon(omega)
-eps_sbstrt = ridge.sbstrt_mdm.epsilon(omega)
-ridge.wvgd_mdm = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
-ridge.sbstrt_mdm = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
-
-k = ridge.find_k(
-    p=mp.EVEN_Y,
-    omega=1,
-    band_min=4,
-    band_max=4,
-    korig_and_kdir=mp.Vector3(1),
-    tol=1e-6,
-    kmag_guess=kmag_guess,
-    kmag_min=kmag_guess * .1,
-    kmag_max=kmag_guess * 10
-)
-
-# As you can see, the light line for free space isn't the constraint,
-# it's the light line for the oxide!
-E = ridge.ms.get_efield(1, False)
-eps = ridge.ms.get_epsilon()
-for n, title in enumerate(['Ex', 'Ey', 'Ez']):
-    plt.figure()
-    x = E[:, :, 0, n].__abs__() ** 2
-    plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-    plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-    plt.axis(False)
-    plt.title(title)
+# omega = 1 / 1
+# n = ridge.wvgd_mdm.epsilon(1 / 1.55)[2, 2]
+# kmag_guess = n * omega
+#
+# eps_wvgd = ridge.wvgd_mdm.epsilon(omega)
+# eps_sbstrt = ridge.sbstrt_mdm.epsilon(omega)
+# ridge.wvgd_mdm = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
+# ridge.sbstrt_mdm = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
+#
+# k = ridge.find_k(
+#     p=mp.EVEN_Y,
+#     omega=1,
+#     band_min=4,
+#     band_max=4,
+#     korig_and_kdir=mp.Vector3(1),
+#     tol=1e-6,
+#     kmag_guess=kmag_guess,
+#     kmag_min=kmag_guess * .1,
+#     kmag_max=kmag_guess * 10
+# )
+#
+# # As you can see, the light line for free space isn't the constraint,
+# # it's the light line for the oxide!
+# E = ridge.ms.get_efield(1, False)
+# eps = ridge.ms.get_epsilon()
+# for n, title in enumerate(['Ex', 'Ey', 'Ez']):
+#     plt.figure()
+#     x = E[:, :, 0, n].__abs__() ** 2
+#     plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+#     plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+#     plt.axis(False)
+#     plt.title(title)
