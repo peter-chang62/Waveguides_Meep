@@ -32,6 +32,13 @@ def store_fields(ms, which_band, cls):
     cls.H.append(ms.get_hfield(which_band=which_band, bloch_phase=False))
 
 
+def get_omega_axis(wl_min, wl_max, NPTS):
+    k_min, k_max = 1 / wl_max, 1 / wl_min
+    step = (k_max - k_min) / NPTS
+    OMEGA = np.arange(k_min, k_max + step, step)
+    return OMEGA[:NPTS + 1]
+
+
 class RidgeWaveguide:
     """
     The RidgeWaveguide class is for calculating the waveguide dispersion of a rectangular waveguide sitting on top of
@@ -268,19 +275,28 @@ class RidgeWaveguide:
 
     def calc_dispersion(self, wl_min, wl_max, NPTS):
         """
-        :param wl_min:
-        :param wl_max:
-        :param NPTS:
-        :return:
+        :param wl_min: shortest wavelength
+        :param wl_max: longest wavelength
+        :param NPTS: number of k_points to interpolate from shortest -> longest wavelength
+        :return: result instance with attributes kx (shape: kx, num_bands), freq (shape: kx), *notice the difference
+        in array shapes from calc_w_from_k
         """
 
+        # if store_fields is true, then re-initialize E and H to empty lists and
+        # create the list to pass to *band_funcs
         if self.store_fields:
             self._initialize_E_and_H_lists()
             band_func = lambda ms, which_band: store_fields(ms, which_band, self)
             self.band_funcs = [band_func]
 
-        else:
+        else:  # otherwise no band_funcs
             self.band_funcs = []
+
+        """MPB's find_k functions uses Newton's method which needs bounds and an initial guess that is somewhat close 
+        to the real answer (order magnitude). I've run into issues where it couldn't converge, however, so I instead 
+        make sure to pass a good guess. We expect materials to have weak dispersion, and so I set epsilon to epsilon(
+        f_center), and solve for waveguide dispersion omega(k). From there, I interpolate to get a k(omega) that can 
+        be use to extrapolate out and provide good gueses for kmag_guess """
 
         k_min, k_max = 1 / wl_max, 1 / wl_min
         f_center = (k_max - k_min) / 2 + k_min
@@ -289,19 +305,29 @@ class RidgeWaveguide:
 
         start = time.time()
 
-        res = self.calc_w_from_k(wl_min, wl_max, NPTS)
+        # I just use the fundamental band for the interpolation (which_band=1),
+        # I just interpolate over 10 pts, if using the user-provided NPTS, we might get an overkill
+        # of data points, or not enough
+        num_bands = self.num_bands  # store self.num_bands
+        self.num_bands = 1  # set the mode-solver to only calculate one band
+        res = self.calc_w_from_k(wl_min, wl_max, 10)
+        self.num_bands = num_bands  # set num_bands back to what it was before
         spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0)
 
-        # fields were stored by _calc_non_dispersive
         if self.store_fields:
+            # fields were stored by _calc_non_dispersive
             self._initialize_E_and_H_lists()
 
-        OMEGA = np.linspace(k_min, k_max, NPTS)
+        print(f"_______________________________start iteration over Omega's _____________________________________")
+
+        OMEGA = get_omega_axis(wl_min, wl_max, NPTS)
         KX = []
         for n, omega in enumerate(OMEGA):
+            # set waveguide epsilon to epsilon(omega)
             self.blk_wvgd.material = mp.Medium(epsilon_diag=self.wvgd_mdm.epsilon(omega).diagonal())
             self.blk_sbstrt.material = mp.Medium(epsilon_diag=self.sbstrt_mdm.epsilon(omega).diagonal())
 
+            # use the interpolated spline to provide a guess for kmag_guess, and pass that to run find_k
             kmag_guess = float(spl(omega))
             kx = self.find_k(mp.EVEN_Y, omega, 1, self.num_bands, mp.Vector3(1), 1e-4,
                              kmag_guess, kmag_guess * 0.1, kmag_guess * 10, *self.band_funcs)
@@ -315,19 +341,24 @@ class RidgeWaveguide:
             self.E = np.squeeze(np.array(self.E))
             self.H = np.squeeze(np.array(self.H))
 
+        # ____________________________________ Done ___________________________________________
+
         class results:
-            def __init__(self):
+            def __init__(self, parent):
                 parent: RidgeWaveguide
                 self.kx = np.array(KX)
                 self.freq = OMEGA
+                self.index_sbstrt = parent.sbstrt_mdm.epsilon(f_center)[2, 2].real ** 0.5
 
             def plot_dispersion(self):
                 plt.figure()
                 [plt.plot(self.kx[:, n], self.freq, '.-') for n in range(self.kx.shape[1])]
+                plt.plot(self.kx[:, 0], self.kx[:, 0] / self.index_sbstrt, 'k', label='light-line substrate')
                 plt.xlabel("k ($\mathrm{1/ \mu m}$)")
                 plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{1/ \mu m}$)")
+                plt.legend(loc='best')
 
-        return results()
+        return results(self)
 
     def calc_w_from_k(self, wl_min, wl_max, NPTS):
         """
@@ -348,12 +379,15 @@ class RidgeWaveguide:
                 parent: RidgeWaveguide
                 self.kx = np.array([i.x for i in k_points])
                 self.freq = parent.ms.all_freqs
+                self.index_sbstrt = parent.sbstrt_mdm.epsilon(1 / 1.55)[2, 2].real ** 0.5
 
             def plot_dispersion(self):
                 plt.figure()
                 [plt.plot(self.kx, self.freq[:, n], '.-') for n in range(self.freq.shape[1])]
+                plt.plot(self.kx, self.kx / self.index_sbstrt, 'k', label='light-line substrate')
                 plt.xlabel("k ($\mathrm{\mu m}$)")
                 plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
+                plt.legend(loc='best')
 
         if self.store_fields:
             self.E = np.squeeze(np.array(self.E))

@@ -23,7 +23,7 @@ ridge = wg.RidgeWaveguide(
     # substrate_medium=mp.Medium(index=1.45),  # non-dispersive
     # waveguide_medium=mp.Medium(index=3.45),  # non-dispersive
     resolution=45,
-    num_bands=4,
+    num_bands=1,
     cell_width=5,
     cell_height=5
 )

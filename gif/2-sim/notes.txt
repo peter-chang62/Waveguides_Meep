@@ -2,6 +2,5 @@ The 3D dispersion calculation was for non-dispersive materials, which allowed me
 
 There are two MPB calculations, the first (dispersion_waveguide_layout_for_3DSim_MPB.png) is done also at 20 pixels / um and non-dispersive. This one should match! 
 
-For the second () MPB calculation was done when I realized that I had *forgotten to make LiNbO3 birefringent!*, and is done using dispersive substrate (SiO2) and waveguide, at 40 pixels/um. We can see a slight deviation in this one from the previous calculations.
-
+The second is done at 45 pixels per um (but for a smaller cell size), and is a full dispersive calculation for frequencies corresponding to .4 -> 1.77 um. I also plotted the light line of the substrate, which is the real constraint for guided modes. 
 
