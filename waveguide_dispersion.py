@@ -101,6 +101,23 @@ class RidgeWaveguide:
                                  geometry=geometry_sim,
                                  resolution=self.resolution[0])
 
+    def redef_ms(self):
+        """
+        when I look at relevant parameters in self.ms (self.ms.geometry_lattice for example) the dimensions are up to
+        date, but the epsilon grid is only partially updated when I run the simulation. I can, however,
+        re-instantiate self.ms without issue since all the parameters in the currently existing self.ms are correct.
+        So, that is what I do here. I've verified that this works correctly
+        """
+
+        # create the mode solver instance
+        # self.geometry and self.lattice are passed by pointer, whereas
+        # self.num_bands and self.resolution are passed by copy
+        self.ms = mpb.ModeSolver(geometry_lattice=self.lattice,
+                                 geometry=self.geometry,
+                                 resolution=self.resolution[0],
+                                 num_bands=self.num_bands)
+        self.run = self.ms.run_yeven
+
     def redef_sbstrt_dim(self):
         """
         if waveguide dimensions that affect the substrate dimensions are changed, the substrate dimensions need to be
@@ -250,28 +267,48 @@ class RidgeWaveguide:
         """
         return self.E[which_band::self.num_bands], self.H[which_band::self.num_bands]
 
-    def plot_mode(self, which_band, which_index_k):
+    def plot_mode(self, which_band, which_index_k, Ez_only=True):
         assert which_band < self.num_bands, \
             f"which_band must be <= {self.num_bands - 1} but got {which_band}"
 
         E, H = self.get_band(which_band)
         eps = self.ms.get_epsilon()
 
-        for n, title in enumerate(['Ex', 'Ey', 'Ez']):
-            plt.figure()
-            x = E[which_index_k][:, :, n].__abs__() ** 2
-            plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-            plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-            plt.axis(False)
-            plt.title(title)
+        if Ez_only:
+            fig, (ax1, ax2) = plt.subplots(1, 2)
+            x = E[which_index_k][:, :, 2].__abs__() ** 2
+            ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+            ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+            ax1.axis(False)
+            fig.suptitle("Ez")
 
-        for n, title in enumerate(['Hx', 'Hy', 'Hz']):
-            plt.figure()
-            x = H[which_index_k][:, :, n].__abs__() ** 2
-            plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-            plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-            plt.axis(False)
-            plt.title(title)
+            ax2.plot(np.fft.fftshift(x, 0)[0], label='vertical cut')
+            ax2.plot(np.fft.fftshift(x.T, 0)[0], label='horizontal cut')
+            ax2.legend(loc='best')
+            ax2.axis(False)
+
+        else:
+            for n, title in enumerate(['Ex', 'Ey', 'Ez']):
+                fig, (ax1, ax2) = plt.subplots(1, 2)
+                x = E[which_index_k][:, :, n].__abs__() ** 2
+                ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+                ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+                ax1.axis(False)
+                fig.suptitle(title)
+
+                ax2.plot(np.fft.fftshift(x, 0)[0], label='vertical cut')
+                ax2.plot(np.fft.fftshift(x.T, 0)[0], label='horizontal cut')
+                ax2.legend(loc='best')
+                ax2.axis(False)
+
+        # don't see the need to plot the H-fields too...
+        # for n, title in enumerate(['Hx', 'Hy', 'Hz']):
+        #     plt.figure()
+        #     x = H[which_index_k][:, :, n].__abs__() ** 2
+        #     plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+        #     plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+        #     plt.axis(False)
+        #     plt.title(title)
 
     def calc_dispersion(self, wl_min, wl_max, NPTS):
         """
@@ -281,6 +318,9 @@ class RidgeWaveguide:
         :return: result instance with attributes kx (shape: kx, num_bands), freq (shape: kx), *notice the difference
         in array shapes from calc_w_from_k
         """
+
+        # make sure all geometric and material parameters are up to date
+        self.redef_ms()
 
         # if store_fields is true, then re-initialize E and H to empty lists and
         # create the list to pass to *band_funcs
@@ -310,9 +350,12 @@ class RidgeWaveguide:
         # of data points, or not enough
         num_bands = self.num_bands  # store self.num_bands
         self.num_bands = 1  # set the mode-solver to only calculate one band
-        res = self.calc_w_from_k(wl_min, wl_max, 10)
+        res = self.calc_w_from_k(wl_min * 0.25, wl_max, 10)  # wl_min * 0.25: interpolation will cover out to wl_min
         self.num_bands = num_bands  # set num_bands back to what it was before
-        spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0)
+
+        z = np.polyfit(res.freq[:, 0], res.kx, deg=1)
+        spl = np.poly1d(z)  # straight up linear fit, great idea!
+        # spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0) # HORRIBLE IDEA!
 
         if self.store_fields:
             # fields were stored by _calc_non_dispersive
@@ -368,6 +411,9 @@ class RidgeWaveguide:
         :return: result instance with attributes kx (shape: kx), freq (shape: kx, num_bands)
         """
 
+        # make sure all geometric and material parameters are up to date
+        self.redef_ms()
+
         k_points = mp.interpolate(NPTS, [mp.Vector3(1 / wl_max), mp.Vector3(1 / wl_min)])
         self.ms.k_points = k_points
         self.run(*self.band_funcs)
@@ -410,6 +456,9 @@ class RidgeWaveguide:
         :param band_funcs: additional arguments to pass to ms.find_k()
         :return: k (list of float(s))
         """
+
+        # make sure all geometric and material parameters are up to date
+        self.redef_ms()
 
         args = [p, omega, band_min, band_max, korig_and_kdir, tol,
                 kmag_guess, kmag_min, kmag_max, *band_funcs]

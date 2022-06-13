@@ -9,33 +9,44 @@ import utilities as util
 import h5py
 import time
 import waveguide_dispersion as wg
+import materials as mtp
 
 wl_wvgd = 3.5  # um
 n_cntr_wl = mt.LiNbO3.epsilon((1 / wl_wvgd))[2, 2]  # ne polarization
 wdth_wvgd = 0.5 * wl_wvgd / n_cntr_wl
 
 ridge = wg.RidgeWaveguide(
-    width=wdth_wvgd,
-    # width=1,
-    height=.5,
-    substrate_medium=mt.SiO2,  # dispersive
+    # width=wdth_wvgd,
+    width=0.5,
+    height=0.7,
+    substrate_medium=mtp.Al2O3,  # dispersive
     waveguide_medium=mt.LiNbO3,  # dispersive
     # substrate_medium=mp.Medium(index=1.45),  # non-dispersive
     # waveguide_medium=mp.Medium(index=3.45),  # non-dispersive
-    resolution=45,
+    resolution=40,
     num_bands=1,
-    cell_width=5,
-    cell_height=5
+    cell_width=7,
+    cell_height=7
 )
 
-res = ridge.calc_dispersion(.4, 1.77, 19)
-res.plot_dispersion()
+# widths = np.linspace(.4, 2, 100)
+# RES = []
+# E = []
+# for h, wdth in enumerate(widths[7:]):
+#     ridge.width = wdth
+#     res = ridge.calc_dispersion(.4, 5, 19)
+#     RES.append(res)
+#     E.append(ridge.E)
+#
+#     print(f'__________________{len(widths) - h}________________________________')
 
-# plt.figure()
-# [plt.plot(res.kx, res.freq[:, n], '.-') for n in range(res.freq.shape[1])]
-# plt.xlabel("k ($\mathrm{\mu m}$)")
-# plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
-# plt.ylim(.25, 2.5)
+ridge.width = .5
+ridge.height = 1
+ridge.cell_width = 3
+ridge.cell_height = 3
+res = ridge.calc_dispersion(.8, 1.5, 1)
+res.plot_dispersion()
+# [ridge.plot_mode(0, n) for n in range(len(res.kx))]
 
 # %%____________________________________________________________________________________________________________________
 # omega = 1 / 1

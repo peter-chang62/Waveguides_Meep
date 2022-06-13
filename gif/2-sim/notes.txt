@@ -4,3 +4,5 @@ There are two MPB calculations, the first (dispersion_waveguide_layout_for_3DSim
 
 The second is done at 45 pixels per um (but for a smaller cell size), and is a full dispersive calculation for frequencies corresponding to .4 -> 1.77 um. I also plotted the light line of the substrate, which is the real constraint for guided modes. 
 
+As a general rule of thumb, run the simulation with the largest waveguide size you plan to use, and make sure that the fundamental mode looks correct for all k_points. Then, with the cell size fixed at one sufficiently larger (as determined using this method), you can feel confident running a sweep of parameters.
+
