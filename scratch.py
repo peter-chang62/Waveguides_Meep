@@ -40,13 +40,13 @@ ridge = wg.RidgeWaveguide(
 #
 #     print(f'__________________{len(widths) - h}________________________________')
 
-ridge.width = .5
-ridge.height = 1
-ridge.cell_width = 3
-ridge.cell_height = 3
-res = ridge.calc_dispersion(.8, 1.5, 1)
+ridge.width = 3
+ridge.height = 3
+ridge.cell_width = 12
+ridge.cell_height = 12
+res = ridge.calc_dispersion(.8, 5, 19)
 res.plot_dispersion()
-# [ridge.plot_mode(0, n) for n in range(len(res.kx))]
+[ridge.plot_mode(0, n) for n in range(len(res.kx))]
 
 # %%____________________________________________________________________________________________________________________
 # omega = 1 / 1
