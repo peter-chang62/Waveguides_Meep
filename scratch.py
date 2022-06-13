@@ -42,11 +42,17 @@ ridge = wg.RidgeWaveguide(
 
 ridge.width = 3
 ridge.height = 3
-ridge.cell_width = 12
-ridge.cell_height = 12
-res = ridge.calc_dispersion(.4, 5, 19)
-res.plot_dispersion()
-[ridge.plot_mode(0, n) for n in range(len(res.kx))]
+ridge.cell_width = 10
+ridge.cell_height = 10
+ridge.num_bands = 8
+
+ridge.wvgd_mdm = mp.Medium(epsilon_diag=mt.LiNbO3.epsilon(1 / 1.55).diagonal())
+ridge.sbstrt_mdm = mp.Medium(epsilon_diag=mtp.Al2O3.epsilon(1 / 1.55).diagonal())
+res = ridge.calc_w_from_k(.8, 5, 10)
+
+# res = ridge.calc_dispersion(.8, 5, 7)
+# res.plot_dispersion()
+# [ridge.plot_mode(0, n) for n in range(len(res.kx))]
 
 # %%____________________________________________________________________________________________________________________
 # omega = 1 / 1

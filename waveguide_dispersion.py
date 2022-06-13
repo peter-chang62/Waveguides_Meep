@@ -322,16 +322,6 @@ class RidgeWaveguide:
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
 
-        # if store_fields is true, then re-initialize E and H to empty lists and
-        # create the list to pass to *band_funcs
-        if self.store_fields:
-            self._initialize_E_and_H_lists()
-            band_func = lambda ms, which_band: store_fields(ms, which_band, self)
-            self.band_funcs = [band_func]
-
-        else:  # otherwise no band_funcs
-            self.band_funcs = []
-
         """MPB's find_k functions uses Newton's method which needs bounds and an initial guess that is somewhat close 
         to the real answer (order magnitude). I've run into issues where it couldn't converge, however, so I instead 
         make sure to pass a good guess. We expect materials to have weak dispersion, and so I set epsilon to epsilon(
@@ -410,6 +400,19 @@ class RidgeWaveguide:
         :param NPTS: number of k_points to interpolate from shortest -> longest wavelength
         :return: result instance with attributes kx (shape: kx), freq (shape: kx, num_bands)
         """
+
+        # calc_dispersion calls calc_w_from_k before going on to calculate anything else, so moving this here should
+        # be fine
+
+        # if store_fields is true, then re-initialize E and H to empty lists and
+        # create the list to pass to *band_funcs
+        if self.store_fields:
+            self._initialize_E_and_H_lists()
+            band_func = lambda ms, which_band: store_fields(ms, which_band, self)
+            self.band_funcs = [band_func]
+
+        else:  # otherwise no band_funcs
+            self.band_funcs = []
 
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
