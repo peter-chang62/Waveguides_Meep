@@ -44,7 +44,7 @@ ridge.width = 3
 ridge.height = 3
 ridge.cell_width = 12
 ridge.cell_height = 12
-res = ridge.calc_dispersion(.8, 5, 19)
+res = ridge.calc_dispersion(.4, 5, 19)
 res.plot_dispersion()
 [ridge.plot_mode(0, n) for n in range(len(res.kx))]
 

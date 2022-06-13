@@ -350,7 +350,7 @@ class RidgeWaveguide:
         # of data points, or not enough
         num_bands = self.num_bands  # store self.num_bands
         self.num_bands = 1  # set the mode-solver to only calculate one band
-        res = self.calc_w_from_k(wl_min * 0.25, wl_max, 10)  # wl_min * 0.25: interpolation will cover out to wl_min
+        res = self.calc_w_from_k(wl_min * 0.5, wl_max, 10)  # wl_min * 0.5: interpolation will cover close to wl_min
         self.num_bands = num_bands  # set num_bands back to what it was before
 
         z = np.polyfit(res.freq[:, 0], res.kx, deg=1)
