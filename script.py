@@ -31,21 +31,20 @@ ridge = wg.RidgeWaveguide(
 
 # at 3 micron you need 5-6 bands (anyways, 4 was too small)
 # keep in mind you really just need 10 pts to do a prety good spline
-ridge.width = 3
-ridge.height = 1.5
-ridge.cell_width = 8
-ridge.cell_height = 8
-ridge.num_bands = 6
+ridge.width = 10
+ridge.height = 2
+ridge.cell_width = 20
+ridge.cell_height = 10
+ridge.num_bands = 7
 
-# ridge.wvgd_mdm = mp.Medium(epsilon_diag=mt.LiNbO3.epsilon(1 / 1.55).diagonal())
-# ridge.sbstrt_mdm = mp.Medium(epsilon_diag=mtp.Al2O3.epsilon(1 / 1.55).diagonal())
-# res = ridge.calc_w_from_k(.4, 5, 10)
-res = ridge.calc_dispersion(.8, 5, 10)
+ridge.wvgd_mdm = mp.Medium(epsilon_diag=mt.LiNbO3.epsilon(1 / 1.55).diagonal())
+ridge.sbstrt_mdm = mp.Medium(epsilon_diag=mtp.Al2O3.epsilon(1 / 1.55).diagonal())
+res = ridge.calc_w_from_k(.4, 5, 10)
+# res = ridge.calc_dispersion(.8, 5, 10)
 
 # %%____________________________________________________________________________________________________________________
 res.plot_dispersion()
-kx_sm = np.array([res.kx[n, i] for n, i in enumerate(res.sm_bands)])
-plt.plot(kx_sm, res.freq, '.-', color='b', label='sm-dispersion')
+plt.plot(res.sm_dispersion[:, 0], res.sm_dispersion[:, 1], '.-', color='b', label='sm-dispersion')
 
 plot = lambda n: ridge.plot_mode(res.sm_bands[n], n)
 

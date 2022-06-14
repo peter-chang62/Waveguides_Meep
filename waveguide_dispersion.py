@@ -40,6 +40,10 @@ def get_omega_axis(wl_min, wl_max, NPTS):
     return OMEGA[:NPTS + 1]
 
 
+def normalize(vec):
+    return vec / np.max(abs(vec))
+
+
 class RidgeWaveguide:
     """
     The RidgeWaveguide class is for calculating the waveguide dispersion of a rectangular waveguide sitting on top of
@@ -283,7 +287,7 @@ class RidgeWaveguide:
         else:
             for n, title in enumerate(['Ex', 'Ey', 'Ez']):
                 fig, (ax1, ax2) = plt.subplots(1, 2)
-                x = self.E[which_index_k][which_band][:, :, 2].__abs__() ** 2
+                x = self.E[which_index_k][which_band][:, :, n].__abs__() ** 2
                 ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
                 ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
                 ax1.axis(False)
@@ -377,12 +381,14 @@ class RidgeWaveguide:
                 self.kx = np.array(KX)
                 self.freq = OMEGA
                 self.index_sbstrt = parent.sbstrt_mdm.epsilon(f_center)[2, 2].real ** 0.5
-                self.sm_bands = np.array([parent.get_sm_band_at_k_index(i) for i in range(len(self.kx))])
+                self.sm_bands = parent.get_sm_band_for_k_axis(self.kx)
+                self.sm_dispersion = np.c_[[self.kx[n, i] for n, i in enumerate(self.sm_bands)], self.freq]
 
             def plot_dispersion(self):
                 plt.figure()
                 [plt.plot(self.kx[:, n], self.freq, '.-') for n in range(self.kx.shape[1])]
                 plt.plot(self.kx[:, 0], self.kx[:, 0] / self.index_sbstrt, 'k', label='light-line substrate')
+                plt.plot(self.sm_dispersion[:, 0], self.sm_dispersion[:, 1], '.-', color='b', label='sm-dispersion')
                 plt.xlabel("k ($\mathrm{1/ \mu m}$)")
                 plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{1/ \mu m}$)")
                 plt.legend(loc='best')
@@ -425,12 +431,14 @@ class RidgeWaveguide:
                 self.kx = np.array([i.x for i in k_points])
                 self.freq = parent.ms.all_freqs
                 self.index_sbstrt = parent.sbstrt_mdm.epsilon(1 / 1.55)[2, 2].real ** 0.5
-                self.sm_bands = np.array([parent.get_sm_band_at_k_index(i) for i in range(len(self.kx))])
+                self.sm_bands = parent.get_sm_band_for_k_axis(self.kx)
+                self.sm_dispersion = np.c_[self.kx, [self.freq[n, i] for n, i in enumerate(self.sm_bands)]]
 
             def plot_dispersion(self):
                 plt.figure()
                 [plt.plot(self.kx, self.freq[:, n], '.-') for n in range(self.freq.shape[1])]
                 plt.plot(self.kx, self.kx / self.index_sbstrt, 'k', label='light-line substrate')
+                plt.plot(self.sm_dispersion[:, 0], self.sm_dispersion[:, 1], '.-', color='b', label='sm-dispersion')
                 plt.xlabel("k ($\mathrm{\mu m}$)")
                 plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
                 plt.legend(loc='best')
@@ -500,6 +508,8 @@ class RidgeWaveguide:
         return lb, lt, center, vertical
 
     def index_rank_sm(self, k_index):
+        # TODO this works most of the time but fails some times!
+
         IND = []
         for band in range(self.num_bands):
             lb, lt, cnt, v = self._get_cut_for_sm(band, k_index)
@@ -512,3 +522,15 @@ class RidgeWaveguide:
 
     def get_sm_band_at_k_index(self, k_index):
         return np.argmax(self.index_rank_sm(k_index))
+
+    def get_sm_band_for_k_axis(self, kx):
+        band = np.array([self.get_sm_band_at_k_index(i) for i in range(len(kx))])
+
+        # # don't allow a band jump > 1 going from
+        # # one kx point to the next
+        # diff = np.diff(band)
+        # jump_too_much = (diff > 1).nonzero()[0]
+        # for i in jump_too_much:
+        #     band[i + 1] = band[i]
+
+        return band
