@@ -377,6 +377,7 @@ class RidgeWaveguide:
                 self.kx = np.array(KX)
                 self.freq = OMEGA
                 self.index_sbstrt = parent.sbstrt_mdm.epsilon(f_center)[2, 2].real ** 0.5
+                self.sm_bands = np.array([parent.get_sm_band_at_k_index(i) for i in range(len(self.kx))])
 
             def plot_dispersion(self):
                 plt.figure()
@@ -424,6 +425,7 @@ class RidgeWaveguide:
                 self.kx = np.array([i.x for i in k_points])
                 self.freq = parent.ms.all_freqs
                 self.index_sbstrt = parent.sbstrt_mdm.epsilon(1 / 1.55)[2, 2].real ** 0.5
+                self.sm_bands = np.array([parent.get_sm_band_at_k_index(i) for i in range(len(self.kx))])
 
             def plot_dispersion(self):
                 plt.figure()
@@ -488,6 +490,8 @@ class RidgeWaveguide:
         edge_side = (cell_width - wvgd_width) // 2
         edge_top = (cell_height - wvgd_height) // 2
 
+        # at this point I just use center line cut,
+        # but it's not gonna kill you to pass the other line cuts as well...
         lb = np.fft.fftshift(mode.T, 0)[-int(np.round(wvgd_height * 0.75))][edge_side:cell_width - edge_side]
         lt = np.fft.fftshift(mode.T, 0)[int(np.round(wvgd_height * 0.75))][edge_side:cell_width - edge_side]
         center = np.fft.fftshift(mode.T, 0)[0][edge_side:cell_width - edge_side]
