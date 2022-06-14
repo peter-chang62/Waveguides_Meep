@@ -19,6 +19,7 @@ from scipy.interpolate import UnivariateSpline
 import utilities as util
 import h5py
 import time
+import scipy.integrate as scint
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -260,23 +261,15 @@ class RidgeWaveguide:
         self.E = []
         self.H = []
 
-    def get_band(self, which_band):
-        """
-        :param which_band: which_band
-        :return: E, H arrays
-        """
-        return self.E[which_band::self.num_bands], self.H[which_band::self.num_bands]
-
     def plot_mode(self, which_band, which_index_k, Ez_only=True):
         assert which_band < self.num_bands, \
             f"which_band must be <= {self.num_bands - 1} but got {which_band}"
 
-        E, H = self.get_band(which_band)
         eps = self.ms.get_epsilon()
 
         if Ez_only:
             fig, (ax1, ax2) = plt.subplots(1, 2)
-            x = E[which_index_k][:, :, 2].__abs__() ** 2
+            x = self.E[which_index_k][which_band][:, :, 2].__abs__() ** 2
             ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
             ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
             ax1.axis(False)
@@ -290,7 +283,7 @@ class RidgeWaveguide:
         else:
             for n, title in enumerate(['Ex', 'Ey', 'Ez']):
                 fig, (ax1, ax2) = plt.subplots(1, 2)
-                x = E[which_index_k][:, :, n].__abs__() ** 2
+                x = self.E[which_index_k][which_band][:, :, 2].__abs__() ** 2
                 ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
                 ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
                 ax1.axis(False)
@@ -372,7 +365,9 @@ class RidgeWaveguide:
 
         if self.store_fields:
             self.E = np.squeeze(np.array(self.E))
+            self.E = self.E.reshape((len(KX), self.num_bands, *self.E.shape[1:]))
             self.H = np.squeeze(np.array(self.H))
+            self.H = self.H.reshape((len(KX), self.num_bands, *self.H.shape[1:]))
 
         # ____________________________________ Done ___________________________________________
 
@@ -440,7 +435,9 @@ class RidgeWaveguide:
 
         if self.store_fields:
             self.E = np.squeeze(np.array(self.E))
+            self.E = self.E.reshape((len(k_points), self.num_bands, *self.E.shape[1:]))
             self.H = np.squeeze(np.array(self.H))
+            self.H = self.H.reshape((len(k_points), self.num_bands, *self.H.shape[1:]))
 
         return results(self)
 
@@ -479,3 +476,35 @@ class RidgeWaveguide:
             self.blk_wvgd.material = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
             self.blk_sbstrt.material = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
             return self.ms.find_k(*args)
+
+    def _get_cut_for_sm(self, which_band, k_index):
+        mode = self.E[k_index][which_band][:, :, 2].__abs__() ** 2
+        resolution = self.resolution[0]
+
+        wvgd_width = int(np.round(self.width * resolution))
+        wvgd_height = int(np.round(self.height * resolution))
+        cell_width = int(np.round(self.cell_width * resolution))
+        cell_height = int(np.round(self.cell_height * resolution))
+        edge_side = (cell_width - wvgd_width) // 2
+        edge_top = (cell_height - wvgd_height) // 2
+
+        lb = np.fft.fftshift(mode.T, 0)[-int(np.round(wvgd_height * 0.75))][edge_side:cell_width - edge_side]
+        lt = np.fft.fftshift(mode.T, 0)[int(np.round(wvgd_height * 0.75))][edge_side:cell_width - edge_side]
+        center = np.fft.fftshift(mode.T, 0)[0][edge_side:cell_width - edge_side]
+        vertical = np.fft.fftshift(mode, 0)[0]
+
+        return lb, lt, center, vertical
+
+    def index_rank_sm(self, k_index):
+        IND = []
+        for band in range(self.num_bands):
+            lb, lt, cnt, v = self._get_cut_for_sm(band, k_index)
+            center = len(lb) // 2
+            third = len(lb) // 3
+            ind = scint.simps(cnt[center - third // 2:center + third // 2])
+            IND.append(ind)
+
+        return np.array(IND)
+
+    def get_sm_band_at_k_index(self, k_index):
+        return np.argmax(self.index_rank_sm(k_index))
