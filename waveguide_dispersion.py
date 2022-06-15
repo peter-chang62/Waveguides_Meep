@@ -597,6 +597,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
         assert height >= self.etch_depth, f"the film thickness (height) must be greater or equal to the etch depth, " \
                                           f"but etch_depth = {self.etch_depth} and film_thickness = {height} "
 
+        # _______________________ copied over from RidgeWaveguide ______________________________________________________
         # set the height of the waveguide
         self.blk_wvgd.size.z = height
         self.redef_sbstrt_dim()
