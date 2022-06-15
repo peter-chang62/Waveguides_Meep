@@ -24,6 +24,10 @@ import scipy.integrate as scint
 clipboard_and_style_sheet.style_sheet()
 
 
+def fft(x):
+    return np.fft.fftshift(np.fft.fft(np.fft.ifftshift(x)))
+
+
 def store_fields(ms, which_band, cls):
     assert isinstance(cls, RidgeWaveguide), \
         f"cls must be an instance of RidgeWaveguide but got {type(cls)}"
@@ -491,46 +495,55 @@ class RidgeWaveguide:
         mode = self.E[k_index][which_band][:, :, 2].__abs__() ** 2
         resolution = self.resolution[0]
 
-        wvgd_width = int(np.round(self.width * resolution))
-        wvgd_height = int(np.round(self.height * resolution))
-        cell_width = int(np.round(self.cell_width * resolution))
-        cell_height = int(np.round(self.cell_height * resolution))
-        edge_side = (cell_width - wvgd_width) // 2
-        edge_top = (cell_height - wvgd_height) // 2
+        wvgd_width = self.width * resolution
+        wvgd_height = self.height * resolution
+        cell_width = self.cell_width * resolution
+        cell_height = self.cell_height * resolution
+        edge_side_h = (cell_width - wvgd_width) / 2
+        edge_side_v = (cell_height - wvgd_height) / 2
 
-        # at this point I just use center line cut,
-        # but it's not gonna kill you to pass the other line cuts as well...
-        lb = np.fft.fftshift(mode.T, 0)[-int(np.round(wvgd_height * 0.75))][edge_side:cell_width - edge_side]
-        lt = np.fft.fftshift(mode.T, 0)[int(np.round(wvgd_height * 0.75))][edge_side:cell_width - edge_side]
-        center = np.fft.fftshift(mode.T, 0)[0][edge_side:cell_width - edge_side]
-        vertical = np.fft.fftshift(mode, 0)[0]
+        # for some reason, the epsilon grid can be slightly different from
+        # what I expect, so scale accordingly to get the right waveguide indices
+        # on the simulation grid
+        eps = self.ms.get_epsilon()
+        h_factor = eps.shape[0] / cell_width
+        v_factor = eps.shape[1] / cell_height
 
-        return lb, lt, center, vertical
+        edge_side_h = int(np.round(edge_side_h * h_factor))
+        edge_side_v = int(np.round(edge_side_v * v_factor))
+        cell_width = int(np.round(cell_width * h_factor))
+        cell_height = int(np.round(cell_height * v_factor))
 
-    def index_rank_sm(self, k_index):
-        # TODO this works most of the time but fails some times!
+        h_center = np.fft.fftshift(mode.T, 0)[0][edge_side_h:cell_width - edge_side_h]
+        v_center = np.fft.fftshift(mode, 0)[0][edge_side_v:cell_height - edge_side_v]
 
+        return h_center, v_center
+
+    def _index_rank_sm(self, k_index):
         IND = []
         for band in range(self.num_bands):
-            lb, lt, cnt, v = self._get_cut_for_sm(band, k_index)
-            center = len(lb) // 2
-            third = len(lb) // 3
-            ind = scint.simps(cnt[center - third // 2:center + third // 2])
+            cnt_h, cnt_v = self._get_cut_for_sm(band, k_index)
+
+            # ___________________________________________________________________________
+            # fft, and look at first component after DC
+            # (or else DC component will always beat out everything else)
+            ind_cnt_h = len(cnt_h) // 2
+            ind_cnt_v = len(cnt_v) // 2
+            ft_h = fft(cnt_h)[ind_cnt_h:][1:].__abs__()
+            ft_v = fft(cnt_v)[ind_cnt_v:][1:].__abs__()
+            if any([np.argmax(ft_h) != 0, np.argmax(ft_v) != 0]):
+                ind = 0
+            else:
+                ind = scint.simps(cnt_h) + scint.simps(cnt_v)
+            # ___________________________________________________________________________
+
             IND.append(ind)
 
         return np.array(IND)
 
     def get_sm_band_at_k_index(self, k_index):
-        return np.argmax(self.index_rank_sm(k_index))
+        return np.argmax(self._index_rank_sm(k_index))
 
     def get_sm_band_for_k_axis(self, kx):
         band = np.array([self.get_sm_band_at_k_index(i) for i in range(len(kx))])
-
-        # # don't allow a band jump > 1 going from
-        # # one kx point to the next
-        # diff = np.diff(band)
-        # jump_too_much = (diff > 1).nonzero()[0]
-        # for i in jump_too_much:
-        #     band[i + 1] = band[i]
-
         return band
