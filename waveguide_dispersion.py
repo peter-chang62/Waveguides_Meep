@@ -100,8 +100,9 @@ class RidgeWaveguide:
         """
 
         geometry_sim = copy.deepcopy(self.geometry)
-        geometry_sim[0].material = mp.Medium(epsilon_diag=self.wvgd_mdm.epsilon(1 / 1.55).diagonal())
-        geometry_sim[1].material = mp.Medium(epsilon_diag=self.sbstrt_mdm.epsilon(1 / 1.55).diagonal())
+        for n in range(len(geometry_sim)):
+            geometry_sim[n].material = mp.Medium(epsilon_diag=self.geometry[n].material.epsilon(1 / 1.55).diagonal())
+
         self.sim = mp.Simulation(cell_size=self.lattice.size,
                                  geometry=geometry_sim,
                                  resolution=self.resolution[0])
@@ -546,9 +547,71 @@ class RidgeWaveguide:
 
 
 class ThinFilmWaveguide(RidgeWaveguide):
+    """
+    height will be redundant for film thickness and will likely be fixed (you buy a wafer with a fixed film
+    thickness). The value that will likely be varied is the etch depth (although you can vary the film thickness if
+    that's what you're up to)
+    """
+
     def __init__(self, etch_width, etch_depth, film_thickness, substrate_medium, waveguide_medium,
                  resolution=64, num_bands=4, cell_width=2, cell_height=2):
+        assert etch_depth <= film_thickness, "the etch depth cannot exceed the film thickness!"
+
         super().__init__(etch_width, etch_depth, substrate_medium, waveguide_medium,
                          resolution, num_bands, cell_width, cell_height)
 
-        # TODO use film thickness to modify relevant geometry
+        _blk_film_thickness = film_thickness - etch_depth
+        self._blk_film = mp.Block(size=mp.Vector3(mp.inf, mp.inf, _blk_film_thickness),
+                                  center=mp.Vector3(0, 0, - (film_thickness - _blk_film_thickness) / 2))
+        self._blk_film.material = self.blk_wvgd.material
+        self.geometry += [self._blk_film]
+        self.redef_sim()
+        self.redef_ms()
+
+        self.etch_depth = etch_depth
+
+    def redef_sbstrt_dim(self):
+        super().redef_sbstrt_dim()
+        _blk_film_thickness = self.film_thickness - self.etch_depth
+        self._blk_film.size.z = _blk_film_thickness
+        self._blk_film.center.z = - (self.film_thickness - _blk_film_thickness) / 2
+
+    @property
+    def film_thickness(self):
+        return self.height
+
+    @film_thickness.setter
+    def film_thickness(self, film_thickness):
+        self.height = film_thickness
+
+    @property
+    def etch_width(self):
+        return self.width
+
+    @etch_width.setter
+    def etch_width(self, etch_width):
+        self.width = etch_width
+
+    @RidgeWaveguide.height.setter
+    def height(self, height):
+        assert height >= self.etch_depth, f"the film thickness (height) must be greater or equal to the etch depth, " \
+                                          f"but etch_depth = {self.etch_depth} and film_thickness = {height} "
+
+        # set the height of the waveguide
+        self.blk_wvgd.size.z = height
+        self.redef_sbstrt_dim()
+        self.redef_sim()
+
+    @property
+    def etch_depth(self):
+        return self._etch_depth
+
+    @etch_depth.setter
+    def etch_depth(self, etch_depth):
+        assert etch_depth <= self.film_thickness, f"the etch depth must be less than or equal to the " \
+                                                  f"film thickness, but etch_depth = {etch_depth} and " \
+                                                  f"film_thickness = {self.height} "
+
+        self._etch_depth = etch_depth
+        self.redef_sbstrt_dim()
+        self.redef_sim()
