@@ -547,3 +547,12 @@ class RidgeWaveguide:
     def get_sm_band_for_k_axis(self, kx):
         band = np.array([self.get_sm_band_at_k_index(i) for i in range(len(kx))])
         return band
+
+
+class ThinFilmWaveguide(RidgeWaveguide):
+    def __init__(self, etch_width, etch_depth, film_thickness, substrate_medium, waveguide_medium,
+                 resolution=64, num_bands=4, cell_width=2, cell_height=2):
+        super().__init__(etch_width, etch_depth, substrate_medium, waveguide_medium,
+                         resolution, num_bands, cell_width, cell_height)
+
+        # TODO use film thickness to modify relevant geometry
