@@ -1,13 +1,4 @@
-import meep as mp
 import meep.materials as mt
-import numpy as np
-import copy
-import clipboard_and_style_sheet
-from meep import mpb
-import matplotlib.pyplot as plt
-import utilities as util
-import h5py
-import time
 import waveguide_dispersion as wg
 import materials as mtp
 
