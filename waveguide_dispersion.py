@@ -1,6 +1,6 @@
 """MPB can solve for omega's given k, or solve for k's given omegas. The former is called with ms.run() (and its
 variations), and the latter is called using ms.find_k(). Just like MEEP's Simulation run() function, you can pass
-arguments to MPB's ModeSolver's find_k() run(). For example, you can tell it to output z and y parities,
+arguments to MPB's ModeSolver's find_k() and run(). For example, you can tell it to output z and y parities,
 and any function you define takes arguments: func(ms_instance, band_index) that will be called at each (k,
 band) or (omega, band) point. In my case, I pass a function that retrieves and stores the E and H fields that I
 intend to use to calculate mode-area. I realize now that I don't need to store the H-fields, but honestly the memory
