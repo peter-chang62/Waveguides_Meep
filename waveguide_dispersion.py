@@ -1,12 +1,10 @@
 """MPB can solve for omega's given k, or solve for k's given omegas. The former is called with ms.run() (and its
-variations), and the latter is called using ms.find_k(). In the RidgeWaveguide class, I use the former to calculate
-the dispersion relation. You can use the latter if you are interested to know what modes can propagate at a given
-frequency. For example, you can imagine that for a frequency well above the cutoff, there are multiple eigenmodes
-that can propagate which results in different k's. MPB solves for the modes starting with highest order and going
-down to the fundamental mode. This is because information retained from the higher order modes can be used to
-accelerate the calculations for the lower ones. You can pass arguments to ms.find_k(), for example, if you wanted it
-to retain the E and H fields that are calculated. This would allow you to plot the field cross-sections inside the
-waveguide for the different modes. """
+variations), and the latter is called using ms.find_k(). Just like MEEP's Simulation run() function, you can pass
+arguments to MPB's ModeSolver's find_k() run(). For example, you can tell it to output z and y parities,
+and any function you define takes arguments: func(ms_instance, band_index) that will be called at each (k,
+band) or (omega, band) point. In my case, I pass a function that retrieves and stores the E and H fields that I
+intend to use to calculate mode-area. I realize now that I don't need to store the H-fields, but honestly the memory
+requirement here is small so I don't really care. """
 
 import meep as mp
 import numpy as np
