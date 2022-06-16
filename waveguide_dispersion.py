@@ -90,7 +90,7 @@ class RidgeWaveguide:
         self.redef_sim()
 
         self.band_funcs = []
-        self.run = self.ms.run_yeven
+        self.run = self.ms.run
         self.store_fields = True
         self.init_finished = True
 
@@ -101,7 +101,7 @@ class RidgeWaveguide:
 
         geometry_sim = copy.deepcopy(self.geometry)
         for n in range(len(geometry_sim)):
-            geometry_sim[n].material = mp.Medium(epsilon_diag=self.geometry[n].material.epsilon(1 / 1.55).diagonal())
+            geometry_sim[n].material = mp.Medium(epsilon=self.geometry[n].material.epsilon(1 / 1.55)[2, 2])
 
         self.sim = mp.Simulation(cell_size=self.lattice.size,
                                  geometry=geometry_sim,
@@ -122,7 +122,7 @@ class RidgeWaveguide:
                                  geometry=self.geometry,
                                  resolution=self.resolution[0],
                                  num_bands=self.num_bands)
-        self.run = self.ms.run_yeven
+        self.run = self.ms.run
 
     def redef_sbstrt_dim(self):
         """
@@ -266,47 +266,23 @@ class RidgeWaveguide:
         self.E = []
         self.H = []
 
-    def plot_mode(self, which_band, which_index_k, Ez_only=True):
+    def plot_mode(self, which_band, which_index_k, component=mp.Ey):
         assert which_band < self.num_bands, \
             f"which_band must be <= {self.num_bands - 1} but got {which_band}"
 
         eps = self.ms.get_epsilon()
 
-        if Ez_only:
-            fig, (ax1, ax2) = plt.subplots(1, 2)
-            x = self.E[which_index_k][which_band][:, :, 2].__abs__() ** 2
-            ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-            ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-            ax1.axis(False)
-            fig.suptitle("Ez")
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        x = self.E[which_index_k][which_band][:, :, component].__abs__() ** 2
+        ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+        ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+        ax1.axis(False)
+        fig.suptitle("Ez")
 
-            ax2.plot(np.fft.fftshift(x, 0)[0], label='vertical cut')
-            ax2.plot(np.fft.fftshift(x.T, 0)[0], label='horizontal cut')
-            ax2.legend(loc='best')
-            ax2.axis(False)
-
-        else:
-            for n, title in enumerate(['Ex', 'Ey', 'Ez']):
-                fig, (ax1, ax2) = plt.subplots(1, 2)
-                x = self.E[which_index_k][which_band][:, :, n].__abs__() ** 2
-                ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-                ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-                ax1.axis(False)
-                fig.suptitle(title)
-
-                ax2.plot(np.fft.fftshift(x, 0)[0], label='vertical cut')
-                ax2.plot(np.fft.fftshift(x.T, 0)[0], label='horizontal cut')
-                ax2.legend(loc='best')
-                ax2.axis(False)
-
-        # don't see the need to plot the H-fields too...
-        # for n, title in enumerate(['Hx', 'Hy', 'Hz']):
-        #     plt.figure()
-        #     x = H[which_index_k][:, :, n].__abs__() ** 2
-        #     plt.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-        #     plt.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-        #     plt.axis(False)
-        #     plt.title(title)
+        ax2.plot(np.fft.fftshift(x, 0)[0], label='vertical cut')
+        ax2.plot(np.fft.fftshift(x.T, 0)[0], label='horizontal cut')
+        ax2.legend(loc='best')
+        ax2.axis(False)
 
     def calc_dispersion(self, wl_min, wl_max, NPTS):
         """
@@ -328,8 +304,8 @@ class RidgeWaveguide:
 
         k_min, k_max = 1 / wl_max, 1 / wl_min
         f_center = (k_max - k_min) / 2 + k_min
-        self.blk_wvgd.material = mp.Medium(epsilon_diag=self.wvgd_mdm.epsilon(f_center).diagonal())
-        self.blk_sbstrt.material = mp.Medium(epsilon_diag=self.sbstrt_mdm.epsilon(f_center).diagonal())
+        self.blk_wvgd.material = mp.Medium(epsilon=self.wvgd_mdm.epsilon(f_center)[2, 2])
+        self.blk_sbstrt.material = mp.Medium(epsilon=self.sbstrt_mdm.epsilon(f_center)[2, 2])
 
         start = time.time()
 
@@ -354,15 +330,21 @@ class RidgeWaveguide:
         OMEGA = get_omega_axis(wl_min, wl_max, NPTS)
         KX = []
         for n, omega in enumerate(OMEGA):
-            # set waveguide epsilon to epsilon(omega)
-            self.blk_wvgd.material = mp.Medium(epsilon_diag=self.wvgd_mdm.epsilon(omega).diagonal())
-            self.blk_sbstrt.material = mp.Medium(epsilon_diag=self.sbstrt_mdm.epsilon(omega).diagonal())
-
             # use the interpolated spline to provide a guess for kmag_guess, and pass that to run find_k
+            # the material epsilon is already changed for each omega inside find_k
             kmag_guess = float(spl(omega))
-            kx = self.find_k(mp.EVEN_Y, omega, 1, self.num_bands, mp.Vector3(1), 1e-4,
+            kx = self.find_k(mp.NO_PARITY, omega, 1, self.num_bands, mp.Vector3(1), 1e-4,
                              kmag_guess, kmag_guess * 0.1, kmag_guess * 10, *self.band_funcs)
             KX.append(kx)
+
+            # delete ________________________ this is a curiosity! _____________________________________________________
+            # to fix this, I now set epsilon to epsilon[2, 2] (ne component)
+            # eps = self.ms.get_epsilon()
+            # eps_z = self.wvgd_mdm.epsilon(omega)[2, 2]
+            # if abs(eps - eps_z).min() < 1e-8:
+            #     print(True)
+
+            # delete ___________________________________________________________________________________________________
 
             print(f'___________________________________{len(OMEGA) - n}__________________________________________')
         stop = time.time()
@@ -382,14 +364,11 @@ class RidgeWaveguide:
                 self.kx = np.array(KX)
                 self.freq = OMEGA
                 self.index_sbstrt = parent.sbstrt_mdm.epsilon(f_center)[2, 2].real ** 0.5
-                self.sm_bands = parent.get_sm_band_for_k_axis(self.kx)
-                self.sm_dispersion = np.c_[[self.kx[n, i] for n, i in enumerate(self.sm_bands)], self.freq]
 
             def plot_dispersion(self):
                 plt.figure()
                 [plt.plot(self.kx[:, n], self.freq, '.-') for n in range(self.kx.shape[1])]
                 plt.plot(self.kx[:, 0], self.kx[:, 0] / self.index_sbstrt, 'k', label='light-line substrate')
-                plt.plot(self.sm_dispersion[:, 0], self.sm_dispersion[:, 1], '.-', color='b', label='sm-dispersion')
                 plt.xlabel("k ($\mathrm{1/ \mu m}$)")
                 plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{1/ \mu m}$)")
                 plt.legend(loc='best')
@@ -432,14 +411,11 @@ class RidgeWaveguide:
                 self.kx = np.array([i.x for i in k_points])
                 self.freq = parent.ms.all_freqs
                 self.index_sbstrt = parent.sbstrt_mdm.epsilon(1 / 1.55)[2, 2].real ** 0.5
-                self.sm_bands = parent.get_sm_band_for_k_axis(self.kx)
-                self.sm_dispersion = np.c_[self.kx, [self.freq[n, i] for n, i in enumerate(self.sm_bands)]]
 
             def plot_dispersion(self):
                 plt.figure()
                 [plt.plot(self.kx, self.freq[:, n], '.-') for n in range(self.freq.shape[1])]
                 plt.plot(self.kx, self.kx / self.index_sbstrt, 'k', label='light-line substrate')
-                plt.plot(self.sm_dispersion[:, 0], self.sm_dispersion[:, 1], '.-', color='b', label='sm-dispersion')
                 plt.xlabel("k ($\mathrm{\mu m}$)")
                 plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
                 plt.legend(loc='best')
@@ -484,66 +460,9 @@ class RidgeWaveguide:
             # then run the simulation
             eps_wvgd = self.wvgd_mdm.epsilon(omega)
             eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
-            self.blk_wvgd.material = mp.Medium(epsilon_diag=eps_wvgd.diagonal())
-            self.blk_sbstrt.material = mp.Medium(epsilon_diag=eps_sbstrt.diagonal())
+            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
             return self.ms.find_k(*args)
-
-    def _get_cut_for_sm(self, which_band, k_index):
-        mode = self.E[k_index][which_band][:, :, 2].__abs__() ** 2
-        resolution = self.resolution[0]
-
-        wvgd_width = self.width * resolution
-        wvgd_height = self.height * resolution
-        cell_width = self.cell_width * resolution
-        cell_height = self.cell_height * resolution
-        edge_side_h = (cell_width - wvgd_width) / 2
-        edge_side_v = (cell_height - wvgd_height) / 2
-
-        # for some reason, the epsilon grid can be slightly different from
-        # what I expect, so scale accordingly to get the right waveguide indices
-        # on the simulation grid
-        eps = self.ms.get_epsilon()
-        h_factor = eps.shape[0] / cell_width
-        v_factor = eps.shape[1] / cell_height
-
-        edge_side_h = int(np.round(edge_side_h * h_factor))
-        edge_side_v = int(np.round(edge_side_v * v_factor))
-        cell_width = int(np.round(cell_width * h_factor))
-        cell_height = int(np.round(cell_height * v_factor))
-
-        h_center = np.fft.fftshift(mode.T, 0)[0][edge_side_h:cell_width - edge_side_h]
-        v_center = np.fft.fftshift(mode, 0)[0][edge_side_v:cell_height - edge_side_v]
-
-        return h_center, v_center
-
-    def _index_rank_sm(self, k_index):
-        IND = []
-        for band in range(self.num_bands):
-            cnt_h, cnt_v = self._get_cut_for_sm(band, k_index)
-
-            # ___________________________________________________________________________
-            # fft, and look at first component after DC
-            # (or else DC component will always beat out everything else)
-            ind_cnt_h = len(cnt_h) // 2
-            ind_cnt_v = len(cnt_v) // 2
-            ft_h = fft(cnt_h)[ind_cnt_h:][1:].__abs__()
-            ft_v = fft(cnt_v)[ind_cnt_v:][1:].__abs__()
-            if any([np.argmax(ft_h) != 0, np.argmax(ft_v) != 0]):
-                ind = 0
-            else:
-                ind = scint.simps(cnt_h) + scint.simps(cnt_v)
-            # ___________________________________________________________________________
-
-            IND.append(ind)
-
-        return np.array(IND)
-
-    def get_sm_band_at_k_index(self, k_index):
-        return np.argmax(self._index_rank_sm(k_index))
-
-    def get_sm_band_for_k_axis(self, kx):
-        band = np.array([self.get_sm_band_at_k_index(i) for i in range(len(kx))])
-        return band
 
 
 class ThinFilmWaveguide(RidgeWaveguide):
@@ -557,12 +476,12 @@ class ThinFilmWaveguide(RidgeWaveguide):
                  resolution=64, num_bands=4, cell_width=2, cell_height=2):
         assert etch_depth <= film_thickness, "the etch depth cannot exceed the film thickness!"
 
-        super().__init__(etch_width, etch_depth, substrate_medium, waveguide_medium,
+        super().__init__(etch_width, film_thickness, substrate_medium, waveguide_medium,
                          resolution, num_bands, cell_width, cell_height)
 
-        _blk_film_thickness = film_thickness - etch_depth
-        self._blk_film = mp.Block(size=mp.Vector3(mp.inf, mp.inf, _blk_film_thickness),
-                                  center=mp.Vector3(0, 0, - (film_thickness - _blk_film_thickness) / 2))
+        blk_film_thickness = film_thickness - etch_depth
+        self._blk_film = mp.Block(size=mp.Vector3(mp.inf, mp.inf, blk_film_thickness),
+                                  center=mp.Vector3(0, 0, - (film_thickness - blk_film_thickness) / 2))
         self._blk_film.material = self.blk_wvgd.material
         self.geometry += [self._blk_film]
         self.redef_sim()
@@ -616,3 +535,46 @@ class ThinFilmWaveguide(RidgeWaveguide):
         self._etch_depth = etch_depth
         self.redef_sbstrt_dim()
         self.redef_sim()
+
+    def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
+               kmag_guess, kmag_min, kmag_max, *band_funcs):
+
+        # ______________________________________________________________________________________________________________
+        # this is the same as find_k from RidgeWaveguide but with the added line in the for loop:
+        #             self._blk_film.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+        # ______________________________________________________________________________________________________________
+
+        """
+        :param p: parity
+        :param omega: frequency
+        :param band_min: minimum band index
+        :param band_max: maximum band index
+        :param korig_and_kdir: k direction (unit vector)
+        :param tol: tolerance
+        :param kmag_guess: guess for the wave-vector magnitude (n/lambda)
+        :param kmag_min: minimum wave-vector magnitude
+        :param kmag_max: maximum wave-vector magnitude
+        :param band_funcs: additional arguments to pass to ms.find_k()
+        :return: k (list of float(s))
+        """
+
+        # make sure all geometric and material parameters are up to date
+        self.redef_ms()
+
+        args = [p, omega, band_min, band_max, korig_and_kdir, tol,
+                kmag_guess, kmag_min, kmag_max, *band_funcs]
+
+        if (self.wvgd_mdm.valid_freq_range[-1] == 1e20) and (self.sbstrt_mdm.valid_freq_range[-1] == 1e20):
+            # materials are NON dispersive
+            return self.ms.find_k(*args)
+
+        else:
+            # materials are dispersive
+            # set the substrate and waveguide epsilon for the input wavelength
+            # then run the simulation
+            eps_wvgd = self.wvgd_mdm.epsilon(omega)
+            eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
+            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+            self._blk_film.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
+            return self.ms.find_k(*args)

@@ -2,6 +2,7 @@ import meep.materials as mt
 import waveguide_dispersion as wg
 import materials as mtp
 import meep as mp
+import matplotlib.pyplot as plt
 
 ridge = wg.RidgeWaveguide(
     width=5,
@@ -19,18 +20,15 @@ ridge = wg.RidgeWaveguide(
 # can roughly guide 3.9!
 ridge.width = 3
 ridge.height = .7
-ridge.cell_width = 5
+ridge.cell_width = 8
 ridge.cell_height = 5
 ridge.num_bands = 4
 
-# ridge.wvgd_mdm = mp.Medium(epsilon_diag=mt.LiNbO3.epsilon(1 / 1.55).diagonal())
-# ridge.sbstrt_mdm = mp.Medium(epsilon_diag=mtp.Al2O3.epsilon(1 / 1.55).diagonal())
-# res = ridge.calc_w_from_k(.4, 5, 15)
+ridge.wvgd_mdm = mp.Medium(epsilon=mt.LiNbO3.epsilon(1 / 1.55)[2, 2])
+ridge.sbstrt_mdm = mp.Medium(epsilon=mtp.Al2O3.epsilon(1 / 1.55)[2, 2])
+res = ridge.calc_w_from_k(.8, 2, 15)
 # res = ridge.calc_dispersion(.8, 2, 15)
 
 # %%____________________________________________________________________________________________________________________
-# res.plot_dispersion()
-#
-# plot = lambda n: ridge.plot_mode(res.sm_bands[n], n)
-# for n in range(len(res.kx)):
-#     plot(n)
+res.plot_dispersion()
+[ridge.plot_mode(0, n, 1) for n in range(len(res.kx))]
