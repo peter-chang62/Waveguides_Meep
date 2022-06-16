@@ -23,8 +23,19 @@ def store_fields(ms, which_band, cls):
         f"cls must be an instance of RidgeWaveguide but got {type(cls)}"
     cls: RidgeWaveguide
     ms: mpb.ModeSolver
+
     cls.E.append(ms.get_efield(which_band=which_band, bloch_phase=False))
     cls.H.append(ms.get_hfield(which_band=which_band, bloch_phase=False))
+
+
+def store_group_velocity(ms, which_band, cls):
+    assert isinstance(cls, RidgeWaveguide), \
+        f"cls must be an instance of RidgeWaveguide but got {type(cls)}"
+    cls: RidgeWaveguide
+    ms: mpb.ModeSolver
+
+    v_g = np.array(ms.compute_one_group_velocity(which_band))
+    cls.v_g.append(v_g)
 
 
 def get_omega_axis(wl_min, wl_max, NPTS):
@@ -85,7 +96,6 @@ class RidgeWaveguide:
 
         self.band_funcs = []
         self.run = self.ms.run
-        self.store_fields = True
         self.init_finished = True
 
     def redef_sim(self):
@@ -107,6 +117,8 @@ class RidgeWaveguide:
         date, but the epsilon grid is only partially updated when I run the simulation. I can, however,
         re-instantiate self.ms without issue since all the parameters in the currently existing self.ms are correct.
         So, that is what I do here. I've verified that this works correctly
+
+        This is basically copied over from __init__
         """
 
         # create the mode solver instance
@@ -288,6 +300,7 @@ class RidgeWaveguide:
     def _initialize_E_and_H_lists(self):
         self.E = []
         self.H = []
+        self.v_g = []
 
     def plot_mode(self, which_band, which_index_k, component=mp.Ey):
         assert which_band < self.num_bands, \
@@ -344,9 +357,8 @@ class RidgeWaveguide:
         spl = np.poly1d(z)  # straight up linear fit, great idea!
         # spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0) # HORRIBLE IDEA!
 
-        if self.store_fields:
-            # fields were stored by calc_w_from_k
-            self._initialize_E_and_H_lists()
+        # fields were stored by calc_w_from_k
+        self._initialize_E_and_H_lists()
 
         print(f"_______________________________start iteration over Omega's _____________________________________")
 
@@ -372,20 +384,22 @@ class RidgeWaveguide:
         stop = time.time()
         print(f"finished in {(stop - start) / 60} minutes")
 
-        if self.store_fields:
-            self.E = np.squeeze(np.array(self.E))
-            self.E = self.E.reshape((len(KX), self.num_bands, *self.E.shape[1:]))
-            self.H = np.squeeze(np.array(self.H))
-            self.H = self.H.reshape((len(KX), self.num_bands, *self.H.shape[1:]))
-
         # ____________________________________ Done ___________________________________________
+
+        self.E = np.squeeze(np.array(self.E))
+        self.E = self.E.reshape((len(KX), self.num_bands, *self.E.shape[1:]))
+        self.H = np.squeeze(np.array(self.H))
+        self.H = self.H.reshape((len(KX), self.num_bands, *self.H.shape[1:]))
+        self.v_g = np.squeeze(np.array(self.v_g))
+        self.v_g = self.v_g.reshape((len(KX), self.num_bands, *self.v_g.shape[1:]))
 
         class results:
             def __init__(self, parent):
                 parent: RidgeWaveguide
-                self.kx = np.array(KX)
-                self.freq = OMEGA
-                self.index_sbstrt = parent.sbstrt_mdm.epsilon(f_center)[2, 2].real ** 0.5
+                self.kx = np.array(KX)  # owns its own array after return call
+                self.freq = OMEGA  # owns its own array after return call
+                self.v_g = np.copy(parent.v_g)  # passed by pointer from parent
+                self.index_sbstrt = parent.sbstrt_mdm.epsilon(f_center)[2, 2].real ** 0.5  # float
 
             def plot_dispersion(self):
                 plt.figure()
@@ -408,15 +422,12 @@ class RidgeWaveguide:
         # calc_dispersion calls calc_w_from_k before going on to calculate anything else, so moving this here should
         # be fine
 
-        # if store_fields is true, then re-initialize E and H to empty lists and
+        # re-initialize E and H to empty lists and
         # create the list to pass to *band_funcs
-        if self.store_fields:
-            self._initialize_E_and_H_lists()
-            band_func = lambda ms, which_band: store_fields(ms, which_band, self)
-            self.band_funcs = [band_func]
-
-        else:  # otherwise no band_funcs
-            self.band_funcs = []
+        self._initialize_E_and_H_lists()
+        band_func1 = lambda ms, which_band: store_fields(ms, which_band, self)
+        band_func2 = lambda ms, which_band: store_group_velocity(ms, which_band, self)
+        self.band_funcs = [band_func1, band_func2]
 
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
@@ -427,12 +438,20 @@ class RidgeWaveguide:
 
         # ____________________________________ Done ___________________________________________
 
+        self.E = np.squeeze(np.array(self.E))
+        self.E = self.E.reshape((len(k_points), self.num_bands, *self.E.shape[1:]))
+        self.H = np.squeeze(np.array(self.H))
+        self.H = self.H.reshape((len(k_points), self.num_bands, *self.H.shape[1:]))
+        self.v_g = np.squeeze(np.array(self.v_g))
+        self.v_g = self.v_g.reshape((len(k_points), self.num_bands, *self.v_g.shape[1:]))
+
         class results:
             def __init__(self, parent):
                 parent: RidgeWaveguide
-                self.kx = np.array([i.x for i in k_points])
-                self.freq = parent.ms.all_freqs
-                self.index_sbstrt = parent.sbstrt_mdm.epsilon(1 / 1.55)[2, 2].real ** 0.5
+                self.kx = np.array([i.x for i in k_points])  # owns it's own array
+                self.freq = np.copy(parent.ms.all_freqs)  # passed by pointer from parent
+                self.v_g = np.copy(parent.v_g)  # passed by pointer from parent
+                self.index_sbstrt = parent.sbstrt_mdm.epsilon(1 / 1.55)[2, 2].real ** 0.5  # float
 
             def plot_dispersion(self):
                 plt.figure()
@@ -441,12 +460,6 @@ class RidgeWaveguide:
                 plt.xlabel("k ($\mathrm{\mu m}$)")
                 plt.ylabel("$\mathrm{\\nu}$ ($\mathrm{\mu m}$)")
                 plt.legend(loc='best')
-
-        if self.store_fields:
-            self.E = np.squeeze(np.array(self.E))
-            self.E = self.E.reshape((len(k_points), self.num_bands, *self.E.shape[1:]))
-            self.H = np.squeeze(np.array(self.H))
-            self.H = self.H.reshape((len(k_points), self.num_bands, *self.H.shape[1:]))
 
         return results(self)
 
