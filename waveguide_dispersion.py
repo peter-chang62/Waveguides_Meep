@@ -18,10 +18,6 @@ import scipy.integrate as scint
 clipboard_and_style_sheet.style_sheet()
 
 
-def fft(x):
-    return np.fft.fftshift(np.fft.fft(np.fft.ifftshift(x)))
-
-
 def store_fields(ms, which_band, cls):
     assert isinstance(cls, RidgeWaveguide), \
         f"cls must be an instance of RidgeWaveguide but got {type(cls)}"
