@@ -16,7 +16,8 @@ film = wg.ThinFilmWaveguide(
     cell_height=4
 )
 
-res = film.calc_dispersion(2.5, 3.5, 15)
+film.num_bands = 1
+res = film.calc_dispersion(.8, 3.5, 30)
 
 res.plot_dispersion()
-[film.plot_mode(0, n) for n in range(len(res.kx))]
+# [film.plot_mode(0, n) for n in range(len(res.kx))]
