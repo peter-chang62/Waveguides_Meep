@@ -24,10 +24,10 @@ ridge.cell_width = 8
 ridge.cell_height = 5
 ridge.num_bands = 4
 
-ridge.wvgd_mdm = mp.Medium(epsilon=mt.LiNbO3.epsilon(1 / 1.55)[2, 2])
-ridge.sbstrt_mdm = mp.Medium(epsilon=mtp.Al2O3.epsilon(1 / 1.55)[2, 2])
-res = ridge.calc_w_from_k(.8, 2, 15)
-# res = ridge.calc_dispersion(.8, 2, 15)
+# ridge.wvgd_mdm = mp.Medium(epsilon=mt.LiNbO3.epsilon(1 / 1.55)[2, 2])
+# ridge.sbstrt_mdm = mp.Medium(epsilon=mtp.Al2O3.epsilon(1 / 1.55)[2, 2])
+# res = ridge.calc_w_from_k(.8, 2, 15)
+res = ridge.calc_dispersion(.8, 2, 15)
 
 # %%____________________________________________________________________________________________________________________
 res.plot_dispersion()

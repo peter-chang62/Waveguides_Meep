@@ -19,6 +19,4 @@ film = wg.ThinFilmWaveguide(
 res = film.calc_dispersion(2.5, 3.5, 15)
 
 res.plot_dispersion()
-plot = lambda n: film.plot_mode(res.sm_bands[n], n)
-for n in range(len(res.kx)):
-    plot(n)
+[film.plot_mode(0, n) for n in range(len(res.kx))]
