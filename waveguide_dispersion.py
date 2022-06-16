@@ -322,7 +322,7 @@ class RidgeWaveguide:
         # spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0) # HORRIBLE IDEA!
 
         if self.store_fields:
-            # fields were stored by _calc_non_dispersive
+            # fields were stored by calc_w_from_k
             self._initialize_E_and_H_lists()
 
         print(f"_______________________________start iteration over Omega's _____________________________________")
