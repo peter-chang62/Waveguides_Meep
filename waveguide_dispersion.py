@@ -205,9 +205,8 @@ class RidgeWaveguide:
         # set the number of bands to be calculated
         self.ms.num_bands = num
 
-    """MPB does not support dispersive materials. To get around this, we pass the k_points at which to calculate 
-    omega one at a time, each time modifying epsilon. This is really the same run time because if you pass a list of 
-    k_points, it simply calculates the omegas serially for each k_point in the list. 
+    """MPB does not support dispersive materials. To get around this, we pass the omegas at which to calculate k, 
+    one at a time, each time modifying epsilon. 
     
     When modifying epsilon, however, we set the medium of the waveguide and substrate to a material with fixed 
     epsilon. So, it's important to keep a copy of the original dispersive mp.Medium() instance, for reference in the 
