@@ -250,10 +250,40 @@ class RidgeWaveguide:
 
     def plot2D(self):
         """
-        call sim.plot2D() to visualize the supercell
+        call sim.plot2D() to visualize the supercell. I realized that plot2D() might not capture small changes in
+        waveguide dimensions (less than 20 nm for example), but the changes are actually there in the epsilon grid (
+        returned with plot_eps). The sub-pixel smoothing feature is also clear there, since I can see noticeable
+        changes with plot_eps() even if I change the dimensions by something less than 1 / resolution
         """
 
         self.sim.plot2D()
+
+    def plot_eps(self, cmap='Greys'):
+        """
+        Realize that if your materials are dispersive then epsilon is all 1,
+        I do take care of this in calc_dispersion and find_k, but if you haven't
+        run those yet then you'll see a big array of ones.
+
+        There's a weird issue where
+            1. eps array updates if I change the waveguide width
+            2. eps array does not update if I change the cell_width
+                a. however, if I call self.sim.plot2D() and then self.plot_eps() then it has not changed
+                the shape of eps, but has changed the width of the waveguide to sort of "scale"
+                b. If I run a simulation, however, then call plot_eps, then the eps array *is correct, showing
+                that it was updated for the simulation*
+
+        All in all, it appears that things ship shape up for the simulation, so actual calculations should be all
+        good, but visualization can be a little frustrating. Just run between plot2D() and plot_eps() as you see fit.
+
+        :param cmap: matplotlib color map
+        :return: epsilon array
+        """
+
+        self.ms.init_params(mp.NO_PARITY, False)
+        eps = self.ms.get_epsilon()
+
+        plt.imshow(eps[::-1, ::-1].T, cmap=cmap)
+        return eps
 
     def _initialize_E_and_H_lists(self):
         self.E = []
@@ -549,6 +579,27 @@ class ThinFilmWaveguide(RidgeWaveguide):
         self._etch_depth = etch_depth
         self.redef_sbstrt_dim()
         self.redef_sim()
+
+    @RidgeWaveguide.sbstrt_mdm.setter
+    def sbstrt_mdm(self, medium):
+
+        # ______________________________________________________________________________________________________________
+        # this is the same as sbstrt_mdm in RidgeWaveguide but with the added line:
+        #         self._blk_film.material = medium
+        # inside the self.init_finished if statement
+        # ______________________________________________________________________________________________________________
+
+        # set the substrate medium
+        assert isinstance(medium, mp.Medium), \
+            f"substrate medium must be a mp.Medium instance but got type {type(medium)}"
+        medium: mp.Medium
+
+        self.blk_sbstrt.material = medium
+        self._sbstrt_mdm = medium
+
+        if self.init_finished:
+            self.redef_sim()
+            self._blk_film.material = medium
 
     def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
                kmag_guess, kmag_min, kmag_max, *band_funcs):
