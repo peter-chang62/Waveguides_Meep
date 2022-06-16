@@ -500,7 +500,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
 
     def redef_sbstrt_dim(self):
         # in addition to redef_sbstrt_dim() from RidgeWaveguide, also re-initialize the remaining
-        # film block, this is basically a copy of what was passed from __init__
+        # film block, this is basically a copy of what was done in __init__
 
         super().redef_sbstrt_dim()
         blk_film_thickness = self.film_thickness - self.etch_depth
