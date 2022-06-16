@@ -13,15 +13,6 @@ clipboard_and_style_sheet.style_sheet()
 sim = wg.ThinFilmWaveguide(3, .3, .7, mtp.Al2O3, mt.LiNbO3, 30, 1, 10, 4)
 
 # %%____________________________________________________________________________________________________________________
-# resolution requirement, negligibly small!
-# not only that, but I think MPB does some sort of pixel smoothing,
-# so I get 10 nm changes to be noticeable in plot_eps() even when resolution is 30 pixels/um
-# res1 = sim.calc_dispersion(.8, 3.5, 15)
-# sim.resolution = 30
-# res2 = sim.calc_dispersion(.8, 3.5, 15)
-# plt.plot(1 / res1.kx - 1 / res2.kx)
-
-# %%____________________________________________________________________________________________________________________
 etch_depth = wg.get_omega_axis(1 / .7, 1 / .3, 10)
 etch_width = wg.get_omega_axis(1 / 5, 1 / 3, 20)
 for w in etch_width:
@@ -30,6 +21,44 @@ for w in etch_width:
         sim.etch_depth = d
         res = sim.calc_dispersion(.8, 5, 25)
 
-        arr = np.c_[res.kx, res.freq]
+        arr = np.c_[res.kx, res.freq, res.v_g[:, 0, 0]]  # 0, 0 -> first band, x-component (non-zero component)
         np.save(f'sim_output/06-16-2022/dispersion-curves/{w}_{d}.npy', arr)
         np.save(f'sim_output/06-16-2022/E-fields/{w}_{d}.npy', sim.E.__abs__() ** 2)
+
+
+# %%____________________________________________________________________________________________________________________
+def width(s):
+    return float(s.split('_')[0])
+
+
+def depth(s):
+    return float(s.split('_')[1].split('.npy')[0])
+
+
+disp = [i.name for i in os.scandir('sim_output/06-16-2022/dispersion-curves')]
+disp = sorted(disp, key=width)
+disp = sorted(disp, key=depth)
+
+
+def plot(n, k_point=0, cmap='RdBu', alpha=.9):
+    s = disp[n]
+
+    E = np.load('sim_output/06-16-2022/E-fields/' + s)
+    band = 0
+    E = E[k_point, band, :, :, 1]
+
+    w = width(s)
+    d = depth(s)
+    sim.etch_width = w
+    sim.etch_depth = d
+    sim.sim.init_sim()
+    eps = sim.sim.get_epsilon()
+
+    plt.figure()
+    plt.imshow(eps[::-1, ::-1].T, cmap='binary')
+    plt.imshow(E[::-1, ::-1].T, cmap=cmap, alpha=alpha)
+
+
+step = 21
+for n in range(-step, 0, 1):
+    plot(n)
