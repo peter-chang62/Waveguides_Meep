@@ -11,10 +11,12 @@ um_scale = 1.0
 eV_um_scale = um_scale / 1.23984193
 
 # ------------------------------------------------------------------
-# Sapphire
+# Sapphire (Al2O3) from Malitson and Dodge 1972
+# ref: https://refractiveindex.info/?shelf=main&book=Al2O3&page=Malitson-o
+# ref: https://refractiveindex.info/?shelf=main&book=Al2O3&page=Malitson-e
 # wavelength range: 0.2 - 5.0 μm
 
-## NOTE: ordinary (o) axes in X and Y, extraordinary (e) axis in Z
+# NOTE: ordinary (o) axes in X and Y, extraordinary (e) axis in Z
 
 Al2O3_range = mp.FreqRange(min=um_scale / 5.0, max=um_scale / 0.2)
 

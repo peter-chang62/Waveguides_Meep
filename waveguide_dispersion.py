@@ -351,7 +351,7 @@ class RidgeWaveguide:
         ax2.legend(loc='best')
         ax2.axis(False)
 
-    def calc_dispersion(self, wl_min, wl_max, NPTS):
+    def calc_dispersion(self, wl_min, wl_max, NPTS, eps_func_wvgd=None, eps_func_sbstrt=None):
         """
         :param wl_min: shortest wavelength
         :param wl_max: longest wavelength
@@ -371,8 +371,26 @@ class RidgeWaveguide:
 
         k_min, k_max = 1 / wl_max, 1 / wl_min
         f_center = (k_max - k_min) / 2 + k_min
-        self.blk_wvgd.material = mp.Medium(epsilon=self.wvgd_mdm.epsilon(f_center)[2, 2])
-        self.blk_sbstrt.material = mp.Medium(epsilon=self.sbstrt_mdm.epsilon(f_center)[2, 2])
+
+        # ______________________________________________________________________________________________________________
+        # if eps_func_wvgd is not provided, then set the material epsilon via calling the usual mp.Medium().epsilon
+        # otherwise, you can set epsilon to something you provide. The use case for this is that MEEP materials can
+        # only use the simple Sellmeier equation, but sometimes you would like to use the extended formulas
+        # that are more accurate over broad bandwidths or at your particular experiment temperature.
+        # originally this was:
+        #           self.blk_wvgd.material = mp.Medium(epsilon=self.wvgd_mdm.epsilon(f_center)[2, 2])
+        #           self.blk_sbstrt.material = mp.Medium(epsilon=self.sbstrt_mdm.epsilon(f_center)[2, 2])
+
+        if eps_func_wvgd is None:
+            self.blk_wvgd.material = mp.Medium(epsilon=self.wvgd_mdm.epsilon(f_center)[2, 2])
+        else:
+            self.blk_wvgd.material = mp.Medium(epsilon=eps_func_wvgd(f_center))
+
+        if eps_func_sbstrt is None:
+            self.blk_sbstrt.material = mp.Medium(epsilon=self.sbstrt_mdm.epsilon(f_center)[2, 2])
+        else:
+            self.blk_sbstrt.material = mp.Medium(epsilon=eps_func_sbstrt(f_center))
+        # ______________________________________________________________________________________________________________
 
         start = time.time()
 
@@ -400,7 +418,8 @@ class RidgeWaveguide:
             # the material epsilon is already changed for each omega inside find_k
             kmag_guess = float(spl(omega))
             kx = self.find_k(mp.NO_PARITY, omega, 1, self.num_bands, mp.Vector3(1), 1e-4,
-                             kmag_guess, kmag_guess * 0.1, kmag_guess * 10, *self.band_funcs)
+                             kmag_guess, kmag_guess * 0.1, kmag_guess * 10, *self.band_funcs,
+                             eps_func_wvgd=eps_func_wvgd, eps_func_sbstrt=eps_func_sbstrt)
             KX.append(kx)
 
             # delete ________________________ this is a curiosity! _____________________________________________________
@@ -495,7 +514,8 @@ class RidgeWaveguide:
         return results(self)
 
     def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
-               kmag_guess, kmag_min, kmag_max, *band_funcs):
+               kmag_guess, kmag_min, kmag_max, *band_funcs, eps_func_wvgd=None,
+               eps_func_sbstrt=None):
         """
         :param p: parity
         :param omega: frequency
@@ -507,6 +527,8 @@ class RidgeWaveguide:
         :param kmag_min: minimum wave-vector magnitude
         :param kmag_max: maximum wave-vector magnitude
         :param band_funcs: additional arguments to pass to ms.find_k()
+        :param eps_func_wvgd: default None, function that takes omega and returns eps (float) for the waveguide
+        :param eps_func_sbstrt: default None, function that takes omega and returns eps (float) for the substrate
         :return: k (list of float(s))
         """
 
@@ -524,10 +546,23 @@ class RidgeWaveguide:
             # materials are dispersive
             # set the substrate and waveguide epsilon for the input wavelength
             # then run the simulation
-            eps_wvgd = self.wvgd_mdm.epsilon(omega)
-            eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
-            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
-            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
+
+            # if epsilon functions are provided, then use those
+            # otherwise obtain epsilon from mp.Medium().epsilon()
+            if eps_func_wvgd is not None:
+                eps_wvgd = eps_func_wvgd(omega)
+                self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
+            else:
+                eps_wvgd = self.wvgd_mdm.epsilon(omega)
+                self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+
+            if eps_func_sbstrt is not None:
+                eps_sbstrt = eps_func_sbstrt(omega)
+                self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
+            else:
+                eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
+                self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
+
             return self.ms.find_k(*args)
 
 
@@ -646,11 +681,14 @@ class ThinFilmWaveguide(RidgeWaveguide):
             self._blk_film.material = medium
 
     def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
-               kmag_guess, kmag_min, kmag_max, *band_funcs):
+               kmag_guess, kmag_min, kmag_max, *band_funcs, eps_func_wvgd=None,
+               eps_func_sbstrt=None):
 
         # ______________________________________________________________________________________________________________
-        # this is the same as find_k from RidgeWaveguide but with the added line in the for loop:
+        # this is the same as find_k from RidgeWaveguide but with the added line:
         #             self._blk_film.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+        # that is included whenever self.blk_wvgd.material is altered, namely wherever there is the line:
+        #             self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
         # ______________________________________________________________________________________________________________
 
         """
@@ -664,6 +702,8 @@ class ThinFilmWaveguide(RidgeWaveguide):
         :param kmag_min: minimum wave-vector magnitude
         :param kmag_max: maximum wave-vector magnitude
         :param band_funcs: additional arguments to pass to ms.find_k()
+        :param eps_func_wvgd: default None, function that takes omega and returns eps (float) for the waveguide
+        :param eps_func_sbstrt: default None, function that takes omega and returns eps (float) for the substrate
         :return: k (list of float(s))
         """
 
@@ -681,9 +721,23 @@ class ThinFilmWaveguide(RidgeWaveguide):
             # materials are dispersive
             # set the substrate and waveguide epsilon for the input wavelength
             # then run the simulation
-            eps_wvgd = self.wvgd_mdm.epsilon(omega)
-            eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
-            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
-            self._blk_film.material = mp.Medium(epsilon=eps_wvgd[2, 2])
-            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
+
+            # if epsilon functions are provided, then use those
+            # otherwise obtain epsilon from mp.Medium().epsilon()
+            if eps_func_wvgd is not None:
+                eps_wvgd = eps_func_wvgd(omega)
+                self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
+                self._blk_film.material = mp.Medium(epsilon=eps_wvgd)
+            else:
+                eps_wvgd = self.wvgd_mdm.epsilon(omega)
+                self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+                self._blk_film.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+
+            if eps_func_sbstrt is not None:
+                eps_sbstrt = eps_func_sbstrt(omega)
+                self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
+            else:
+                eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
+                self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
+
             return self.ms.find_k(*args)

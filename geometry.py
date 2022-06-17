@@ -14,6 +14,14 @@ def convert_block_to_trapezoid(blk, angle_deg=80):
     assert isinstance(blk, mp.Block), f"blk needs to be an mp.Block instance but got {type(blk)}"
     blk: mp.Block
 
+    # __________________________________________________________________________________________________________________
+    # there are basically two things to get right about geometric objects:
+    #   1. dimensions
+    #   2. material
+    # I noticed that setting prism.center = blk.center was a bad idea, so don't go adding that later! The dimensions
+    # are correct the way it is done here
+    # __________________________________________________________________________________________________________________
+
     size = blk.size
     y_added = size.z / np.tan(deg_to_rad(angle_deg))
     pt1 = mp.Vector3(y=-size.y / 2, z=size.z / 2)

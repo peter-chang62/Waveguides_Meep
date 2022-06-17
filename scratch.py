@@ -42,3 +42,40 @@ eps2 = sim2.get_epsilon()
 # checks out!
 plt.imshow(eps1[::-1, ::-1].T, cmap='binary', alpha=0.5)
 plt.imshow(eps2[::-1, ::-1].T, cmap='binary', alpha=0.5)
+
+# %%___________________________________________________Done ____________________________________________________________
+# def width(s):
+#     return float(s.split('_')[0])
+#
+#
+# def depth(s):
+#     return float(s.split('_')[1].split('.npy')[0])
+#
+#
+# disp = [i.name for i in os.scandir('sim_output/06-16-2022/dispersion-curves')]
+# disp = sorted(disp, key=width)
+# disp = sorted(disp, key=depth)
+#
+#
+# def plot(n, k_point=0, cmap='RdBu', alpha=.9):
+#     s = disp[n]
+#
+#     E = np.load('sim_output/06-16-2022/E-fields/' + s)
+#     band = 0
+#     E = E[k_point, band, :, :, 1]
+#
+#     w = width(s)
+#     d = depth(s)
+#     sim.etch_width = w
+#     sim.etch_depth = d
+#     sim.sim.init_sim()
+#     eps = sim.sim.get_epsilon()
+#
+#     plt.figure()
+#     plt.imshow(eps[::-1, ::-1].T, cmap='binary')
+#     plt.imshow(E[::-1, ::-1].T, cmap=cmap, alpha=alpha)
+#
+#
+# step = 21
+# for n in range(-step, 0, 1):
+#     plot(n)
