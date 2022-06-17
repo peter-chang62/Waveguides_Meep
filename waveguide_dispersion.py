@@ -13,7 +13,6 @@ import clipboard_and_style_sheet
 from meep import mpb
 import matplotlib.pyplot as plt
 import time
-import scipy.integrate as scint
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -217,12 +216,14 @@ class RidgeWaveguide:
         # set the number of bands to be calculated
         self.ms.num_bands = num
 
-    """MPB does not support dispersive materials. To get around this, we pass the omegas at which to calculate k, 
-    one at a time, each time modifying epsilon. 
-    
-    When modifying epsilon, however, we set the medium of the waveguide and substrate to a material with fixed 
-    epsilon. So, it's important to keep a copy of the original dispersive mp.Medium() instance, for reference in the 
-    dispersive calculations. This is stored in self._wvgd_mdm and self._sbstrt_mdm. """
+    # __________________________________________________________________________________________________________________
+    # MPB does not support dispersive materials. To get around this, we pass the omegas at which to calculate k,
+    # one at a time, each time modifying epsilon.
+
+    # When modifying epsilon, however, we set the medium of the waveguide and substrate to a material with fixed
+    # epsilon. So, it's important to keep a copy of the original dispersive mp.Medium() instance, for reference in
+    # the dispersive calculations. This is stored in self._wvgd_mdm and self._sbstrt_mdm.
+    # __________________________________________________________________________________________________________________
 
     @property
     def wvgd_mdm(self):
@@ -258,6 +259,36 @@ class RidgeWaveguide:
         self._sbstrt_mdm = medium
 
         if self.init_finished:
+            self.redef_sim()
+
+    # __________________________________________________________________________________________________________________
+    # I only do this for the waveguide GeometricObject: You can substitute the waveguide geometric object via
+    # self.blk_wvgd = mp.GeometricObject(), and it will update the geometry list, which will incorporate the changes
+    # into the simulation. I don't see the need to do this for any other geometric object in the simulation cell.
+
+    # The main use case for this, (although you can always create your own waveguide geometry), is to substitute:
+    #       self.blk_wvgd = geometry.convert_block_to_trapezoid(blk=self.blk_wvgd, angle_deg=80)
+    # *realize this will mess up many functionalities (like self.width = new_width)!!!* So, the typical use case
+    # is to:
+    #   1. save self.blk_wvgd to another variable
+    #   2. set self.blk_wvgd to a new mp.GeometricObject()
+    #   3. run the simulation
+    #   4. reset self.blk_wvgd to the original mp.GeometricObject() that you had saved in step 1.
+    # __________________________________________________________________________________________________________________
+
+    @property
+    def blk_wvgd(self):
+        if self.init_finished:
+            return self.geometry[0]
+        else:
+            return self._blk_wvgd
+
+    @blk_wvgd.setter
+    def blk_wvgd(self, GeometricObject):
+        self._blk_wvgd = GeometricObject
+
+        if self.init_finished:
+            self.geometry[0] = GeometricObject
             self.redef_sim()
 
     def plot2D(self):
