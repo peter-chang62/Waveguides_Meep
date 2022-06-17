@@ -14,8 +14,8 @@ clipboard_and_style_sheet.style_sheet()
 sim = wg.ThinFilmWaveguide(3, .3, .7, mtp.Al2O3, mt.LiNbO3, 30, 1, 10, 4)
 
 # %%____________________________________________________________________________________________________________________
-etch_depth = wg.get_omega_axis(1 / .7, 1 / .3, 10)
-etch_width = wg.get_omega_axis(1 / 5, 1 / 3, 20)
+etch_depth = wg.get_omega_axis(1 / 1.0, 1 / 0.3, 10)
+etch_width = wg.get_omega_axis(1 / 5.0, 1 / 3.0, 20)
 for w in etch_width:
     for d in etch_depth:
         sim.etch_width = w
