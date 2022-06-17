@@ -513,6 +513,12 @@ class RidgeWaveguide:
 
         return results(self)
 
+    # __________________________________________________________________________________________________________________
+    # this was originally meant to take the same arguments as find_k() from mpb.ModeSolver(). However, I've now added
+    # eps_func_wvgd and eps_func_sbstrt *make sure that if you decide to use these, that you pass them in as
+    # kwargs!!* Otherwise they'll be interpreted as part of band_funcs (not to worry too much, you'll just get an
+    # error and then it'll be obvious what you did wrong)
+    # __________________________________________________________________________________________________________________
     def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
                kmag_guess, kmag_min, kmag_max, *band_funcs, eps_func_wvgd=None,
                eps_func_sbstrt=None):
@@ -680,6 +686,12 @@ class ThinFilmWaveguide(RidgeWaveguide):
             self.redef_sim()
             self._blk_film.material = medium
 
+    # __________________________________________________________________________________________________________________
+    # this was originally meant to take the same arguments as find_k() from mpb.ModeSolver(). However, I've now added
+    # eps_func_wvgd and eps_func_sbstrt *make sure that if you decide to use these, that you pass them in as
+    # kwargs!!* Otherwise they'll be interpreted as part of band_funcs (not to worry too much, you'll just get an
+    # error and then it'll be obvious what you did wrong)
+    # __________________________________________________________________________________________________________________
     def find_k(self, p, omega, band_min, band_max, korig_and_kdir, tol,
                kmag_guess, kmag_min, kmag_max, *band_funcs, eps_func_wvgd=None,
                eps_func_sbstrt=None):
