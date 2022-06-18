@@ -363,11 +363,13 @@ class RidgeWaveguide:
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
 
-        """MPB's find_k functions uses Newton's method which needs bounds and an initial guess that is somewhat close 
-        to the real answer (order magnitude). I've run into issues where it couldn't converge, however, so I instead 
-        make sure to pass a good guess. We expect materials to have weak dispersion, and so I set epsilon to epsilon(
-        f_center), and solve for waveguide dispersion omega(k). From there, I interpolate to get a k(omega) that can 
-        be use to extrapolate out and provide good gueses for kmag_guess """
+        # ______________________________________________________________________________________________________________
+        # MPB's find_k functions uses Newton's method which needs bounds and an initial guess that is somewhat close
+        # to the real answer (order magnitude). I've run into issues where it couldn't converge, however,
+        # so I instead make sure to pass a good guess. We expect materials to have weak dispersion, and so I set
+        # epsilon to epsilon( f_center), and solve for waveguide dispersion omega(k). From there, I interpolate to
+        # get a k(omega) that can be use to extrapolate out and provide good gueses for kmag_guess
+        # ______________________________________________________________________________________________________________
 
         k_min, k_max = 1 / wl_max, 1 / wl_min
         f_center = (k_max - k_min) / 2 + k_min
