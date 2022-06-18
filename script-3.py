@@ -47,8 +47,26 @@ name_eps = sorted(name_eps, key=width)
 get_eps = lambda n: np.load(path_eps + name_eps[n])
 plot_eps = lambda n: plt.imshow(get_eps(n)[::-1, ::-1].T, interpolation='spline36', cmap='binary')
 
+
+# %%____________________________________________________________________________________________________________________
+def plot_mode(n, k_index):
+    plot_eps(n)
+    plot_field(n, k_index)
+
+
 # %%____________________________________________________________________________________________________________________
 plt.figure()
 [plot_nu_disp(i) for i in range(len(name_disp))]
 plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
 plt.ylabel("$\mathrm{\\epsilon}$")
+
+# %%____________________________________________________________________________________________________________________
+N = -1
+fig, ax = plt.subplots(1, 1)
+wl = 1 / get_disp(N)[:, 1]
+for n in range(26):
+    ax.clear()
+    plot_mode(N, n)
+    ax.set_title('%.3f' % wl[n] + " $\mathrm{\\mu m}$")
+    # plt.savefig(f'fig/{n}.png')
+    plt.pause(.1)
