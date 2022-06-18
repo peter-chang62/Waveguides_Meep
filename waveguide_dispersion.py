@@ -544,32 +544,23 @@ class RidgeWaveguide:
         args = [p, omega, band_min, band_max, korig_and_kdir, tol,
                 kmag_guess, kmag_min, kmag_max, *band_funcs]
 
-        if (self.wvgd_mdm.valid_freq_range[-1] == 1e20) and (self.sbstrt_mdm.valid_freq_range[-1] == 1e20):
-            # materials are NON dispersive
-            return self.ms.find_k(*args)
-
+        # if epsilon functions are provided, then use those
+        # otherwise obtain epsilon from mp.Medium().epsilon()
+        if eps_func_wvgd is not None:
+            eps_wvgd = eps_func_wvgd(omega)
+            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
         else:
-            # materials are dispersive
-            # set the substrate and waveguide epsilon for the input wavelength
-            # then run the simulation
+            eps_wvgd = self.wvgd_mdm.epsilon(omega)
+            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
 
-            # if epsilon functions are provided, then use those
-            # otherwise obtain epsilon from mp.Medium().epsilon()
-            if eps_func_wvgd is not None:
-                eps_wvgd = eps_func_wvgd(omega)
-                self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
-            else:
-                eps_wvgd = self.wvgd_mdm.epsilon(omega)
-                self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+        if eps_func_sbstrt is not None:
+            eps_sbstrt = eps_func_sbstrt(omega)
+            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
+        else:
+            eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
+            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
 
-            if eps_func_sbstrt is not None:
-                eps_sbstrt = eps_func_sbstrt(omega)
-                self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
-            else:
-                eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
-                self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
-
-            return self.ms.find_k(*args)
+        return self.ms.find_k(*args)
 
 
 class ThinFilmWaveguide(RidgeWaveguide):
@@ -725,31 +716,22 @@ class ThinFilmWaveguide(RidgeWaveguide):
         args = [p, omega, band_min, band_max, korig_and_kdir, tol,
                 kmag_guess, kmag_min, kmag_max, *band_funcs]
 
-        if (self.wvgd_mdm.valid_freq_range[-1] == 1e20) and (self.sbstrt_mdm.valid_freq_range[-1] == 1e20):
-            # materials are NON dispersive
-            return self.ms.find_k(*args)
-
+        # if epsilon functions are provided, then use those
+        # otherwise obtain epsilon from mp.Medium().epsilon()
+        if eps_func_wvgd is not None:
+            eps_wvgd = eps_func_wvgd(omega)
+            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
+            self._blk_film.material = mp.Medium(epsilon=eps_wvgd)
         else:
-            # materials are dispersive
-            # set the substrate and waveguide epsilon for the input wavelength
-            # then run the simulation
+            eps_wvgd = self.wvgd_mdm.epsilon(omega)
+            self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+            self._blk_film.material = mp.Medium(epsilon=eps_wvgd[2, 2])
 
-            # if epsilon functions are provided, then use those
-            # otherwise obtain epsilon from mp.Medium().epsilon()
-            if eps_func_wvgd is not None:
-                eps_wvgd = eps_func_wvgd(omega)
-                self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
-                self._blk_film.material = mp.Medium(epsilon=eps_wvgd)
-            else:
-                eps_wvgd = self.wvgd_mdm.epsilon(omega)
-                self.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd[2, 2])
-                self._blk_film.material = mp.Medium(epsilon=eps_wvgd[2, 2])
+        if eps_func_sbstrt is not None:
+            eps_sbstrt = eps_func_sbstrt(omega)
+            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
+        else:
+            eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
+            self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
 
-            if eps_func_sbstrt is not None:
-                eps_sbstrt = eps_func_sbstrt(omega)
-                self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
-            else:
-                eps_sbstrt = self.sbstrt_mdm.epsilon(omega)
-                self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
-
-            return self.ms.find_k(*args)
+        return self.ms.find_k(*args)
