@@ -479,7 +479,7 @@ class RidgeWaveguide:
         self._initialize_E_and_H_lists()
         band_func1 = lambda ms, which_band: store_fields(ms, which_band, self)
         band_func2 = lambda ms, which_band: store_group_velocity(ms, which_band, self)
-        self.band_funcs = [band_func1, band_func2]
+        self.band_funcs = [band_func1, band_func2, mpb.display_yparities, mpb.display_zparities]
 
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
