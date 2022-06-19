@@ -658,22 +658,21 @@ class ThinFilmWaveguide(RidgeWaveguide):
         self.redef_sbstrt_dim()
         self.redef_sim()
 
-    @RidgeWaveguide.sbstrt_mdm.setter
-    def sbstrt_mdm(self, medium):
-
+    @RidgeWaveguide.wvgd_mdm.setter
+    def wvgd_mdm(self, medium):
         # ______________________________________________________________________________________________________________
         # this is the same as sbstrt_mdm in RidgeWaveguide but with the added line:
         #         self._blk_film.material = medium
         # inside the self.init_finished if statement
         # ______________________________________________________________________________________________________________
 
-        # set the substrate medium
+        # set the waveguide medium
         assert isinstance(medium, mp.Medium), \
-            f"substrate medium must be a mp.Medium instance but got type {type(medium)}"
+            f"waveguide medium must be a mp.Medium instance but got type {type(medium)}"
         medium: mp.Medium
 
-        self.blk_sbstrt.material = medium
-        self._sbstrt_mdm = medium
+        self.blk_wvgd.material = medium
+        self._wvgd_mdm = medium
 
         if self.init_finished:
             self.redef_sim()
