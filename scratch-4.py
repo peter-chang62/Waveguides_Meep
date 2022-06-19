@@ -140,7 +140,7 @@ taper, flux, mon_pt = create_taper_sim(wvg1=wvg1,
                                        length_taper=5,
                                        fcen=1 / 1.55,
                                        df=0.2,
-                                       nfreq=10,
+                                       nfreq=100,
                                        resolution=20,
                                        etch_angle=90)
 
