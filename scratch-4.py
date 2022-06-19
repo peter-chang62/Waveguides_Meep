@@ -41,6 +41,8 @@ def create_taper_sim(wvg1, wvg2, length_taper, fcen, df, nfreq, resolution, etch
 
     # __________________________________________________________________________________________________________________
     # vertices of the waveguides + taper
+    # TODO you forgot to implement y_added = blk.size.z / np.tan(deg_to_rad(angle_deg))
+    #  in any case, right now you're just trying the sim with 90 deg etch angle so it doesn't matter
     vertices = [
         mp.Vector3(-sx, wvg1.width / 2, -wvg1.height / 2),
         mp.Vector3(-sx, -wvg1.width / 2, -wvg1.height / 2),
@@ -111,8 +113,28 @@ def create_taper_sim(wvg1, wvg2, length_taper, fcen, df, nfreq, resolution, etch
 
 
 # %% ___________________________________________________________________________________________________________________
-wvg1 = wg.ThinFilmWaveguide(1, .3, .7, mp.Medium(index=1.45), mp.Medium(index=3.45), 30, 1, 10, 4)
-wvg2 = wg.ThinFilmWaveguide(3, .3, .7, mp.Medium(index=1.45), mp.Medium(index=3.45), 30, 1, 10, 4)
+wvg1 = wg.ThinFilmWaveguide(etch_width=1,
+                            etch_depth=.3,
+                            film_thickness=.7,
+                            # substrate_medium=mtp.Al2O3,
+                            # waveguide_medium=mt.LiNbO3,
+                            substrate_medium=mp.Medium(epsilon_diag=mtp.Al2O3.epsilon(1 / 1.55).diagonal()),
+                            waveguide_medium=mp.Medium(epsilon_diag=mt.LiNbO3.epsilon(1 / 1.55).diagonal()),
+                            resolution=30, num_bands=1,
+                            cell_width=10,
+                            cell_height=4)
+
+wvg2 = wg.ThinFilmWaveguide(etch_width=3,
+                            etch_depth=.3,
+                            film_thickness=.7,
+                            # substrate_medium=mtp.Al2O3,
+                            # waveguide_medium=mt.LiNbO3,
+                            substrate_medium=mp.Medium(epsilon_diag=mtp.Al2O3.epsilon(1 / 1.55).diagonal()),
+                            waveguide_medium=mp.Medium(epsilon_diag=mt.LiNbO3.epsilon(1 / 1.55).diagonal()),
+                            resolution=30, num_bands=1,
+                            cell_width=10,
+                            cell_height=4)
+
 taper, flux, mon_pt = create_taper_sim(wvg1=wvg1,
                                        wvg2=wvg2,
                                        length_taper=5,
@@ -123,6 +145,8 @@ taper, flux, mon_pt = create_taper_sim(wvg1=wvg1,
                                        etch_angle=90)
 
 # %% ___________________________________________________________________________________________________________________
-# taper.init_sim()
-# eps = taper.get_epsilon()
-# np.save('eps.npy', eps)
+# memory requirement is already too much!
+taper.run(until_after_sources=mp.stop_when_fields_decayed(50, mp.Ez, mon_pt, 1e-3))
+res = taper.get_eigenmode_coefficients(flux, [1], eig_parity=mp.EVEN_Z + mp.ODD_Y)
+arr = np.c_[np.array(flux.freq), res.alpha]
+np.save("alpha_taper_1_to_3_90deg_etch.npy", arr)
