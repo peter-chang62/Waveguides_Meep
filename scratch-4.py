@@ -8,6 +8,9 @@ import clipboard_and_style_sheet
 import h5py
 import waveguide_dispersion as wg
 
+rad_to_deg = lambda rad: rad * 180 / np.pi
+deg_to_rad = lambda deg: deg * np.pi / 180
+
 
 def create_taper_sim(wvg1, wvg2, length_taper, fcen, df, nfreq, resolution, etch_angle=80):
     assert all([isinstance(wvg1, wg.ThinFilmWaveguide),
@@ -43,15 +46,16 @@ def create_taper_sim(wvg1, wvg2, length_taper, fcen, df, nfreq, resolution, etch
     # vertices of the waveguides + taper
     # TODO you forgot to implement y_added = blk.size.z / np.tan(deg_to_rad(angle_deg))
     #  in any case, right now you're just trying the sim with 90 deg etch angle so it doesn't matter
+    y_added = wvg1.height / np.tan(deg_to_rad(etch_angle))
     vertices = [
-        mp.Vector3(-sx, wvg1.width / 2, -wvg1.height / 2),
-        mp.Vector3(-sx, -wvg1.width / 2, -wvg1.height / 2),
-        mp.Vector3(-length_taper / 2, -wvg1.width / 2, -wvg1.height / 2),
-        mp.Vector3(length_taper / 2, -wvg2.width / 2, -wvg1.height / 2),
-        mp.Vector3(sx, -wvg2.width / 2, -wvg1.height / 2),
-        mp.Vector3(sx, wvg2.width / 2, -wvg1.height / 2),
-        mp.Vector3(length_taper / 2, wvg2.width / 2, -wvg1.height / 2),
-        mp.Vector3(-length_taper / 2, wvg1.width / 2, -wvg1.height / 2),
+        mp.Vector3(-sx, wvg1.width / 2 + y_added, -wvg1.height / 2),
+        mp.Vector3(-sx, -wvg1.width / 2 - y_added, -wvg1.height / 2),
+        mp.Vector3(-length_taper / 2, -wvg1.width / 2 - y_added, -wvg1.height / 2),
+        mp.Vector3(length_taper / 2, -wvg2.width / 2 - y_added, -wvg1.height / 2),
+        mp.Vector3(sx, -wvg2.width / 2 - y_added, -wvg1.height / 2),
+        mp.Vector3(sx, wvg2.width / 2 + y_added, -wvg1.height / 2),
+        mp.Vector3(length_taper / 2, wvg2.width / 2 + y_added, -wvg1.height / 2),
+        mp.Vector3(-length_taper / 2, wvg1.width / 2 + y_added, -wvg1.height / 2),
     ]
 
     # __________________________________________________________________________________________________________________
@@ -61,12 +65,12 @@ def create_taper_sim(wvg1, wvg2, length_taper, fcen, df, nfreq, resolution, etch
     # prism that will be the waveguides + taper
     prism = mp.Prism(vertices=vertices,
                      height=wvg1.height,
-                     sidewall_angle=90 - etch_angle,
-                     material=wvg1.wvgd_mdm)
+                     sidewall_angle=deg_to_rad(90 - etch_angle),  # takes angle in radians!
+                     material=copy.deepcopy(wvg1.wvgd_mdm))  # pass material its own copy of wvgd_mdm
 
     # blocks for the unetched waveguide + substrate
-    blk_film = wvg1._blk_film
-    blk_sbstrt = wvg1.blk_sbstrt
+    blk_film = copy.deepcopy(wvg1._blk_film)  # taper owns its own copy
+    blk_sbstrt = copy.deepcopy(wvg1.blk_sbstrt)  # taper owns its own copy
     geometry = [prism, blk_film, blk_sbstrt]
 
     # __________________________________________________________________________________________________________________
@@ -109,6 +113,11 @@ def create_taper_sim(wvg1, wvg2, length_taper, fcen, df, nfreq, resolution, etch
                         mp.FluxRegion(center=mon_pt,
                                       size=mp.Vector3(0, sy - 2 * dpml_y, sz - 2 * dpml_z), direction=mp.X))
 
+    # __________________________________________________________________________________________________________________
+    # reset
+    wvg1.cell_height -= dpml_z * 2
+    wvg2.cell_height -= dpml_z * 2
+
     return sim, flux, mon_pt
 
 
@@ -141,12 +150,30 @@ taper, flux, mon_pt = create_taper_sim(wvg1=wvg1,
                                        fcen=1 / 1.55,
                                        df=0.2,
                                        nfreq=100,
-                                       resolution=20,
-                                       etch_angle=90)
+                                       resolution=30,
+                                       etch_angle=80)
+
+taper2, flux2, mon_pt2 = create_taper_sim(wvg1=wvg1,
+                                          wvg2=wvg2,
+                                          length_taper=5,
+                                          fcen=1 / 1.55,
+                                          df=0.2,
+                                          nfreq=100,
+                                          resolution=30,
+                                          etch_angle=90)
+
+taper.cell_size.x = 0
+taper2.cell_size.x = 0
+taper.boundary_layers.remove(taper.boundary_layers[0])
+taper2.boundary_layers.remove(taper2.boundary_layers[0])
+taper.init_sim()
+taper2.init_sim()
+eps = taper.get_epsilon()
+eps2 = taper2.get_epsilon()
 
 # %% ___________________________________________________________________________________________________________________
 # memory requirement is already too much!
-taper.run(until_after_sources=mp.stop_when_fields_decayed(50, mp.Ez, mon_pt, 1e-3))
-res = taper.get_eigenmode_coefficients(flux, [1], eig_parity=mp.EVEN_Z + mp.ODD_Y)
-arr = np.c_[np.array(flux.freq), res.alpha]
-np.save("alpha_taper_1_to_3_90deg_etch.npy", arr)
+# taper.run(until_after_sources=mp.stop_when_fields_decayed(50, mp.Ez, mon_pt, 1e-3))
+# res = taper.get_eigenmode_coefficients(flux, [1], eig_parity=mp.EVEN_Z + mp.ODD_Y)
+# arr = np.c_[np.array(flux.freq), res.alpha]
+# np.save("alpha_taper_1_to_3_90deg_etch.npy", arr)
