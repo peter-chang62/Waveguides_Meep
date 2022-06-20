@@ -69,6 +69,10 @@ def create_taper_sim(wvg1, wvg2, length_taper, fcen, df, nfreq, resolution, etch
 
     # __________________________________________________________________________________________________________________
     # dimension parameters
+    # TODO because the substrate and film objects are dependent on the cell size in z, you don't actually
+    #  end up using this. Also, the pml / absorbing layers in y and z only need to absorb what's left of 
+    #  evanescent waves, so shouldn't have to be as thick as the layers in x. Make sure they're not too close
+    #  to the waveguide though, or else you'll suck power from the waveguide. 
     dair = 3.0
     dsubstrate = 3
 
