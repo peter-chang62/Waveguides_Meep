@@ -1,14 +1,7 @@
 """sim data analysis """
 import numpy as np
 import matplotlib.pyplot as plt
-import clipboard_and_style_sheet
-import meep as mp
-import meep.materials as mt
-import materials as mtp
-import waveguide_dispersion as wg
 import os
-import geometry
-from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
 
 
 def width(s):
