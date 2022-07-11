@@ -73,26 +73,21 @@ for n in range(26):
     plt.pause(.1)
 
 # %%____________________________________________________________________________________________________________________
-fig, ax = plt.subplots(1, 2)
+fig, ax = plt.subplots(1, 1)
 for i in range(len(name_disp)):
     data = get_disp(i)
     kx = data[:, 0]
     freq = data[:, 1]
-    wl = 1 / freq
 
-    spl_vg = InterpolatedUnivariateSpline(kx, freq, k=4).derivative(1)
-    vg = spl_vg(kx)
-    beta1 = 1 / vg
-    spl_beta2 = InterpolatedUnivariateSpline(freq, beta1, k=4).derivative(1)
-    spl_D = InterpolatedUnivariateSpline(wl[::-1], beta1[::-1], k=4).derivative(1)
+    omega = freq * 2 * np.pi
+    beta = kx * 2 * np.pi
+    spl_beta = InterpolatedUnivariateSpline(omega, beta, k=5)
+    spl_beta1 = spl_beta.derivative(1)
+    spl_beta2 = spl_beta.derivative(2)
 
-    wl_plot = np.linspace(*wl[[0, -1]], 5000)
-    ax[0].plot(wl_plot, spl_beta2(1 / wl_plot))
-    ax[1].plot(wl_plot, spl_D(wl_plot))
+    freq_plot = np.linspace(*freq[[0, -1]], 5000)
+    ax.plot(1 / freq_plot, spl_beta2(2 * np.pi * freq_plot))
 
-ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$")
-ax[1].set_xlabel("wavelength ($\mathrm{\mu m}$")
-ax[0].set_ylabel("$\\beta_2$")
-ax[1].set_ylabel("D")
-ax[0].axhline(0, color='k', linestyle='--')
-ax[1].axhline(0, color='k', linestyle='--')
+ax.set_xlabel("wavelength ($\mathrm{\mu m}$")
+ax.set_ylabel("$\\beta_2$")
+ax.axhline(0, color='k', linestyle='--')
