@@ -1,0 +1,3 @@
+Right now, the group velocity as calculates using np.gradient does not agree with the group velocity output by MPB. And they don't seem to differ by factors of 2*pi which I think is odd. The gradient calculation gives a weird spike at the edge though, which can be just an edge derivative calculation error, but maybe I should trust MPB's more? 
+
+Actually no, I think using np.gradient is the right call here. I don't know, after all, how MPB is calculating the group velocity correctly when I set epsilon to be frequency independent at each omega, k eigenvalue calculation. Using MPB's vg calculation, I get that no geometry in the very large sweep that I did has a ZDW, whereas using np.gradient, I get ZDW points to occur for geometries in a certain range. 

@@ -1,7 +1,12 @@
-"""sim data analysis """
+"""sim data analysis the arrays were saved as np.c_[kx, freq, vg] """
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
+import clipboard_and_style_sheet
+
+clipboard_and_style_sheet.style_sheet()
 
 
 def width(s):
@@ -11,6 +16,8 @@ def width(s):
 def height(s):
     return float(s.split('_')[1].split('.npy')[0])
 
+
+eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 
 # %%____________________________________________________________________________________________________________________
 path_disp = 'sim_output/06-16-2022/dispersion-curves/'
@@ -50,15 +57,15 @@ def plot_mode(n, k_index):
 
 
 # %%____________________________________________________________________________________________________________________
-plt.figure()
-[plot_nu_eps(i) for i in range(len(name_disp))]
-plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
-plt.ylabel("$\mathrm{\\epsilon}$")
-
-plt.figure()
-[plot_nu_vgrp(i) for i in range(len(name_disp))]
-plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
-plt.ylabel("$\mathrm{v_{grp}}$")
+# plt.figure()
+# [plot_nu_eps(i) for i in range(len(name_disp))]
+# plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
+# plt.ylabel("$\mathrm{\\epsilon}$")
+#
+# plt.figure()
+# [plot_nu_vgrp(i) for i in range(len(name_disp))]
+# plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
+# plt.ylabel("$\mathrm{v_{grp}}$")
 
 # %%____________________________________________________________________________________________________________________
 # N = 115
@@ -70,3 +77,26 @@ plt.ylabel("$\mathrm{v_{grp}}$")
 #     ax.set_title('%.3f' % wl[n] + " $\mathrm{\\mu m}$")
 #     # plt.savefig(f'fig/{n}.png')
 #     plt.pause(.1)
+
+# %%____________________________________________________________________________________________________________________
+fig, ax = plt.subplots(1, 2)
+for i in range(len(name_disp)):
+    data = get_disp(i)
+    kx = data[:, 0]
+    freq = data[:, 1]
+    vg = np.gradient(freq, kx, edge_order=2)
+
+    eps = (kx / freq) ** 2
+    wl = 1 / freq
+    beta1 = 1 / vg
+    beta2 = np.gradient(beta1, freq)
+    D = np.gradient(beta1, wl)
+    ax[0].plot(wl, beta2, '.-')
+    ax[1].plot(wl, D, '.-')
+
+ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$")
+ax[1].set_xlabel("wavelength ($\mathrm{\mu m}$")
+ax[0].set_ylabel("$\\beta_2$")
+ax[1].set_ylabel("D")
+ax[0].axhline(0, color='k', linestyle='--')
+ax[1].axhline(0, color='k', linestyle='--')
