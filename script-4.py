@@ -82,3 +82,4 @@ for n in range(len(name_disp)):
     n_roots[n] = (len(roots[n]))
 
 # %%____________________________________________________________________________________________________________________
+# TODO restrict analysis to guided modes
