@@ -74,4 +74,11 @@ def vg_beta2_D(n):
 
 
 # %%____________________________________________________________________________________________________________________
-vg, beta2, D, spl_vg, spl_beta2, spl_D = vg_beta2_D(-1)
+roots = []
+n_roots = np.zeros(len(name_disp))
+for n in range(len(name_disp)):
+    vg, beta2, D, spl_vg, spl_beta2, spl_D = vg_beta2_D(n)
+    roots.append(spl_D.roots())
+    n_roots[n] = (len(roots[n]))
+
+# %%____________________________________________________________________________________________________________________
