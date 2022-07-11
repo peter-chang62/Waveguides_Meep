@@ -76,11 +76,11 @@ def get_betas(n):
 
 
 # %%____________________________________________________________________________________________________________________
-roots = []
+roots = np.zeros(len(name_disp), dtype=object)
 n_roots = np.zeros(len(name_disp))
 for n in range(len(name_disp)):
     beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2 = get_betas(n)
-    roots.append(2 * np.pi / spl_beta2.roots())
+    roots[n] = 2 * np.pi / spl_beta2.roots()
     n_roots[n] = (len(roots[n]))
 
 # %%____________________________________________________________________________________________________________________
