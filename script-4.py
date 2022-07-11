@@ -62,23 +62,23 @@ def vg_beta2_D(n):
     data = get_disp(n)
     kx = data[:, 0]
     freq = data[:, 1]
-    wl = 1 / freq
 
-    spl_vg = InterpolatedUnivariateSpline(kx, freq, k=4).derivative(1)
-    vg = spl_vg(kx)
-    beta1 = 1 / vg
-    spl_beta2 = InterpolatedUnivariateSpline(freq, beta1, k=4).derivative(1)
-    spl_D = InterpolatedUnivariateSpline(wl[::-1], beta1[::-1], k=4).derivative(1)
+    # beta = n * omega / c = 2 * np.pi * kx (the propagation constant)
+    omega = freq * 2 * np.pi
+    beta = kx * 2 * np.pi
+    spl_beta = InterpolatedUnivariateSpline(omega, beta, k=5)
+    spl_beta1 = spl_beta.derivative(1)
+    spl_beta2 = spl_beta.derivative(2)
 
-    return vg, spl_beta2(freq), spl_D(wl), spl_vg, spl_beta2, spl_D
+    return spl_beta(freq), spl_beta1(freq), spl_beta2(freq), spl_beta, spl_beta1, spl_beta2
 
 
 # %%____________________________________________________________________________________________________________________
 roots = []
 n_roots = np.zeros(len(name_disp))
 for n in range(len(name_disp)):
-    vg, beta2, D, spl_vg, spl_beta2, spl_D = vg_beta2_D(n)
-    roots.append(spl_D.roots())
+    beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2 = vg_beta2_D(n)
+    roots.append(spl_beta2.roots())
     n_roots[n] = (len(roots[n]))
 
 # %%____________________________________________________________________________________________________________________
