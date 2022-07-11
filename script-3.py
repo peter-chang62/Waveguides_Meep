@@ -85,8 +85,8 @@ for i in range(len(name_disp)):
     spl_beta1 = spl_beta.derivative(1)
     spl_beta2 = spl_beta.derivative(2)
 
-    freq_plot = np.linspace(*freq[[0, -1]], 5000)
-    ax.plot(1 / freq_plot, spl_beta2(2 * np.pi * freq_plot))
+    omega_plot = np.linspace(*freq[[0, -1]], 5000) * 2 * np.pi
+    ax.plot(2 * np.pi / omega_plot, spl_beta2(omega_plot) * 1e3)
 
 ax.set_xlabel("wavelength ($\mathrm{\mu m}$")
 ax.set_ylabel("$\\beta_2$")
