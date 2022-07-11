@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import os
 from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
 import clipboard_and_style_sheet
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -27,9 +28,7 @@ name_disp = sorted(name_disp, key=width)
 
 get_disp = lambda n: np.load(path_disp + name_disp[n])
 plot_nu_eps = lambda n: plt.plot(get_disp(n)[:, 1], (get_disp(n)[:, 0] / get_disp(n)[:, 1]) ** 2, '.-')
-plot_nu_vgrp = lambda n: plt.plot(get_disp(n)[:, 1], get_disp(n)[:, 2], '.-')
 plot_wl_eps = lambda n: plt.plot(1 / get_disp(n)[:, 1], (get_disp(n)[:, 0] / get_disp(n)[:, 1]) ** 2, '.-')
-plot_wl_vgrp = lambda n: plt.plot(1 / get_disp(n)[:, 1], get_disp(n)[:, 2], '.-')
 
 # %%____________________________________________________________________________________________________________________
 path_fields = 'sim_output/06-16-2022/E-fields/'
@@ -57,15 +56,10 @@ def plot_mode(n, k_index):
 
 
 # %%____________________________________________________________________________________________________________________
-# plt.figure()
-# [plot_nu_eps(i) for i in range(len(name_disp))]
-# plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
-# plt.ylabel("$\mathrm{\\epsilon}$")
-#
-# plt.figure()
-# [plot_nu_vgrp(i) for i in range(len(name_disp))]
-# plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
-# plt.ylabel("$\mathrm{v_{grp}}$")
+plt.figure()
+[plot_nu_eps(i) for i in range(len(name_disp))]
+plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
+plt.ylabel("$\mathrm{\\epsilon}$")
 
 # %%____________________________________________________________________________________________________________________
 # N = 115
@@ -84,15 +78,17 @@ for i in range(len(name_disp)):
     data = get_disp(i)
     kx = data[:, 0]
     freq = data[:, 1]
-    vg = np.gradient(freq, kx, edge_order=2)
-
-    eps = (kx / freq) ** 2
     wl = 1 / freq
+
+    spl_vg = InterpolatedUnivariateSpline(kx, freq, k=5).derivative(1)
+    vg = spl_vg(kx)
     beta1 = 1 / vg
-    beta2 = np.gradient(beta1, freq)
-    D = np.gradient(beta1, wl)
-    ax[0].plot(wl, beta2, '.-')
-    ax[1].plot(wl, D, '.-')
+    spl_beta2 = InterpolatedUnivariateSpline(freq, beta1, k=5).derivative(1)
+    spl_D = InterpolatedUnivariateSpline(wl[::-1], beta1[::-1], k=5).derivative(1)
+
+    wl_plot = np.linspace(*wl[[0, -1]], 5000)
+    ax[0].plot(wl_plot, spl_beta2(1 / wl_plot))
+    ax[1].plot(wl_plot, spl_D(wl_plot))
 
 ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$")
 ax[1].set_xlabel("wavelength ($\mathrm{\mu m}$")
