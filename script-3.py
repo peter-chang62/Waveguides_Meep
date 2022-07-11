@@ -62,15 +62,15 @@ plt.xlabel("$\mathrm{\\nu \; (1 / \mu m)}$")
 plt.ylabel("$\mathrm{\\epsilon}$")
 
 # %%____________________________________________________________________________________________________________________
-# N = 115
-# fig, ax = plt.subplots(1, 1)
-# wl = 1 / get_disp(N)[:, 1]
-# for n in range(26):
-#     ax.clear()
-#     plot_mode(N, n)
-#     ax.set_title('%.3f' % wl[n] + " $\mathrm{\\mu m}$")
-#     # plt.savefig(f'fig/{n}.png')
-#     plt.pause(.1)
+N = 115
+fig, ax = plt.subplots(1, 1)
+wl = 1 / get_disp(N)[:, 1]
+for n in range(26):
+    ax.clear()
+    plot_mode(N, n)
+    ax.set_title('%.3f' % wl[n] + " $\mathrm{\\mu m}$")
+    # plt.savefig(f'fig/{n}.png')
+    plt.pause(.1)
 
 # %%____________________________________________________________________________________________________________________
 fig, ax = plt.subplots(1, 2)
