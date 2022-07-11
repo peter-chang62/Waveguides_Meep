@@ -80,11 +80,11 @@ for i in range(len(name_disp)):
     freq = data[:, 1]
     wl = 1 / freq
 
-    spl_vg = InterpolatedUnivariateSpline(kx, freq, k=5).derivative(1)
+    spl_vg = InterpolatedUnivariateSpline(kx, freq, k=4).derivative(1)
     vg = spl_vg(kx)
     beta1 = 1 / vg
-    spl_beta2 = InterpolatedUnivariateSpline(freq, beta1, k=5).derivative(1)
-    spl_D = InterpolatedUnivariateSpline(wl[::-1], beta1[::-1], k=5).derivative(1)
+    spl_beta2 = InterpolatedUnivariateSpline(freq, beta1, k=4).derivative(1)
+    spl_D = InterpolatedUnivariateSpline(wl[::-1], beta1[::-1], k=4).derivative(1)
 
     wl_plot = np.linspace(*wl[[0, -1]], 5000)
     ax[0].plot(wl_plot, spl_beta2(1 / wl_plot))
