@@ -108,6 +108,15 @@ for n in range(len(name_disp)):
     wl_roots[n] = 2 * np.pi / spl_beta2.roots()
     n_roots[n] = (len(wl_roots[n]))
 
+    omega_plt = np.linspace(*omega[[0, -1]], 5000)
+    beta2_plt = spl_beta2(omega_plt)
+
+    # if you want to plot
+    plt.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
+plt.axhline(0, color='k', linestyle='--')
+plt.xlabel("wavelength $\mathrm{\mu m}$")
+plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
+
 # %%____________________________________________________________________________________________________________________
 ind_zdw = n_roots.nonzero()[0]
 
