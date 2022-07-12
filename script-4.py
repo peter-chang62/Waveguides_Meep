@@ -159,6 +159,7 @@ for n in range(len(name_disp)):
     ax.set_xlabel("wavelength $\mathrm{\mu m}$")
     ax.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
     # ax.axhline(0, color='k', linestyle='--')
+    # plt.savefig(f'fig/{n}.png')
     # plt.pause(.1)
 plt.axhline(0, color='k', linestyle='--')
 plt.xlabel("wavelength $\mathrm{\mu m}$")
