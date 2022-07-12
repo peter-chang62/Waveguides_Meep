@@ -9,8 +9,6 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 import materials as mtp
 import scipy.constants as sc
 import scipy.integrate as scint
-import waveguide_dispersion as wg
-from mpl_toolkits import mplot3d
 from numpy import ma
 
 clipboard_and_style_sheet.style_sheet()
