@@ -78,21 +78,23 @@ for n in range(26):
 # s^2 um / m^2 -> ps^2 um / km^2 -> ps^2 / km
 fig, ax = plt.subplots(1, 1)
 conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
+BETA2 = np.zeros((len(name_disp), len(get_disp(0))))
 for i in range(len(name_disp)):
-    # ax.clear()
+    ax.clear()
     data = get_disp(i)
     kx = data[:, 0]
     freq = data[:, 1]
 
     omega = freq * 2 * np.pi
     beta = kx * 2 * np.pi
-    spl_beta = InterpolatedUnivariateSpline(omega, beta, k=5)
-    spl_beta1 = spl_beta.derivative(1)
-    spl_beta2 = spl_beta.derivative(2)
+    beta1 = np.gradient(beta, omega, edge_order=2)
+    beta2 = np.gradient(beta1, omega, edge_order=2)
+    spl_beta2 = InterpolatedUnivariateSpline(omega, beta2, k=3)
 
     omega_plot = np.linspace(*freq[[0, -1]], 5000) * 2 * np.pi
-    ax.plot(2 * np.pi / omega_plot, spl_beta2(omega_plot) * conversion)
-    # plt.pause(.1)
+    ax.plot(omega_plot / (2 * np.pi), spl_beta2(omega_plot) * conversion)
+    BETA2[i] = spl_beta2(omega)
+    plt.pause(.1)
 
 ax.set_xlabel("wavelength ($\mathrm{\mu m}$")
 ax.set_ylabel("$\\beta_2$")

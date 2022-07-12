@@ -87,11 +87,13 @@ def get_betas(n):
     # beta = n * omega / c = 2 * np.pi * kx (the propagation constant)
     omega = freq * 2 * np.pi
     beta = kx * 2 * np.pi
-    spl_beta = InterpolatedUnivariateSpline(omega, beta, k=5)
-    spl_beta1 = spl_beta.derivative(1)
-    spl_beta2 = spl_beta.derivative(2)
+    spl_beta = InterpolatedUnivariateSpline(omega, beta, k=3)
+    beta1 = np.gradient(beta, omega, edge_order=2)
+    spl_beta1 = InterpolatedUnivariateSpline(omega, beta1, k=3)
+    beta2 = np.gradient(beta1, omega, edge_order=2)
+    spl_beta2 = InterpolatedUnivariateSpline(omega, beta2, k=3)
 
-    return spl_beta(omega), spl_beta1(omega), spl_beta2(omega), spl_beta, spl_beta1, spl_beta2
+    return beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2
 
 
 # %%____________________________________________________________________________________________________________________
@@ -103,16 +105,20 @@ wl = 1 / freq
 # %%____________________________________________________________________________________________________________________
 wl_roots = np.zeros(len(name_disp), dtype=object)
 n_roots = np.zeros(len(name_disp))
+BETA2 = np.zeros((len(name_disp), len(freq)))
 for n in range(len(name_disp)):
     beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2 = get_betas(n)
     wl_roots[n] = 2 * np.pi / spl_beta2.roots()
     n_roots[n] = (len(wl_roots[n]))
+    BETA2[n] = beta2
 
     omega_plt = np.linspace(*omega[[0, -1]], 5000)
     beta2_plt = spl_beta2(omega_plt)
 
     # if you want to plot
-    plt.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
+    # plt.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
+    plt.plot(omega / (2 * np.pi), beta2 * conversion)
+
 plt.axhline(0, color='k', linestyle='--')
 plt.xlabel("wavelength $\mathrm{\mu m}$")
 plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
