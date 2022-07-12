@@ -116,8 +116,8 @@ for n in range(len(name_disp)):
     beta2_plt = spl_beta2(omega_plt)
 
     # if you want to plot
-    # plt.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
-    plt.plot(omega / (2 * np.pi), beta2 * conversion)
+    plt.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
+    # plt.plot(omega / (2 * np.pi), beta2 * conversion)
 
 plt.axhline(0, color='k', linestyle='--')
 plt.xlabel("wavelength $\mathrm{\mu m}$")
