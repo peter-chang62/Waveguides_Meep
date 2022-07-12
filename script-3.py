@@ -6,6 +6,7 @@ import os
 from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
 import clipboard_and_style_sheet
 from scipy.interpolate import InterpolatedUnivariateSpline
+import scipy.constants as sc
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -73,9 +74,12 @@ for n in range(26):
     plt.pause(.1)
 
 # %%____________________________________________________________________________________________________________________
+# beta is calculated in (2 pi / um) with c = 1, so the conversion goes from
+# s^2 um / m^2 -> ps^2 um / km^2 -> ps^2 / km
 fig, ax = plt.subplots(1, 1)
-conversion = (1 / 3e8) ** 2 * 1e12 ** 2 * 1e3 ** 2 * 1e-6 * 1e-3
+conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
 for i in range(len(name_disp)):
+    # ax.clear()
     data = get_disp(i)
     kx = data[:, 0]
     freq = data[:, 1]
@@ -88,6 +92,7 @@ for i in range(len(name_disp)):
 
     omega_plot = np.linspace(*freq[[0, -1]], 5000) * 2 * np.pi
     ax.plot(2 * np.pi / omega_plot, spl_beta2(omega_plot) * conversion)
+    # plt.pause(.1)
 
 ax.set_xlabel("wavelength ($\mathrm{\mu m}$")
 ax.set_ylabel("$\\beta_2$")

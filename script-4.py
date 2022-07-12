@@ -6,6 +6,8 @@ import os
 from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
 import clipboard_and_style_sheet
 from scipy.interpolate import InterpolatedUnivariateSpline
+import materials as mtp
+import scipy.constants as sc
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -19,6 +21,15 @@ def height(s):
 
 
 eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+eps_func_sbstrt = lambda freq: mtp.Al2O3.epsilon(freq)[2, 2]
+conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
+
+
+def is_guided(kx, freq):
+    index_substrate = eps_func_sbstrt(freq) ** 0.5
+    freq_substrate = kx / index_substrate
+    return freq < freq_substrate
+
 
 # %%____________________________________________________________________________________________________________________
 # Dispersion Simulation Data
@@ -72,16 +83,22 @@ def get_betas(n):
     spl_beta1 = spl_beta.derivative(1)
     spl_beta2 = spl_beta.derivative(2)
 
-    return spl_beta(freq), spl_beta1(freq), spl_beta2(freq), spl_beta, spl_beta1, spl_beta2
+    return spl_beta(omega), spl_beta1(omega), spl_beta2(omega), spl_beta, spl_beta1, spl_beta2
 
 
 # %%____________________________________________________________________________________________________________________
-roots = np.zeros(len(name_disp), dtype=object)
+wl_roots = np.zeros(len(name_disp), dtype=object)
 n_roots = np.zeros(len(name_disp))
 for n in range(len(name_disp)):
     beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2 = get_betas(n)
-    roots[n] = 2 * np.pi / spl_beta2.roots()
-    n_roots[n] = (len(roots[n]))
+    wl_roots[n] = 2 * np.pi / spl_beta2.roots()
+    n_roots[n] = (len(wl_roots[n]))
 
 # %%____________________________________________________________________________________________________________________
-# TODO restrict analysis to guided modes
+ind_zdw = n_roots.nonzero()[0]
+freq = get_disp(0)[:, 0]
+omega = 2 * np.pi * freq
+wl = 1 / freq
+
+w_zdw = np.array([width(i) for i in np.array(name_disp)[n_roots.nonzero()]])
+h_zdw = np.array([height(i) for i in np.array(name_disp)[n_roots.nonzero()]])
