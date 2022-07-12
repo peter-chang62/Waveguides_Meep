@@ -20,9 +20,14 @@ def height(s):
     return float(s.split('_')[1].split('.npy')[0])
 
 
-eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
-eps_func_sbstrt = lambda freq: mtp.Al2O3.epsilon(freq)[2, 2]
-conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
+def eps_func_sbstrt(freq):
+    assert isinstance(freq, float) or isinstance(freq, int) or \
+           all([isinstance(freq, np.ndarray), len(freq.shape) == 1, freq.shape[0] > 1])  # 1D array with length > 1
+
+    if isinstance(freq, float) or isinstance(freq, int):
+        return mtp.Al2O3.epsilon(freq)[2, 2]
+    else:
+        return mtp.Al2O3.epsilon(freq)[:, 2, 2]
 
 
 def is_guided(kx, freq):
@@ -30,6 +35,9 @@ def is_guided(kx, freq):
     freq_substrate = kx / index_substrate
     return freq < freq_substrate
 
+
+eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
 
 # %%____________________________________________________________________________________________________________________
 # Dispersion Simulation Data
@@ -87,6 +95,12 @@ def get_betas(n):
 
 
 # %%____________________________________________________________________________________________________________________
+# values fixed by the simulation data:
+freq = get_disp(0)[:, 1]  # np.c_[kx, freq, vg]
+omega = 2 * np.pi * freq
+wl = 1 / freq
+
+# %%____________________________________________________________________________________________________________________
 wl_roots = np.zeros(len(name_disp), dtype=object)
 n_roots = np.zeros(len(name_disp))
 for n in range(len(name_disp)):
@@ -96,9 +110,17 @@ for n in range(len(name_disp)):
 
 # %%____________________________________________________________________________________________________________________
 ind_zdw = n_roots.nonzero()[0]
-freq = get_disp(0)[:, 0]
-omega = 2 * np.pi * freq
-wl = 1 / freq
 
+# geometries
 w_zdw = np.array([width(i) for i in np.array(name_disp)[n_roots.nonzero()]])
 h_zdw = np.array([height(i) for i in np.array(name_disp)[n_roots.nonzero()]])
+
+# masks to find which wavelengths are guided, I think for SPM ZDW you're mostly
+# interested in short wavelengths anyways, which should be guided
+mask_guided_wl = np.array([is_guided(get_disp(i)[:, 0], freq) for i in range(len(name_disp))])
+mask_all_wl_guided = np.array([np.all(i) for i in mask_guided_wl])
+ind_not_all_wl_guided = np.nonzero(mask_all_wl_guided == 0)[0]
+
+mask_guided_wl_zdw = mask_guided_wl[ind_zdw]
+mask_all_wl_guided_zdw = np.array([np.all(i) for i in mask_guided_wl_zdw])
+ind_not_all_wl_guided_zdw = np.nonzero(mask_all_wl_guided_zdw == 0)[0]
