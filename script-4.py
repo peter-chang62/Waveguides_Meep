@@ -87,10 +87,11 @@ def get_betas(n):
     # beta = n * omega / c = 2 * np.pi * kx (the propagation constant)
     omega = freq * 2 * np.pi
     beta = kx * 2 * np.pi
-    spl_beta = InterpolatedUnivariateSpline(omega, beta, k=3)
     beta1 = np.gradient(beta, omega, edge_order=2)
-    spl_beta1 = InterpolatedUnivariateSpline(omega, beta1, k=3)
     beta2 = np.gradient(beta1, omega, edge_order=2)
+
+    spl_beta = InterpolatedUnivariateSpline(omega, beta, k=3)
+    spl_beta1 = InterpolatedUnivariateSpline(omega, beta1, k=3)
     spl_beta2 = InterpolatedUnivariateSpline(omega, beta2, k=3)
 
     return beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2
