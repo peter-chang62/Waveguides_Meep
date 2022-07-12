@@ -136,7 +136,7 @@ omega = 2 * np.pi * freq
 wl = 1 / freq
 resolution = 30  # pixels / um
 
-# %%____________________________________________________________________________________________________________________
+# %%__________________________________________ Analyzing Results _______________________________________________________
 wl_roots = np.zeros(len(name_disp), dtype=object)
 n_roots = np.zeros(len(name_disp))
 BETA2 = np.zeros((len(name_disp), len(freq)))
@@ -147,6 +147,7 @@ for n in range(len(name_disp)):
     n_roots[n] = (len(wl_roots[n]))
     BETA2[n] = beta2
 
+    # ___________________________________ plotting _____________________________________________________________________
     # if you want to plot
     omega_plt = np.linspace(*omega[[0, -1]], 5000)
     beta2_plt = spl_beta2(omega_plt)
@@ -159,7 +160,6 @@ for n in range(len(name_disp)):
     ax.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
     # ax.axhline(0, color='k', linestyle='--')
     # plt.pause(.1)
-
 plt.axhline(0, color='k', linestyle='--')
 plt.xlabel("wavelength $\mathrm{\mu m}$")
 plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
@@ -170,6 +170,7 @@ wl_zdw_long = np.array([i[0] for i in wl_roots if len(i) > 0])
 wl_zdw_short = np.array([i[1] for i in wl_roots if len(i) > 0])
 
 check_if_guided = lambda n: is_guided(get_disp(n)[:, 0], freq)
+
 w = np.array([width(i) for i in name_disp])
 h = np.array([height(i) for i in name_disp])
 w.resize((21, 11))
