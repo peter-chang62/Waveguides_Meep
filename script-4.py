@@ -8,6 +8,10 @@ import clipboard_and_style_sheet
 from scipy.interpolate import InterpolatedUnivariateSpline
 import materials as mtp
 import scipy.constants as sc
+import scipy.integrate as scint
+import waveguide_dispersion as wg
+from mpl_toolkits import mplot3d
+from numpy import ma
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -31,9 +35,24 @@ def eps_func_sbstrt(freq):
 
 
 def is_guided(kx, freq):
+    # __________________________________________________________________________________________________________________
+    # bulk propagation is omega = c * k / n
+    # to be guided we need omega < omega_bulk
+    # __________________________________________________________________________________________________________________
+
     index_substrate = eps_func_sbstrt(freq) ** 0.5
     freq_substrate = kx / index_substrate
+    print(freq, freq_substrate, freq - freq_substrate)
     return freq < freq_substrate
+
+
+def mode_area(I):
+    # integral(I * dA) ** 2  / integral(I ** 2 * dA) is the common definition that is used
+    # reference: https://www.rp-photonics.com/effective_mode_area.html
+    # this gives an overall dimension of dA in the numerator
+    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(scint.simpson(I ** 2))
+    area /= resolution ** 2
+    return area
 
 
 eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
@@ -57,8 +76,8 @@ name_fields = [i.name for i in os.scandir(path_fields)]
 name_fields = sorted(name_fields, key=height)
 name_fields = sorted(name_fields, key=width)
 
-get_field = lambda n: np.load(path_fields + name_fields[n])
-plot_field = lambda n, k_index, alpha=0.9: plt.imshow(get_field(n)[k_index, 0][::-1, ::-1].T, cmap='RdBu', alpha=alpha)
+get_field = lambda n: np.squeeze(np.load(path_fields + name_fields[n]))
+plot_field = lambda n, k_index, alpha=0.9: plt.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap='RdBu', alpha=alpha)
 
 # %%____________________________________________________________________________________________________________________
 # epsilon grid simulation data corresponding to the dispersion simulation data
@@ -75,6 +94,19 @@ plot_eps = lambda n: plt.imshow(get_eps(n)[::-1, ::-1].T, interpolation='spline3
 def plot_mode(n, k_index):
     plot_eps(n)
     plot_field(n, k_index)
+    data = get_disp(n)  # np.c_[res.kx, res.freq, res.v_g[:, 0, 0]]
+    kx = data[:, 0]
+    freq = data[:, 1]
+    guided = is_guided(kx[k_index], freq[k_index])
+    wl = 1 / freq[k_index]
+    if guided:
+        plt.title("$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
+                  '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+                  ' $\mathrm{\mu m^2}$' + ", is guided")
+    else:
+        plt.title("$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
+                  '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+                  ' $\mathrm{\mu m^2}$' + ", NOT guided")
 
 
 # %%____________________________________________________________________________________________________________________
@@ -102,11 +134,13 @@ def get_betas(n):
 freq = get_disp(0)[:, 1]  # np.c_[kx, freq, vg]
 omega = 2 * np.pi * freq
 wl = 1 / freq
+resolution = 30  # pixels / um
 
 # %%____________________________________________________________________________________________________________________
 wl_roots = np.zeros(len(name_disp), dtype=object)
 n_roots = np.zeros(len(name_disp))
 BETA2 = np.zeros((len(name_disp), len(freq)))
+fig, ax = plt.subplots(1, 1)
 for n in range(len(name_disp)):
     beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2 = get_betas(n)
     wl_roots[n] = 2 * np.pi / spl_beta2.roots()
@@ -116,7 +150,15 @@ for n in range(len(name_disp)):
     # if you want to plot
     omega_plt = np.linspace(*omega[[0, -1]], 5000)
     beta2_plt = spl_beta2(omega_plt)
-    plt.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
+
+    # ax.clear()
+    ax.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
+    ax.set_ylim(-100)
+    ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\mathrm{\mu m}$')
+    ax.set_xlabel("wavelength $\mathrm{\mu m}$")
+    ax.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
+    # ax.axhline(0, color='k', linestyle='--')
+    # plt.pause(.1)
 
 plt.axhline(0, color='k', linestyle='--')
 plt.xlabel("wavelength $\mathrm{\mu m}$")
@@ -124,17 +166,36 @@ plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
 
 # %%____________________________________________________________________________________________________________________
 ind_zdw = n_roots.nonzero()[0]
+wl_zdw_long = np.array([i[0] for i in wl_roots if len(i) > 0])
+wl_zdw_short = np.array([i[1] for i in wl_roots if len(i) > 0])
 
-# geometries
-w_zdw = np.array([width(i) for i in np.array(name_disp)[n_roots.nonzero()]])
-h_zdw = np.array([height(i) for i in np.array(name_disp)[n_roots.nonzero()]])
+check_if_guided = lambda n: is_guided(get_disp(n)[:, 0], freq)
+w = np.array([width(i) for i in name_disp])
+h = np.array([height(i) for i in name_disp])
+w.resize((21, 11))
+h.resize((21, 11))
+ind_zdw_2D = np.unravel_index(ind_zdw, w.shape)
+wl_zdw_short_2D = np.zeros(w.shape)
+wl_zdw_short_2D[ind_zdw_2D] = wl_zdw_short
+wl_zdw_short_2D = ma.masked_values(wl_zdw_short_2D, 0)
+wl_zdw_long_2D = np.zeros(w.shape)
+wl_zdw_long_2D[ind_zdw_2D] = wl_zdw_long
+wl_zdw_long_2D = ma.masked_values(wl_zdw_long_2D, 0)
 
-# masks to find which wavelengths are guided, I think for SPM ZDW you're mostly
-# interested in short wavelengths anyways, which should be guided
-mask_guided_wl = np.array([is_guided(get_disp(i)[:, 0], freq) for i in range(len(name_disp))])
-mask_all_wl_guided = np.array([np.all(i) for i in mask_guided_wl])
-ind_not_all_wl_guided = np.nonzero(mask_all_wl_guided == 0)[0]
+fig, ax = plt.subplots(1, 1)
+img = ax.pcolormesh(w, h, wl_zdw_short_2D)
+plt.colorbar(img)
+ax.set_xlim(1.4, 3.2)
+ax.set_ylim(.87, 1.07)
+ax.set_xlabel("width ($\mathrm{\mu m}$)")
+ax.set_ylabel("height ($\mathrm{\mu m}$)")
+ax.set_title("$\mathrm{\lambda_{ZDW}}$ shortest")
 
-mask_guided_wl_zdw = mask_guided_wl[ind_zdw]
-mask_all_wl_guided_zdw = np.array([np.all(i) for i in mask_guided_wl_zdw])
-ind_not_all_wl_guided_zdw = np.nonzero(mask_all_wl_guided_zdw == 0)[0]
+fig, ax = plt.subplots(1, 1)
+img = ax.pcolormesh(w, h, wl_zdw_long_2D)
+plt.colorbar(img)
+ax.set_xlim(1.4, 3.2)
+ax.set_ylim(.87, 1.07)
+ax.set_xlabel("width ($\mathrm{\mu m}$)")
+ax.set_ylabel("height ($\mathrm{\mu m}$)")
+ax.set_title("$\mathrm{\lambda_{ZDW}}$ longest")
