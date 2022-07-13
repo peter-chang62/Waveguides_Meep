@@ -6,10 +6,18 @@ import os
 from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
 import clipboard_and_style_sheet
 from scipy.interpolate import InterpolatedUnivariateSpline
-import materials as mtp
 import scipy.constants as sc
 import scipy.integrate as scint
 from numpy import ma
+
+try:
+    import materials as mtp
+
+    on_linux = True
+except:
+    Al2O3 = np.load('convenience/freq_epsilon_data.npy')
+    Al2O3 = InterpolatedUnivariateSpline(Al2O3[:, 0], Al2O3[:, 1])
+    on_linux = False
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -27,9 +35,15 @@ def eps_func_sbstrt(freq):
            all([isinstance(freq, np.ndarray), len(freq.shape) == 1, freq.shape[0] > 1])  # 1D array with length > 1
 
     if isinstance(freq, float) or isinstance(freq, int):
-        return mtp.Al2O3.epsilon(freq)[2, 2]
+        if on_linux:
+            return mtp.Al2O3.epsilon(freq)[2, 2]
+        else:
+            return Al2O3(freq)
     else:
-        return mtp.Al2O3.epsilon(freq)[:, 2, 2]
+        if on_linux:
+            return mtp.Al2O3.epsilon(freq)[:, 2, 2]
+        else:
+            return Al2O3(freq)
 
 
 def is_guided(kx, freq):
