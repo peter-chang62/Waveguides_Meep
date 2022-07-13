@@ -196,8 +196,9 @@ wl_zdw_long_2D = np.zeros(w.shape)
 wl_zdw_long_2D[ind_zdw_2D] = wl_zdw_long
 wl_zdw_long_2D = ma.masked_values(wl_zdw_long_2D, 0)
 
+cmap = 'afmhot'
 fig, ax = plt.subplots(1, 1)
-img = ax.pcolormesh(w, h, wl_zdw_short_2D)
+img = ax.pcolormesh(w, h, wl_zdw_short_2D, cmap=cmap)
 plt.colorbar(img)
 ax.set_xlim(1.4, 3.2)
 ax.set_ylim(.87, 1.07)
@@ -206,10 +207,26 @@ ax.set_ylabel("height ($\mathrm{\mu m}$)")
 ax.set_title("$\mathrm{\lambda_{ZDW}}$ shortest")
 
 fig, ax = plt.subplots(1, 1)
-img = ax.pcolormesh(w, h, wl_zdw_long_2D)
+img = ax.pcolormesh(w, h, wl_zdw_long_2D, cmap=cmap)
 plt.colorbar(img)
 ax.set_xlim(1.4, 3.2)
 ax.set_ylim(.87, 1.07)
 ax.set_xlabel("width ($\mathrm{\mu m}$)")
 ax.set_ylabel("height ($\mathrm{\mu m}$)")
 ax.set_title("$\mathrm{\lambda_{ZDW}}$ longest")
+
+# %%____________________________________________________________________________________________________________________
+# for the subset where there are zdw roots, which wavelengths aren't guided?
+# if it's unguided, it's always 5 um, which is pretty far away from the ZDW!
+# x = np.array([check_if_guided(i) for i in ind_zdw])
+# ind_not_guided = np.c_[(x == False).nonzero()]
+# for i, j in ind_not_guided:
+#     plt.figure()
+#     plot_mode(ind_zdw[i], j + 1)
+
+# fig, ax = plt.subplots(1, 1)
+# for i in range(len(name_disp)):
+#     ax.clear()
+#     plot_mode(i, 11)
+#     plt.pause(0.1)
+#     # plt.savefig(f'fig/{i}.png')
