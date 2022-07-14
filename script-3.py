@@ -112,13 +112,13 @@ def plot_mode(n, k_index):
     guided = is_guided(kx[k_index], freq[k_index])
     wl = 1 / freq[k_index]
     if guided:
-        plt.title("$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
-                  '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-                  ' $\mathrm{\mu m^2}$' + ", is guided")
+        s = "guided"
     else:
-        plt.title("$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
-                  '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-                  ' $\mathrm{\mu m^2}$' + ", NOT guided")
+        s = "NOT guided"
+    plt.title(f'{np.round(width(name_eps[n]), 3)} x {np.round(height(name_eps[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
+              "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
+              '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+              ' $\mathrm{\mu m^2}$' + '\n' + s)
 
 
 # %%____________________________________________________________________________________________________________________
@@ -148,60 +148,82 @@ omega = 2 * np.pi * freq
 wl = 1 / freq
 resolution = 30  # pixels / um
 
+# %%____________________________________________________________________________________________________________________
+# truncate the simulation data
+[name_disp.remove(i) for i in name_disp.copy() if height(i) > 2.0]
+[name_eps.remove(i) for i in name_eps.copy() if height(i) > 2.0]
+[name_fields.remove(i) for i in name_fields.copy() if height(i) > 2.0]
+
 # %%__________________________________________ Analyzing Results _______________________________________________________
 wl_roots = np.zeros(len(name_disp), dtype=object)
-n_roots = np.zeros(len(name_disp))
 BETA2 = np.zeros((len(name_disp), len(freq)))
 fig, ax = plt.subplots(1, 1)
+savefig = False
+animate = False
 for n in range(len(name_disp)):
     beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2 = get_betas(n)
     wl_roots[n] = 2 * np.pi / spl_beta2.roots()
-    n_roots[n] = (len(wl_roots[n]))
     BETA2[n] = beta2
 
     # ___________________________________ plotting _____________________________________________________________________
     # if you want to plot
     omega_plt = np.linspace(*omega[[0, -1]], 5000)
     beta2_plt = spl_beta2(omega_plt)
-
-    # ax.clear()
+    if (not savefig) and animate:
+        ax.clear()
     ax.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
-    ax.set_ylim(-100)
     ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\mathrm{\mu m}$')
     ax.set_xlabel("wavelength $\mathrm{\mu m}$")
     ax.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
-    # ax.axhline(0, color='k', linestyle='--')
-    # plt.savefig(f'fig/{n}.png')
-    # plt.pause(.1)
+    ax.axhline(0, color='k', linestyle='--')
+    if savefig:
+        plt.savefig(f'fig/{n}.png')
+    elif animate:
+        plt.pause(.1)
 plt.axhline(0, color='k', linestyle='--')
 plt.xlabel("wavelength $\mathrm{\mu m}$")
 plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
 
 # %%____________________________________________________________________________________________________________________
-ind_zdw = n_roots.nonzero()[0]
-wl_zdw_long = np.array([i[0] for i in wl_roots if len(i) > 0])
-wl_zdw_short = np.array([i[1] for i in wl_roots if len(i) > 0])
+# plotting the analysis of the results
+wl_zdw_long = []
+wl_zdw_short = []
+ind_zdw_long = []
+ind_zdw_short = []
+for n, i in enumerate(wl_roots):
+    if len(i) > 1:  # if there are two roots
+        wl_zdw_long.append(i[0])
+        wl_zdw_short.append(i[1])
+        ind_zdw_long.append(n)
+        ind_zdw_short.append(n)
+    elif len(i) > 0:  # if there is only one root
+        wl_zdw_short.append(i[0])
+        ind_zdw_short.append(n)
+wl_zdw_long = np.array(wl_zdw_long)
+wl_zdw_short = np.array(wl_zdw_short)
+ind_zdw_long = np.array(ind_zdw_long)
+ind_zdw_short = np.array(ind_zdw_short)
 
 check_if_guided = lambda n: is_guided(get_disp(n)[:, 0], freq)
 
 w = np.array([width(i) for i in name_disp])
 h = np.array([height(i) for i in name_disp])
-w.resize((21, 11))
-h.resize((21, 11))
-ind_zdw_2D = np.unravel_index(ind_zdw, w.shape)
+shape = (len(set(w)), len(set(h)))
+w.resize(shape)
+h.resize(shape)
+ind_zdw_long_2D = np.unravel_index(ind_zdw_long, w.shape)
+ind_zdw_short_2D = np.unravel_index(ind_zdw_short, w.shape)
 wl_zdw_short_2D = np.zeros(w.shape)
-wl_zdw_short_2D[ind_zdw_2D] = wl_zdw_short
+wl_zdw_short_2D[ind_zdw_short_2D] = wl_zdw_short
 wl_zdw_short_2D = ma.masked_values(wl_zdw_short_2D, 0)
 wl_zdw_long_2D = np.zeros(w.shape)
-wl_zdw_long_2D[ind_zdw_2D] = wl_zdw_long
+wl_zdw_long_2D[ind_zdw_long_2D] = wl_zdw_long
 wl_zdw_long_2D = ma.masked_values(wl_zdw_long_2D, 0)
 
 cmap = 'afmhot'
 fig, ax = plt.subplots(1, 1)
 img = ax.pcolormesh(w, h, wl_zdw_short_2D, cmap=cmap)
 plt.colorbar(img)
-ax.set_xlim(1.4, 3.2)
-ax.set_ylim(.87, 1.07)
 ax.set_xlabel("width ($\mathrm{\mu m}$)")
 ax.set_ylabel("height ($\mathrm{\mu m}$)")
 ax.set_title("$\mathrm{\lambda_{ZDW}}$ shortest")
@@ -209,24 +231,6 @@ ax.set_title("$\mathrm{\lambda_{ZDW}}$ shortest")
 fig, ax = plt.subplots(1, 1)
 img = ax.pcolormesh(w, h, wl_zdw_long_2D, cmap=cmap)
 plt.colorbar(img)
-ax.set_xlim(1.4, 3.2)
-ax.set_ylim(.87, 1.07)
 ax.set_xlabel("width ($\mathrm{\mu m}$)")
 ax.set_ylabel("height ($\mathrm{\mu m}$)")
 ax.set_title("$\mathrm{\lambda_{ZDW}}$ longest")
-
-# %%____________________________________________________________________________________________________________________
-# for the subset where there are zdw roots, which wavelengths aren't guided?
-# if it's unguided, it's always 5 um, which is pretty far away from the ZDW!
-# x = np.array([check_if_guided(i) for i in ind_zdw])
-# ind_not_guided = np.c_[(x == False).nonzero()]
-# for i, j in ind_not_guided:
-#     plt.figure()
-#     plot_mode(ind_zdw[i], j + 1)
-
-# fig, ax = plt.subplots(1, 1)
-# for i in range(len(name_disp)):
-#     ax.clear()
-#     plot_mode(i, 11)
-#     plt.pause(0.1)
-#     # plt.savefig(f'fig/{i}.png')
