@@ -21,7 +21,8 @@ sim = wg.ThinFilmWaveguide(3, .3, .7, mtp.Al2O3, mt.LiNbO3, 30, 1, 10, 4)
 
 # %%____________________________________________________________________________________________________________________
 etch_width = wg.get_omega_axis(1 / 3, 1 / 0.3, 20)  # 300 nm to 3 um in 135 nm steps
-height = wg.get_omega_axis(1 / 1, 1 / 0.7, 10)  # 700 nm to 1 um in 30 nm steps
+# height = wg.get_omega_axis(1 / 1, 1 / 0.7, 10)  # 700 nm to 1 um in 30 nm steps
+height = np.arange(1.05, 3.05, .05)  # continue parameter sweep: 1050 nm to 3000 nm in 50 nm steps
 for w in etch_width:
     for h in height:
         sim.etch_width = w
