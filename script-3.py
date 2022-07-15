@@ -171,11 +171,11 @@ for n in range(len(name_disp)):
     beta2_plt = spl_beta2(omega_plt)
     if animate:
         ax.clear()
+        ax.axhline(0, color='k', linestyle='--')
     ax.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
     ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\mathrm{\mu m}$')
     ax.set_xlabel("wavelength $\mathrm{\mu m}$")
     ax.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
-    ax.axhline(0, color='k', linestyle='--')
     if savefig:
         plt.savefig(f'fig/{n}.png')
         print(n)
@@ -236,31 +236,34 @@ ax.set_xlabel("width ($\mathrm{\mu m}$)")
 ax.set_ylabel("height ($\mathrm{\mu m}$)")
 ax.set_title("$\mathrm{\lambda_{ZDW}}$ longest")
 
+ind_shortest = np.unravel_index(np.argmin(wl_zdw_short_2D), h.shape)
+ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
+
 # %%____________________________________________________________________________________________________________________
-w_unique = np.array(list(set([width(i) for i in name_disp])))
-h_unique = np.array(list(set([height(i) for i in name_disp])))
-w_unique.sort()
-h_unique.sort()
-
-ind_wl = np.argmin(abs(wl - 1.55))
-
-# fixed width
-ind_w = np.argmin(abs(w_unique - 2.19))
-step = 30
-fig, ax = plt.subplots(1, 1)
-for i in range(step):
-    ax.clear()
-    plot_mode(i + step * ind_w, ind_wl)
-    plt.pause(.1)
-    # plt.savefig(f'fig/{i}.png')
-
-# fixed height
-ind_h = np.argmin(abs(h_unique - 1.15))
-fig, ax = plt.subplots(1, 1)
-h = 0
-for i in range(ind_h, len(name_disp), step):
-    ax.clear()
-    plot_mode(i, ind_wl)
-    plt.pause(.1)
-    # plt.savefig(f'fig/{h}.png')
-    h += 1
+# w_unique = np.array(list(set([width(i) for i in name_disp])))
+# h_unique = np.array(list(set([height(i) for i in name_disp])))
+# w_unique.sort()
+# h_unique.sort()
+#
+# ind_wl = np.argmin(abs(wl - 1.55))
+#
+# # fixed width
+# ind_w = np.argmin(abs(w_unique - 2.19))
+# step = 30
+# fig, ax = plt.subplots(1, 1)
+# for i in range(step):
+#     ax.clear()
+#     plot_mode(i + step * ind_w, ind_wl)
+#     plt.pause(.1)
+#     # plt.savefig(f'fig/{i}.png')
+#
+# # fixed height
+# ind_h = np.argmin(abs(h_unique - 1.15))
+# fig, ax = plt.subplots(1, 1)
+# h = 0
+# for i in range(ind_h, len(name_disp), step):
+#     ax.clear()
+#     plot_mode(i, ind_wl)
+#     plt.pause(.1)
+#     # plt.savefig(f'fig/{h}.png')
+#     h += 1
