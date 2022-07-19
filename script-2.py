@@ -33,7 +33,11 @@ etch_width = wg.get_omega_axis(1 / 3, 1 / 0.3, 20)  # 300 nm to 3 um in 135 nm s
 # height = wg.get_omega_axis(1 / 1, 1 / 0.7, 10)  # 700 nm to 1 um in 30 nm steps
 # height = np.arange(1.05, 3.05, .05)  # continue parameter sweep: 1050 nm to 3000 nm in 50 nm steps
 etch_depth = np.arange(0.1, 1.05, .05)
-etch_depth = np.round(etch_depth, 2)
+
+# round the parameters
+etch_width = np.round(etch_width, 3)
+etch_depth = np.round(etch_depth, 3)
+
 for w in etch_width:
     # for h in height:
     for d in etch_depth:
@@ -46,7 +50,14 @@ for w in etch_width:
         res = sim.calc_dispersion(.8, 5, 25, eps_func_wvgd=eps_func_wvgd)  # run simulation
         sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
-        arr = np.c_[res.kx, res.freq, res.v_g[:, 0, 0]]  # 0, 0 -> first band, x-component (non-zero component)
+        # _________________________________ calculate beta2 ____________________________________________________________
+        omega = res.freq * 2 * np.pi
+        beta = res.kx.flatten() * 2 * np.pi
+        beta1 = np.gradient(beta, omega, edge_order=2)
+        beta2 = np.gradient(beta1, omega, edge_order=2)
+
+        # _______________________________________ save the data ________________________________________________________
+        arr = np.c_[res.kx, res.freq, beta2]
         # np.save(f'sim_output/06-16-2022/dispersion-curves/{w}_{h}.npy', arr)
         # np.save(f'sim_output/06-16-2022/E-fields/{w}_{h}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
         # np.save(f'sim_output/06-16-2022/eps/{w}_{h}.npy', sim.ms.get_epsilon())

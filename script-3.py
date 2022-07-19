@@ -1,4 +1,7 @@
-"""sim data analysis the arrays were saved as np.c_[kx, freq, vg] """
+"""sim data analysis the arrays were saved as np.c_[kx, freq, vg]
+
+The axis labels may or may not be relevant for the dimensions. Sometimes I swept the Lithium Niobate deposition
+thickness, and sometimes I fixed the thickness but swept the etch-depth """
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -69,10 +72,12 @@ def mode_area(I):
 
 eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
+# path_sim_output = "sim_output/06-16-2022/"
+path_sim_output = "sim_output/07-18-2022/"
 
 # %%____________________________________________________________________________________________________________________
 # Dispersion Simulation Data
-path_disp = 'sim_output/06-16-2022/dispersion-curves/'
+path_disp = path_sim_output + 'dispersion-curves/'
 name_disp = [i.name for i in os.scandir(path_disp)]
 name_disp = sorted(name_disp, key=height)
 name_disp = sorted(name_disp, key=width)
@@ -83,7 +88,7 @@ plot_wl_eps = lambda n: plt.plot(1 / get_disp(n)[:, 1], (get_disp(n)[:, 0] / get
 
 # %%____________________________________________________________________________________________________________________
 # E-field Simulation Data corresponding to the dispersion simulation data
-path_fields = 'sim_output/06-16-2022/E-fields/'
+path_fields = path_sim_output + 'E-fields/'
 name_fields = [i.name for i in os.scandir(path_fields)]
 name_fields = sorted(name_fields, key=height)
 name_fields = sorted(name_fields, key=width)
@@ -93,7 +98,7 @@ plot_field = lambda n, k_index, alpha=0.9: plt.imshow(get_field(n)[k_index][::-1
 
 # %%____________________________________________________________________________________________________________________
 # epsilon grid simulation data corresponding to the dispersion simulation data
-path_eps = 'sim_output/06-16-2022/eps/'
+path_eps = path_sim_output + 'eps/'
 name_eps = [i.name for i in os.scandir(path_eps)]
 name_eps = sorted(name_eps, key=height)
 name_eps = sorted(name_eps, key=width)
@@ -267,3 +272,22 @@ ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 #     plt.pause(.1)
 #     # plt.savefig(f'fig/{h}.png')
 #     h += 1
+
+# %%____________________________________________________________________________________________________________________
+# going back to look at the modes, the ones that look weird are bad geometries
+# fig, ax = plt.subplots(1, 1)
+# for n, i in enumerate(BETA2):
+#     ax.clear()
+#     ax.plot(1 / freq, i, 'o-')
+#     ax.set_title(str(n) + " | " + str(width(name_disp[n])) + " x " + str(height(name_disp[n])))
+#     ax.axhline(0, color='k', linestyle='--')
+#     ax.axvline(1.55, color='k', linestyle='--')
+#     plt.pause(1)
+
+# fig, ax = plt.subplots(1, 1)
+# for n, i in enumerate(wl_roots):
+#     if len(i) != 0:
+#         ax.clear()
+#         ax.plot(BETA2[n], 'o-')
+#         ax.set_title(n)
+#         plt.pause(1)
