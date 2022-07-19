@@ -57,7 +57,7 @@ for w in etch_width:
         beta2 = np.gradient(beta1, omega, edge_order=2)
 
         # _______________________________________ save the data ________________________________________________________
-        arr = np.c_[res.kx, res.freq, beta2]
+        arr = np.c_[res.kx, res.freq, beta]
         # np.save(f'sim_output/06-16-2022/dispersion-curves/{w}_{h}.npy', arr)
         # np.save(f'sim_output/06-16-2022/E-fields/{w}_{h}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
         # np.save(f'sim_output/06-16-2022/eps/{w}_{h}.npy', sim.ms.get_epsilon())
