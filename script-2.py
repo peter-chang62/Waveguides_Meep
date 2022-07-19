@@ -62,6 +62,6 @@ for w in etch_width:
         # np.save(f'sim_output/06-16-2022/E-fields/{w}_{h}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
         # np.save(f'sim_output/06-16-2022/eps/{w}_{h}.npy', sim.ms.get_epsilon())
 
-        np.save(f'sim_output/07-18-2022/dispersion-curves/{w}_{d}.npy', arr)
-        np.save(f'sim_output/07-18-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
-        np.save(f'sim_output/07-18-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
+        np.save(f'sim_output/07-19-2022/dispersion-curves/{w}_{d}.npy', arr)
+        np.save(f'sim_output/07-19-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
+        np.save(f'sim_output/07-19-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
