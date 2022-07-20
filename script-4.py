@@ -156,7 +156,7 @@ wl_roots = np.zeros(len(name_disp), dtype=object)
 BETA2 = np.zeros((len(name_disp), len(freq)))
 fig, ax = plt.subplots(1, 1)
 savefig = False
-animate = True
+animate = False
 for n in range(len(name_disp)):
     beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2 = get_betas(n)
     wl_roots[n] = 2 * np.pi / spl_beta2.roots()
@@ -170,8 +170,8 @@ for n in range(len(name_disp)):
         ax.clear()
         ax.axhline(0, color='k', linestyle='--')
         ax.axvline(1.55, color='k', linestyle='--')
+        ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\mathrm{\mu m}$')
     ax.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
-    ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\mathrm{\mu m}$')
     ax.set_xlabel("wavelength $\mathrm{\mu m}$")
     ax.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
     if savefig:
@@ -180,6 +180,7 @@ for n in range(len(name_disp)):
     elif animate:
         plt.pause(.1)
 plt.axhline(0, color='k', linestyle='--')
+plt.axvline(1.55, color='k', linestyle='--')
 plt.xlabel("wavelength $\mathrm{\mu m}$")
 plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
 
@@ -238,33 +239,33 @@ ind_shortest = np.unravel_index(np.argmin(wl_zdw_short_2D), h.shape)
 ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 
 # %%____________________________________________________________________________________________________________________
-w_unique = np.array(list(set([width(i) for i in name_disp])))
-h_unique = np.array(list(set([height(i) for i in name_disp])))
-w_unique.sort()
-h_unique.sort()
-
-ind_wl = np.argmin(abs(wl - 1.55))
-
-# fixed width
-ind_w = np.argmin(abs(w_unique - 2.19))
-step = 19
-fig, ax = plt.subplots(1, 1)
-for i in range(step):
-    ax.clear()
-    plot_mode(i + step * ind_w, ind_wl, False)
-    plt.pause(.1)
-    # plt.savefig(f'fig/{i}.png')
-
-# fixed height
-ind_h = np.argmin(abs(h_unique - 1.15))
-fig, ax = plt.subplots(1, 1)
-h = 0
-for i in range(ind_h, len(name_disp), step):
-    ax.clear()
-    plot_mode(i, ind_wl, False)
-    plt.pause(.1)
-    # plt.savefig(f'fig/{h}.png')
-    h += 1
+# w_unique = np.array(list(set([width(i) for i in name_disp])))
+# h_unique = np.array(list(set([height(i) for i in name_disp])))
+# w_unique.sort()
+# h_unique.sort()
+#
+# ind_wl = np.argmin(abs(wl - 1.55))
+#
+# # fixed width
+# ind_w = np.argmin(abs(w_unique - 2.19))
+# step = 19
+# fig, ax = plt.subplots(1, 1)
+# for i in range(step):
+#     ax.clear()
+#     plot_mode(i + step * ind_w, ind_wl, False)
+#     plt.pause(.1)
+#     # plt.savefig(f'fig/{i}.png')
+#
+# # fixed height
+# ind_h = np.argmin(abs(h_unique - 1.15))
+# fig, ax = plt.subplots(1, 1)
+# h = 0
+# for i in range(ind_h, len(name_disp), step):
+#     ax.clear()
+#     plot_mode(i, ind_wl, False)
+#     plt.pause(.1)
+#     # plt.savefig(f'fig/{h}.png')
+#     h += 1
 
 # %%____________________________________________________________________________________________________________________
 # This is kind of old plotting code

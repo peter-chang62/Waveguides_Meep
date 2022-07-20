@@ -165,7 +165,7 @@ wl_roots = np.zeros(len(name_disp), dtype=object)
 BETA2 = np.zeros((len(name_disp), len(freq)))
 fig, ax = plt.subplots(1, 1)
 savefig = False
-animate = True
+animate = False
 for n in range(len(name_disp)):
     beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2 = get_betas(n)
     wl_roots[n] = 2 * np.pi / spl_beta2.roots()
@@ -179,8 +179,8 @@ for n in range(len(name_disp)):
         ax.clear()
         ax.axhline(0, color='k', linestyle='--')
         ax.axvline(1.55, color='k', linestyle='--')
+        ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\mathrm{\mu m}$')
     ax.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
-    ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\mathrm{\mu m}$')
     ax.set_xlabel("wavelength $\mathrm{\mu m}$")
     ax.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
     if savefig:
@@ -189,6 +189,7 @@ for n in range(len(name_disp)):
     elif animate:
         plt.pause(.1)
 plt.axhline(0, color='k', linestyle='--')
+plt.axvline(1.55, color='k', linestyle='--')
 plt.xlabel("wavelength $\mathrm{\mu m}$")
 plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
 
