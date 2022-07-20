@@ -72,8 +72,6 @@ def mode_area(I):
 
 eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
-# path_sim_output = "sim_output/06-16-2022/"
-# path_sim_output = "sim_output/07-18-2022/"
 path_sim_output = "sim_output/07-19-2022/"
 
 # %%____________________________________________________________________________________________________________________
@@ -115,8 +113,8 @@ def plot_mode(n, k_index, new_figure=True):
     plot_eps(n)
     plot_field(n, k_index)
     data = get_disp(n)  # np.c_[res.kx, res.freq, res.v_g[:, 0, 0]]
-    kx = data[:, 0]
-    freq = data[:, 1]
+    freq = data[:, 0]
+    kx = data[:, 1] / (2 * np.pi) # kx = beta / (2 pi)
     guided = is_guided(kx[k_index], freq[k_index])
     wl = 1 / freq[k_index]
     if guided:
@@ -131,25 +129,8 @@ def plot_mode(n, k_index, new_figure=True):
 
 # %%____________________________________________________________________________________________________________________
 def get_betas(n):
-    # simulation data was saved as: np.c_[res.kx, res.freq, res.v_g[:, 0, 0]]
+    # simulation data was saved as: np.c_[res.freq, beta, beta1, beta2]
     data = get_disp(n)
-
-    # __________________________________________________________________________________________________________________
-    # kx = data[:, 0]
-    # freq = data[:, 1]
-    #
-    # # beta = n * omega / c = 2 * np.pi * kx (the propagation constant)
-    # omega = freq * 2 * np.pi
-    # beta = kx * 2 * np.pi
-    # beta1 = np.gradient(beta, omega, edge_order=2)
-    # beta2 = np.gradient(beta1, omega, edge_order=2)
-    #
-    # spl_beta = InterpolatedUnivariateSpline(omega, beta, k=3)
-    # spl_beta1 = InterpolatedUnivariateSpline(omega, beta1, k=3)
-    # spl_beta2 = InterpolatedUnivariateSpline(omega, beta2, k=3)
-    #
-    # return beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2
-    # __________________________________________________________________________________________________________________
 
     freq, beta, beta1, beta2 = data[:, 0], data[:, 1], data[:, 2], data[:, 3]
     omega = 2 * np.pi * freq
@@ -161,7 +142,6 @@ def get_betas(n):
 
 # %%____________________________________________________________________________________________________________________
 # values fixed by the simulation data:
-# freq = get_disp(0)[:, 1]  # np.c_[kx, freq, vg]
 freq = get_disp(0)[:, 0]  # np.c_[kx, freq, vg]
 omega = 2 * np.pi * freq
 wl = 1 / freq
@@ -305,4 +285,4 @@ ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 #         ax.plot(BETA2[n], 'o-')
 #         ax.set_title(f'{np.round(width(name_disp[n]), 2)} x {np.round(height(name_disp[n]), 2)}' +
 #                      f" {height(name_disp[n]) > width(name_disp[n])}")
-#         plt.pause(1)
+#         plt.pause(0.5)
