@@ -149,9 +149,13 @@ resolution = 30  # pixels / um
 
 # %%____________________________________________________________________________________________________________________
 # truncate the simulation data
-[name_disp.remove(i) for i in name_disp.copy() if height(i) > 2.0]
-[name_eps.remove(i) for i in name_eps.copy() if height(i) > 2.0]
-[name_fields.remove(i) for i in name_fields.copy() if height(i) > 2.0]
+# [name_disp.remove(i) for i in name_disp.copy() if height(i) > 2.0]
+# [name_eps.remove(i) for i in name_eps.copy() if height(i) > 2.0]
+# [name_fields.remove(i) for i in name_fields.copy() if height(i) > 2.0]
+
+# [name_disp.remove(i) for i in name_disp.copy() if height(i) > width(i)]
+# [name_eps.remove(i) for i in name_eps.copy() if height(i) > width(i)]
+# [name_fields.remove(i) for i in name_fields.copy() if height(i) > width(i)]
 
 # %%__________________________________________ Analyzing Results _______________________________________________________
 wl_roots = np.zeros(len(name_disp), dtype=object)

@@ -73,7 +73,6 @@ def mode_area(I):
 eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
 path_sim_output = "sim_output/06-16-2022/"
-# path_sim_output = "sim_output/07-18-2022/"
 
 # %%____________________________________________________________________________________________________________________
 # Dispersion Simulation Data
