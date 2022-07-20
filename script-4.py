@@ -238,35 +238,36 @@ ind_shortest = np.unravel_index(np.argmin(wl_zdw_short_2D), h.shape)
 ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 
 # %%____________________________________________________________________________________________________________________
-# w_unique = np.array(list(set([width(i) for i in name_disp])))
-# h_unique = np.array(list(set([height(i) for i in name_disp])))
-# w_unique.sort()
-# h_unique.sort()
-#
-# ind_wl = np.argmin(abs(wl - 1.55))
-#
-# # fixed width
-# ind_w = np.argmin(abs(w_unique - 2.19))
-# step = 19
-# fig, ax = plt.subplots(1, 1)
-# for i in range(step):
-#     ax.clear()
-#     plot_mode(i + step * ind_w, ind_wl, False)
-#     plt.pause(.1)
-#     # plt.savefig(f'fig/{i}.png')
-#
-# # fixed height
-# ind_h = np.argmin(abs(h_unique - 1.15))
-# fig, ax = plt.subplots(1, 1)
-# h = 0
-# for i in range(ind_h, len(name_disp), step):
-#     ax.clear()
-#     plot_mode(i, ind_wl, False)
-#     plt.pause(.1)
-#     # plt.savefig(f'fig/{h}.png')
-#     h += 1
+w_unique = np.array(list(set([width(i) for i in name_disp])))
+h_unique = np.array(list(set([height(i) for i in name_disp])))
+w_unique.sort()
+h_unique.sort()
+
+ind_wl = np.argmin(abs(wl - 1.55))
+
+# fixed width
+ind_w = np.argmin(abs(w_unique - 2.19))
+step = 19
+fig, ax = plt.subplots(1, 1)
+for i in range(step):
+    ax.clear()
+    plot_mode(i + step * ind_w, ind_wl, False)
+    plt.pause(.1)
+    # plt.savefig(f'fig/{i}.png')
+
+# fixed height
+ind_h = np.argmin(abs(h_unique - 1.15))
+fig, ax = plt.subplots(1, 1)
+h = 0
+for i in range(ind_h, len(name_disp), step):
+    ax.clear()
+    plot_mode(i, ind_wl, False)
+    plt.pause(.1)
+    # plt.savefig(f'fig/{h}.png')
+    h += 1
 
 # %%____________________________________________________________________________________________________________________
+# This is kind of old plotting code
 # going back to look at the modes, the ones that look weird are bad geometries
 # fig, ax = plt.subplots(1, 1)
 # for n, i in enumerate(BETA2):

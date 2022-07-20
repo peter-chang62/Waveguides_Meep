@@ -276,6 +276,7 @@ ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 #     h += 1
 
 # %%____________________________________________________________________________________________________________________
+# This is kind of old plotting code
 # going back to look at the modes, the ones that look weird are bad geometries
 # fig, ax = plt.subplots(1, 1)
 # for n, i in enumerate(BETA2):
