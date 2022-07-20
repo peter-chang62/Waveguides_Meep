@@ -1,7 +1,4 @@
-"""sim data analysis the arrays were saved as np.c_[kx, freq, vg]
-
-The axis labels may or may not be relevant for the dimensions. Sometimes I swept the Lithium Niobate deposition
-thickness, and sometimes I fixed the thickness but swept the etch-depth """
+"""sim data analysis the arrays were saved as np.c_[res.freq, beta, beta1, beta2] """
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -112,7 +109,7 @@ def plot_mode(n, k_index, new_figure=True):
         plt.figure()
     plot_eps(n)
     plot_field(n, k_index)
-    data = get_disp(n)  # np.c_[res.kx, res.freq, res.v_g[:, 0, 0]]
+    data = get_disp(n)  # np.c_[res.freq, beta, beta1, beta2]
     freq = data[:, 0]
     kx = data[:, 1] / (2 * np.pi)  # kx = beta / (2 pi)
     guided = is_guided(kx[k_index], freq[k_index])
@@ -142,7 +139,7 @@ def get_betas(n):
 
 # %%____________________________________________________________________________________________________________________
 # values fixed by the simulation data:
-freq = get_disp(0)[:, 0]  # np.c_[kx, freq, vg]
+freq = get_disp(0)[:, 0]  # np.c_[res.freq, beta, beta1, beta2]
 omega = 2 * np.pi * freq
 wl = 1 / freq
 resolution = 30  # pixels / um
