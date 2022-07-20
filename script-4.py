@@ -114,7 +114,7 @@ def plot_mode(n, k_index, new_figure=True):
     plot_field(n, k_index)
     data = get_disp(n)  # np.c_[res.kx, res.freq, res.v_g[:, 0, 0]]
     freq = data[:, 0]
-    kx = data[:, 1] / (2 * np.pi) # kx = beta / (2 pi)
+    kx = data[:, 1] / (2 * np.pi)  # kx = beta / (2 pi)
     guided = is_guided(kx[k_index], freq[k_index])
     wl = 1 / freq[k_index]
     if guided:
@@ -149,13 +149,10 @@ resolution = 30  # pixels / um
 
 # %%____________________________________________________________________________________________________________________
 # truncate the simulation data
-# [name_disp.remove(i) for i in name_disp.copy() if height(i) > 2.0]
-# [name_eps.remove(i) for i in name_eps.copy() if height(i) > 2.0]
-# [name_fields.remove(i) for i in name_fields.copy() if height(i) > 2.0]
-
-# [name_disp.remove(i) for i in name_disp.copy() if height(i) > width(i)]
-# [name_eps.remove(i) for i in name_eps.copy() if height(i) > width(i)]
-# [name_fields.remove(i) for i in name_fields.copy() if height(i) > width(i)]
+w_limit = 1.245
+[name_disp.remove(i) for i in name_disp.copy() if width(i) < w_limit]
+[name_eps.remove(i) for i in name_eps.copy() if width(i) < w_limit]
+[name_fields.remove(i) for i in name_fields.copy() if width(i) < w_limit]
 
 # %%__________________________________________ Analyzing Results _______________________________________________________
 wl_roots = np.zeros(len(name_disp), dtype=object)
@@ -208,7 +205,7 @@ wl_zdw_short = np.array(wl_zdw_short)
 ind_zdw_long = np.array(ind_zdw_long)
 ind_zdw_short = np.array(ind_zdw_short)
 
-check_if_guided = lambda n: is_guided(get_disp(n)[:, 0], freq)
+check_if_guided = lambda n: is_guided(get_disp(n)[:, 1] / (2 * np.pi), freq)
 
 w = np.array([width(i) for i in name_disp])
 h = np.array([height(i) for i in name_disp])
@@ -252,11 +249,11 @@ ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 #
 # # fixed width
 # ind_w = np.argmin(abs(w_unique - 2.19))
-# step = 30
+# step = 19
 # fig, ax = plt.subplots(1, 1)
 # for i in range(step):
 #     ax.clear()
-#     plot_mode(i + step * ind_w, ind_wl)
+#     plot_mode(i + step * ind_w, ind_wl, False)
 #     plt.pause(.1)
 #     # plt.savefig(f'fig/{i}.png')
 #
@@ -266,7 +263,7 @@ ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 # h = 0
 # for i in range(ind_h, len(name_disp), step):
 #     ax.clear()
-#     plot_mode(i, ind_wl)
+#     plot_mode(i, ind_wl, False)
 #     plt.pause(.1)
 #     # plt.savefig(f'fig/{h}.png')
 #     h += 1
@@ -284,9 +281,8 @@ ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 
 # fig, ax = plt.subplots(1, 1)
 # for n, i in enumerate(wl_roots):
-#     if len(i) != 0:
-#         ax.clear()
-#         ax.plot(BETA2[n], 'o-')
-#         ax.set_title(f'{np.round(width(name_disp[n]), 2)} x {np.round(height(name_disp[n]), 2)}' +
-#                      f" {height(name_disp[n]) > width(name_disp[n])}")
-#         plt.pause(0.5)
+#     ax.clear()
+#     ax.plot(BETA2[n], 'o-')
+#     ax.set_title(str(n) + " " + f'{np.round(width(name_disp[n]), 2)} x {np.round(height(name_disp[n]), 2)}' +
+#                  f" {height(name_disp[n]) > width(name_disp[n])}")
+#     plt.pause(1)
