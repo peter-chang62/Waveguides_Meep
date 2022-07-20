@@ -73,7 +73,8 @@ def mode_area(I):
 eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
 # path_sim_output = "sim_output/06-16-2022/"
-path_sim_output = "sim_output/07-18-2022/"
+# path_sim_output = "sim_output/07-18-2022/"
+path_sim_output = "sim_output/07-19-2022/"
 
 # %%____________________________________________________________________________________________________________________
 # Dispersion Simulation Data
@@ -130,19 +131,26 @@ def plot_mode(n, k_index):
 def get_betas(n):
     # simulation data was saved as: np.c_[res.kx, res.freq, res.v_g[:, 0, 0]]
     data = get_disp(n)
-    kx = data[:, 0]
-    freq = data[:, 1]
+    # kx = data[:, 0]
+    # freq = data[:, 1]
+    #
+    # # beta = n * omega / c = 2 * np.pi * kx (the propagation constant)
+    # omega = freq * 2 * np.pi
+    # beta = kx * 2 * np.pi
+    # beta1 = np.gradient(beta, omega, edge_order=2)
+    # beta2 = np.gradient(beta1, omega, edge_order=2)
+    #
+    # spl_beta = InterpolatedUnivariateSpline(omega, beta, k=3)
+    # spl_beta1 = InterpolatedUnivariateSpline(omega, beta1, k=3)
+    # spl_beta2 = InterpolatedUnivariateSpline(omega, beta2, k=3)
+    #
+    # return beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2
 
-    # beta = n * omega / c = 2 * np.pi * kx (the propagation constant)
-    omega = freq * 2 * np.pi
-    beta = kx * 2 * np.pi
-    beta1 = np.gradient(beta, omega, edge_order=2)
-    beta2 = np.gradient(beta1, omega, edge_order=2)
-
-    spl_beta = InterpolatedUnivariateSpline(omega, beta, k=3)
-    spl_beta1 = InterpolatedUnivariateSpline(omega, beta1, k=3)
-    spl_beta2 = InterpolatedUnivariateSpline(omega, beta2, k=3)
-
+    freq, beta, beta1, beta2 = data[:, 0], data[:, 1], data[:, 2], data[:, 3]
+    omega = 2 * np.pi * freq
+    spl_beta = InterpolatedUnivariateSpline(omega, beta)
+    spl_beta1 = InterpolatedUnivariateSpline(omega, beta1)
+    spl_beta2 = InterpolatedUnivariateSpline(omega, beta2)
     return beta, beta1, beta2, spl_beta, spl_beta1, spl_beta2
 
 
@@ -289,5 +297,6 @@ ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
 #     if len(i) != 0:
 #         ax.clear()
 #         ax.plot(BETA2[n], 'o-')
-#         ax.set_title(n)
+#         ax.set_title(f'{np.round(width(name_disp[n]), 2)} x {np.round(height(name_disp[n]), 2)}' +
+#                      f" {height(name_disp[n]) > width(name_disp[n])}")
 #         plt.pause(1)

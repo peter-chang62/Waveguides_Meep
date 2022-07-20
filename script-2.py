@@ -47,7 +47,7 @@ for w in etch_width:
 
         block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
         sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
-        res = sim.calc_dispersion(.8, 5, 25, eps_func_wvgd=eps_func_wvgd)  # run simulation
+        res = sim.calc_dispersion(.8, 5, 50, eps_func_wvgd=eps_func_wvgd)  # run simulation
         sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
         # _________________________________ calculate beta2 ____________________________________________________________

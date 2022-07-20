@@ -419,7 +419,7 @@ class RidgeWaveguide:
             # use the interpolated spline to provide a guess for kmag_guess, and pass that to run find_k
             # the material epsilon is already changed for each omega inside find_k
             kmag_guess = float(spl(omega))
-            kx = self.find_k(mp.NO_PARITY, omega, 1, self.num_bands, mp.Vector3(1), 1e-4,
+            kx = self.find_k(mp.NO_PARITY, omega, 1, self.num_bands, mp.Vector3(1), 1e-6,
                              kmag_guess, kmag_guess * 0.1, kmag_guess * 10, *self.band_funcs,
                              eps_func_wvgd=eps_func_wvgd, eps_func_sbstrt=eps_func_sbstrt)
             KX.append(kx)
