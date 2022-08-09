@@ -13,6 +13,7 @@ import clipboard_and_style_sheet
 from meep import mpb
 import matplotlib.pyplot as plt
 import time
+import scipy.integrate as scint
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -46,6 +47,15 @@ def get_omega_axis(wl_min, wl_max, NPTS):
 
 def normalize(vec):
     return vec / np.max(abs(vec))
+
+
+def mode_area(I, resolution):
+    # integral(I * dA) ** 2  / integral(I ** 2 * dA) is the common definition that is used
+    # reference: https://www.rp-photonics.com/effective_mode_area.html
+    # this gives an overall dimension of dA in the numerator
+    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(scint.simpson(I ** 2))
+    area /= resolution ** 2
+    return area
 
 
 class RidgeWaveguide:
@@ -339,17 +349,19 @@ class RidgeWaveguide:
 
         eps = self.ms.get_epsilon()
 
-        fig, (ax1, ax2) = plt.subplots(1, 2)
+        fig, ax = plt.subplots(1, 1)
         x = self.E[which_index_k][which_band][:, :, component].__abs__() ** 2
-        ax1.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-        ax1.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
-        ax1.axis(False)
-        fig.suptitle("Ez")
+        area = mode_area(x, self.resolution[0])
 
-        ax2.plot(np.fft.fftshift(x, 0)[0], label='vertical cut')
-        ax2.plot(np.fft.fftshift(x.T, 0)[0], label='horizontal cut')
-        ax2.legend(loc='best')
-        ax2.axis(False)
+        ax.imshow(eps[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+        ax.imshow(x[::-1, ::-1].T, cmap='RdBu', alpha=0.9)
+        ax.axis(False)
+        ax.set_title("Ez" + '\n' +
+                     'width=' + '%.2f' % self.width + ' $\mathrm{\mu m}$' + ', ' +
+                     'height=' + '%.2f' % self.height + ' $\mathrm{\mu m}$' + '\n' +
+                     '$\mathrm{A_{eff}}$ = %.3f' % area + ' $\mathrm{\mu m^2}$')
+
+        return fig, ax  # in case you want to add additional things
 
     def calc_dispersion(self, wl_min, wl_max, NPTS, eps_func_wvgd=None, eps_func_sbstrt=None):
         """
@@ -677,6 +689,21 @@ class ThinFilmWaveguide(RidgeWaveguide):
         if self.init_finished:
             self.redef_sim()
             self._blk_film.material = medium
+
+    def plot_mode(self, which_band, which_index_k, component=mp.Ey):
+        # ______________________________________________________________________________________________________________
+        # this is the same as plot_mode from RidgeWaveguide, but it adds the etch_depth to the title
+        # ______________________________________________________________________________________________________________
+
+        x = self.E[which_index_k][which_band][:, :, component].__abs__() ** 2
+        area = mode_area(x, self.resolution[0])
+        fig, ax = super().plot_mode(which_band, which_index_k, component)
+        ax.set_title("Ez" + '\n' +
+                     'width=' + '%.2f' % self.width + ' $\mathrm{\mu m}$' + ', ' +
+                     'height=' + '%.2f' % self.height + ' $\mathrm{\mu m}$' + ', ' +
+                     'depth=' + '%.2f' % self.etch_depth + ' $\mathrm{\mu m}$' + '\n' +
+                     '$\mathrm{A_{eff}}$ = %.3f' % area + ' $\mathrm{\mu m^2}$')
+        return fig, ax  # in case you want to add additional things
 
     # __________________________________________________________________________________________________________________
     # this was originally meant to take the same arguments as find_k() from mpb.ModeSolver(). However, I've now added
