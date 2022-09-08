@@ -72,6 +72,7 @@ sim = wg.ThinFilmWaveguide(etch_width=3,
 
 # %%____________________________________________________________________________________________________________________
 # for loop sweep through parameters
+# I've verified that these are all guided (really only had to check 2.5 x .3 um)
 etch_width = wg.get_omega_axis(1 / 5, 1 / 2.5, 5)
 etch_depth = wg.get_omega_axis(1 / .6, 1 / .3, 6)
 NPTS = len(etch_width) * len(etch_depth)
