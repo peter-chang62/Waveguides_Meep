@@ -76,7 +76,6 @@ sim = wg.ThinFilmWaveguide(etch_width=3,
 etch_width = wg.get_omega_axis(1 / 5, 1 / 2.5, 5)
 etch_depth = wg.get_omega_axis(1 / .6, 1 / .3, 6)
 NPTS = len(etch_width) * len(etch_depth)
-RES = []
 
 h = 0
 for w in etch_width:
@@ -90,47 +89,13 @@ for w in etch_width:
         res = sim.calc_dispersion(.8, 5, 50, eps_func_wvgd=eps_func_wvgd)  # run simulation
         sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
-        RES.append(res)
+        wl, omega, beta, beta1, beta2 = get_beta(res, False)
+        arr = np.c_[res.freq, beta, beta1, beta2]
+
+        # _______________________________________ save the data ________________________________________________________
+        np.save(f'sim_output/09-08-2022/dispersion-curves/{w}_{d}.npy', arr)
+        np.save(f'sim_output/09-08-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
+        np.save(f'sim_output/09-08-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
 
         h += 1
         print(f'______________________________________finished {h} of {NPTS}________________________________')
-
-# %%____________________________________________________________________________________________________________________
-params = []
-for w in etch_width:
-    for d in etch_depth:
-        params.append([w, d])
-params = np.array(params)
-
-fig, ax = plt.subplots(2, 4, figsize=np.array([11.81, 6.46]))
-ax = ax.flatten()
-ax[-1].axis(False)
-for n in range(len(etch_depth)):
-    for dat in RES[n::len(etch_depth)]:
-        wl, omega, b, b1, b2 = get_beta(dat, False)
-        ax[n].plot(wl, b2, '-')
-    ax[n].set_ylim(-1000, 5800)
-    ax[n].set_title(f'{np.round(etch_depth[n], 2)}' + " $\mathrm{\mu m}$")
-    ax[n].axvline(1.55, color='k', linestyle='--')
-    ax[n].axhline(0, color='k', linestyle='--')
-    print(params[n::len(etch_depth)])
-[i.set_xlabel("wavelength ($\mathrm{\mu m}$)") for i in ax]
-[i.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$") for i in ax]
-fig.suptitle("fixed depth, sweeping width")
-
-fig, ax = plt.subplots(2, 3, figsize=np.array([8.79, 6.46]))
-ax = ax.flatten()
-h = 0
-for n in range(0, len(params), len(etch_depth)):
-    for dat in RES[n: n + len(etch_depth)]:
-        wl, omega, b, b1, b2 = get_beta(dat, False)
-        ax[h].plot(wl, b2, '-')
-    ax[h].set_ylim(-1000, 5800)
-    ax[h].set_title(f'{np.round(etch_width[h], 2)}' + " $\mathrm{\mu m}$")
-    ax[h].axvline(1.55, color='k', linestyle='--')
-    ax[h].axhline(0, color='k', linestyle='--')
-    print(params[n: n + len(etch_depth)])
-    h += 1
-[i.set_xlabel("wavelength ($\mathrm{\mu m}$)") for i in ax]
-[i.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$") for i in ax]
-fig.suptitle("fixed width, sweeping depth")
