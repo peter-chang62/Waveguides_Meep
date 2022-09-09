@@ -42,14 +42,34 @@ def mode_area(I):
 
 # %%____________________________________________________________________________________________________________________
 resolution = 30
-names = [i.name for i in os.scandir('sim_output/09-08-2022/dispersion-curves/')]
+path = 'sim_output/07-19-2022/'
+names = [i.name for i in os.scandir(path + 'dispersion-curves/')]
+
+w_limit = 1.245
+[names.remove(i) for i in names.copy() if width(i) < w_limit]
+
 names = sorted(names, key=depth)
 names = sorted(names, key=width)
-get_disp = lambda n: np.load('sim_output/09-08-2022/dispersion-curves/' + names[n])
-get_eps = lambda n: np.load('sim_output/09-08-2022/eps/' + names[n])
-plot_eps = lambda n: plt.imshow(get_eps(n)[::-1, ::-1].T, interpolation='spline36', cmap='binary')
-get_field = lambda n: np.squeeze(np.load('sim_output/09-08-2022/E-fields/' + names[n]))
-plot_field = lambda n, k_index, alpha=0.9: plt.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap='RdBu', alpha=alpha)
+
+# %%____________________________________________________________________________________________________________________
+get_disp = lambda n: np.load(path + 'dispersion-curves/' + names[n])
+get_eps = lambda n: np.load(path + 'eps/' + names[n])
+get_field = lambda n: np.squeeze(np.load(path + 'E-fields/' + names[n]))
+
+
+# %%____________________________________________________________________________________________________________________
+def plot_eps(n, ax=None):
+    if ax is not None:
+        ax.imshow(get_eps(n)[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+    else:
+        plt.imshow(get_eps(n)[::-1, ::-1].T, interpolation='spline36', cmap='binary')
+
+
+def plot_field(n, k_index, alpha=0.9, ax=None):
+    if ax is not None:
+        ax.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap='RdBu', alpha=alpha)
+    else:
+        plt.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap='RdBu', alpha=alpha)
 
 
 def is_guided(kx, freq):
@@ -64,11 +84,12 @@ def is_guided(kx, freq):
     return freq < freq_substrate
 
 
-def plot_mode(n, k_index, new_figure=True):
+def plot_mode(n, k_index, new_figure=True, ax=None):
+    assert not np.all([new_figure, ax is not None])
     if new_figure:
         plt.figure()
-    plot_eps(n)
-    plot_field(n, k_index)
+    plot_eps(n, ax)
+    plot_field(n, k_index, 0.9, ax)
     data = get_disp(n)  # np.c_[res.freq, beta, beta1, beta2]
     freq = data[:, 0]
     kx = data[:, 1] / (2 * np.pi)  # kx = beta / (2 pi)
@@ -78,19 +99,45 @@ def plot_mode(n, k_index, new_figure=True):
         s = "guided"
     else:
         s = "NOT guided"
-    plt.title(f'{np.round(width(names[n]), 3)} x {np.round(depth(names[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
-              "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
-              '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-              ' $\mathrm{\mu m^2}$' + '\n' + s)
+    if ax is not None:
+        ax.set_title(f'{np.round(width(names[n]), 3)} x {np.round(depth(names[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
+                     "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
+                     '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+                     ' $\mathrm{\mu m^2}$' + '\n' + s)
+    else:
+        plt.title(f'{np.round(width(names[n]), 3)} x {np.round(depth(names[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
+                  "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
+                  '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+                  ' $\mathrm{\mu m^2}$' + '\n' + s)
 
 
-fig, ax = plt.subplots(2, 4)
-ax = ax.flatten()
-ax[-1].axis(False)
-for n in range(7):
-    ind = np.arange(len(names))[n::7]
-    for m in ind:
-        wl = 1 / get_disp(m)[:, 0]
-        beta2 = get_disp(m)[:, 3]
-        ax[n].plot(wl, beta2)
-        print(names[m])
+# %%____________________________________________________________________________________________________________________
+# fig, ax = plt.subplots(2, 4)
+# ax = ax.flatten()
+# ax[-1].axis(False)
+# for n in range(7):
+#     ind = np.arange(len(names))[n::7]
+#     for m in ind:
+#         wl = 1 / get_disp(m)[:, 0]
+#         beta2 = get_disp(m)[:, 3]
+#         ax[n].plot(wl, beta2)
+#         print(names[m])
+
+# %%____________________________________________________________________________________________________________________
+fig, ax = plt.subplots(1, 2, figsize=np.array([9.04, 4.24]))
+save = False
+for n in range(len(names)):
+    [i.clear() for i in ax]
+    ax[0].set_xlabel("wavelength $\mathrm{\mu m}$")
+    ax[0].set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
+    wl = 1 / get_disp(n)[:, 0]
+    beta2 = get_disp(n)[:, 3]
+    ax[0].plot(wl, beta2, 'o-')
+    ax[0].axhline(0, linestyle='--', color='k')
+    ax[0].axhline(1.55, linestyle='--', color='k')
+    ax[0].set_ylim(-1000, 5500)
+    plot_mode(n, 21, False, ax[1])
+    if save:
+        plt.savefig(f'fig/{n}.png')
+    else:
+        plt.pause(.1)
