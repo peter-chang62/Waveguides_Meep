@@ -42,7 +42,9 @@ def mode_area(I):
 
 # %%____________________________________________________________________________________________________________________
 resolution = 30
+conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9  # already multiplied for some sim data (should be obvious)
 path = 'sim_output/07-19-2022/'
+# path = 'sim_output/09-08-2022/'
 names = [i.name for i in os.scandir(path + 'dispersion-curves/')]
 
 w_limit = 1.245
@@ -124,19 +126,24 @@ def plot_mode(n, k_index, new_figure=True, ax=None):
 #         print(names[m])
 
 # %%____________________________________________________________________________________________________________________
-fig, ax = plt.subplots(1, 2, figsize=np.array([9.04, 4.24]))
+fig, ax = plt.subplots(1, 3, figsize=np.array([12.88, 4.5]))
 save = False
+# save = True
 for n in range(len(names)):
     [i.clear() for i in ax]
     ax[0].set_xlabel("wavelength $\mathrm{\mu m}$")
     ax[0].set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
     wl = 1 / get_disp(n)[:, 0]
-    beta2 = get_disp(n)[:, 3]
+
+    beta2 = get_disp(n)[:, 3] * conversion
+    # beta2 = get_disp(n)[:, 3]
+
     ax[0].plot(wl, beta2, 'o-')
     ax[0].axhline(0, linestyle='--', color='k')
     ax[0].axhline(1.55, linestyle='--', color='k')
     ax[0].set_ylim(-1000, 5500)
-    plot_mode(n, 21, False, ax[1])
+    plot_mode(n, 0, False, ax[1])
+    plot_mode(n, 21, False, ax[2])
     if save:
         plt.savefig(f'fig/{n}.png')
     else:
