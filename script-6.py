@@ -43,8 +43,8 @@ def mode_area(I):
 # %%____________________________________________________________________________________________________________________
 resolution = 30
 conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9  # already multiplied for some sim data (should be obvious)
-path = 'sim_output/07-19-2022/'
-# path = 'sim_output/09-08-2022/'
+# path = 'sim_output/07-19-2022/'
+path = 'sim_output/09-08-2022/'
 names = [i.name for i in os.scandir(path + 'dispersion-curves/')]
 
 w_limit = 1.245
@@ -135,8 +135,8 @@ for n in range(len(names)):
     ax[0].set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
     wl = 1 / get_disp(n)[:, 0]
 
-    beta2 = get_disp(n)[:, 3] * conversion
-    # beta2 = get_disp(n)[:, 3]
+    # beta2 = get_disp(n)[:, 3] * conversion
+    beta2 = get_disp(n)[:, 3]
 
     ax[0].plot(wl, beta2, 'o-')
     ax[0].axhline(0, linestyle='--', color='k')
