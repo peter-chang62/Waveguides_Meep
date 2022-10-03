@@ -22,3 +22,10 @@ t_fwhm = 50e-15  # 50 fs
 
 pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
 pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
+
+v_grid = pulse.v_grid
+t_grid = pulse.t_grid
+
+# %% ___________________________________________________________________________________________________________________
+# Waveguide properties
+length = 10e-3  # 10 mm
