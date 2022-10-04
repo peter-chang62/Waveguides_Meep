@@ -15,7 +15,7 @@ import scipy.constants as sc
 clipboard_and_style_sheet.style_sheet()
 
 
-def get_beta(res, plot=True):
+def get_beta(res, plot=True, plot_freq=False):
     wl = 1 / res.freq
     omega = res.freq * 2 * np.pi
     conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
@@ -25,9 +25,14 @@ def get_beta(res, plot=True):
 
     if plot:
         # plt.figure()
-        plt.plot(wl, beta2, 'o-')
+        if plot_freq:
+            nu = sc.c * 1e-12 / (wl * 1e-6)
+            plt.plot(nu, beta2, 'o-')
+            plt.axvline(sc.c * 1e-12 / 1.55e-6, color='r')
+        else:
+            plt.plot(wl, beta2, 'o-')
+            plt.axvline(1.55, color='r')
         plt.axhline(0, color='r')
-        plt.axvline(1.55, color='r')
         plt.xlabel("wavelength ($\mathrm{\mu m}$)")
         plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
 
@@ -68,7 +73,7 @@ sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_
 res = sim.calc_dispersion(.8, 5, 50, eps_func_wvgd=eps_func_wvgd)  # run simulation
 sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
-wl, omega, beta, beta1, beta2 = get_beta(res)
+wl, omega, beta, beta1, beta2 = get_beta(res, plot_freq=True)
 plot_mode(res, sim, 0, 0)
 
 # %%____________________________________________________________________________________________________________________
