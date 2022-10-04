@@ -49,7 +49,7 @@ g2 = utils.chi2.g2_shg(v0, v_grid, n_eff, a_eff, chi2_eff)
 chi3_eff = 5200e-24
 g3 = utils.chi3.g3_spm(n_eff, a_eff, chi3_eff)
 
-# Mode
+# %% Mode ______________________________________________________________________________________________________________
 mode = pynlo.media.Mode(
     v_grid=v_grid,
     beta_v=beta,
@@ -59,7 +59,7 @@ mode = pynlo.media.Mode(
     z=0.0
 )
 
-# Model
+# Model ________________________________________________________________________________________________________________
 model = pynlo.model.SM_UPE(pulse, mode)
 local_error = 1e-6
 dz = model.estimate_step_size(n=20, local_error=local_error)
@@ -68,6 +68,7 @@ dz = model.estimate_step_size(n=20, local_error=local_error)
 z_grid = np.linspace(0, length, 100)
 pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
 
+# Plotting _____________________________________________________________________________________________________________
 fig = plt.figure("Simulation Results", clear=True)
 ax0 = plt.subplot2grid((3, 2), (0, 0), rowspan=1)
 ax1 = plt.subplot2grid((3, 2), (0, 1), rowspan=1)
