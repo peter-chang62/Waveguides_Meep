@@ -171,8 +171,7 @@ for ind in range(19 * 2, len(names)):
     pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
 
     # %% save data _____________________________________________________________________________________________________
-    arr = np.c_[z, a_t, a_v]
-    np.save('sim_output/10-05-2022/' + f'{width(names[ind])}_{depth(names[ind])}.npy', arr)
+    np.save('sim_output/10-05-2022/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
 
     # %% Plotting ______________________________________________________________________________________________________
     # fig = plt.figure("Simulation Results", clear=True)
@@ -201,3 +200,6 @@ for ind in range(19 * 2, len(names)):
     # ax2.set_ylabel('Propagation Distance (mm)')
     # fig.tight_layout()
     # fig.show()
+
+np.save('sim_output/10-05-2022/v_grid.npy', v_grid)
+np.save('sim_output/10-05-2022/z.npy', z)
