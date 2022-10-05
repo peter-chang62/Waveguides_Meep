@@ -174,7 +174,7 @@ for ind in range(19 * 2, len(names)):
     arr = np.c_[z, a_t, a_v]
     np.save('sim_output/10-05-2022/' + f'{width(names[ind])}_{depth(names[ind])}.npy', arr)
 
-    # Plotting _________________________________________________________________________________________________________
+    # %% Plotting ______________________________________________________________________________________________________
     # fig = plt.figure("Simulation Results", clear=True)
     # ax0 = plt.subplot2grid((3, 2), (0, 0), rowspan=1)
     # ax1 = plt.subplot2grid((3, 2), (0, 1), rowspan=1)
