@@ -1,4 +1,6 @@
-"""sim data analysis the arrays were saved as np.c_[res.freq, beta, beta1, beta2] """
+"""sim data analysis the arrays were saved as np.c_[res.freq, beta, beta1, beta2]
+
+This script runs all the dispersion curves through PyNLO"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -105,101 +107,117 @@ def plot_mode(n, k_index, new_figure=True, ax=None):
         ax.set_title(f'{np.round(width(names[n]), 3)} x {np.round(depth(names[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
                      "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
                      '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-                     ' $\mathrm{\mu m^2}$' + '\n' + s)
+                     ' $\mathrm{\mu m^2}$')
     else:
         plt.title(f'{np.round(width(names[n]), 3)} x {np.round(depth(names[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
                   "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
                   '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-                  ' $\mathrm{\mu m^2}$' + '\n' + s)
+                  ' $\mathrm{\mu m^2}$')
 
 
-for ind in range(19 * 2, len(names)):
-    # %% Pulse Properties ______________________________________________________________________________________________
-    n_points = 2 ** 13
-    v_min = sc.c / 4500e-9  # sc.c / 4500 nm
-    v_max = sc.c / 800e-9  # sc.c / 815 nm
-    v0 = sc.c / 1560e-9  # sc.c / 1550 nm
-    e_p = 300e-3 * 1e-9  # 300 mW
-    t_fwhm = 50e-15  # 50 fs
+# %% __________________________________________ RUN THROUGH PYNLO ______________________________________________________
+# for ind in range(19 * 2, len(names)):
+#     # %% Pulse Properties ____________________________________________________________________________________________
+#     n_points = 2 ** 13
+#     v_min = sc.c / 4500e-9  # sc.c / 4500 nm
+#     v_max = sc.c / 800e-9  # sc.c / 815 nm
+#     v0 = sc.c / 1560e-9  # sc.c / 1550 nm
+#     e_p = 300e-3 * 1e-9  # 300 mW
+#     t_fwhm = 50e-15  # 50 fs
+# 
+#     pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
+#     pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
+# 
+#     v_grid = pulse.v_grid
+#     t_grid = pulse.t_grid
+# 
+#     # %% Waveguide properties ________________________________________________________________________________________
+#     length = 3e-3  # 10 mm
+#     a_eff = mode_area(get_field(ind)[21]) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
+# 
+#     b_data = get_disp(ind)
+#     b_data_dim = names[ind]
+#     wl, b = 1 / b_data[:, 0], b_data[:, 1]
+#     k = b * 1e6 / (2 * np.pi)  # 1/m
+#     nu = sc.c / (wl * 1e-6)
+#     n = sc.c * k / nu
+#     n_wvgd = interp1d(nu, n, kind='cubic', bounds_error=True)
+# 
+#     n_eff = n_wvgd(v_grid)
+#     beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
+# 
+#     # 2nd order nonlinearity
+#     d_eff = 27e-12  # 27 pm / V
+#     chi2_eff = 2 * d_eff
+#     g2 = utils.chi2.g2_shg(v0, v_grid, n_eff, a_eff, chi2_eff)
+# 
+#     # 3rd order nonlinearity
+#     chi3_eff = 5200e-24
+#     g3 = utils.chi3.g3_spm(n_eff, a_eff, chi3_eff)
+# 
+#     # %% Mode ________________________________________________________________________________________________________
+#     mode = pynlo.media.Mode(
+#         v_grid=v_grid,
+#         beta_v=beta,
+#         g2_v=g2,
+#         g2_inv=None,
+#         g3_v=g3,
+#         z=0.0
+#     )
+# 
+#     # %% Model _______________________________________________________________________________________________________
+#     model = pynlo.model.SM_UPE(pulse, mode)
+#     local_error = 1e-6
+#     dz = model.estimate_step_size(n=20, local_error=local_error)
+# 
+#     z_grid = np.linspace(0, length, 100)
+#     pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
+# 
+#     # %% save data ___________________________________________________________________________________________________
+#     np.save('sim_output/10-05-2022/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
+# 
+# np.save('sim_output/10-05-2022/v_grid.npy', v_grid)
+# np.save('sim_output/10-05-2022/z.npy', z)
 
-    pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
-    pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
+# %% ________________________________________ LOOK AT PYNLO SIMULATION RESULTS _________________________________________
+path_ = 'sim_output/10-05-2022/'
+names_ = [i.name for i in os.scandir('sim_output/10-05-2022/')]
+names_.remove('z.npy')
+names_.remove('v_grid.npy')
 
-    v_grid = pulse.v_grid
-    t_grid = pulse.t_grid
+names_.sort(key=depth)
+names_.sort(key=width)
 
-    # %% Waveguide properties __________________________________________________________________________________________
-    length = 3e-3  # 10 mm
-    a_eff = mode_area(get_field(ind)[21]) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
+z = np.load(path_ + 'z.npy') * 1e3
+z_ind = np.argmin(abs(z - 1))
+v_grid = np.load(path_ + 'v_grid.npy') * 1e-12
+wl_grid = sc.c * 1e6 * 1e-12 / v_grid
 
-    b_data = get_disp(ind)
-    b_data_dim = names[ind]
-    wl, b = 1 / b_data[:, 0], b_data[:, 1]
-    k = b * 1e6 / (2 * np.pi)  # 1/m
-    nu = sc.c / (wl * 1e-6)
-    n = sc.c * k / nu
-    n_wvgd = interp1d(nu, n, kind='cubic', bounds_error=True)
+fig, ax = plt.subplots(2, 2, figsize=np.array([13.69, 4.8 * 2]))
+ax = ax.flatten()
+save = True
+for i in range(len(names_)):
+    data = np.load(path_ + names_[i])
+    data = abs(data) ** 2
+    data /= data.max()
 
-    n_eff = n_wvgd(v_grid)
-    beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
+    [i.clear() for i in ax]
 
-    # 2nd order nonlinearity
-    d_eff = 27e-12  # 27 pm / V
-    chi2_eff = 2 * d_eff
-    g2 = utils.chi2.g2_shg(v0, v_grid, n_eff, a_eff, chi2_eff)
+    ax[0].pcolormesh(wl_grid, z, data)
+    ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
 
-    # 3rd order nonlinearity
-    chi3_eff = 5200e-24
-    g3 = utils.chi3.g3_spm(n_eff, a_eff, chi3_eff)
+    ax[1].plot(wl_grid, 10 * np.log10(data[z_ind] / data[-1].max()))
+    ax[1].set_xlabel("wavelength ($\mathrm{\mu m}$)")
 
-    # %% Mode __________________________________________________________________________________________________________
-    mode = pynlo.media.Mode(
-        v_grid=v_grid,
-        beta_v=beta,
-        g2_v=g2,
-        g2_inv=None,
-        g3_v=g3,
-        z=0.0
-    )
+    plot_mode(i, 3, False, ax[2])
+    freq, b, b1, b2 = get_disp(i).T
+    wl = 1 / freq
+    b2 *= conversion
+    ax[3].plot(wl, b2, 'o-')
+    ax[3].axhline(0, linestyle='--', color='k')
+    ax[3].set_ylim(-1000, 5500)
 
-    # %% Model _________________________________________________________________________________________________________
-    model = pynlo.model.SM_UPE(pulse, mode)
-    local_error = 1e-6
-    dz = model.estimate_step_size(n=20, local_error=local_error)
-
-    z_grid = np.linspace(0, length, 100)
-    pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
-
-    # %% save data _____________________________________________________________________________________________________
-    np.save('sim_output/10-05-2022/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
-
-    # %% Plotting ______________________________________________________________________________________________________
-    # fig = plt.figure("Simulation Results", clear=True)
-    # ax0 = plt.subplot2grid((3, 2), (0, 0), rowspan=1)
-    # ax1 = plt.subplot2grid((3, 2), (0, 1), rowspan=1)
-    # ax2 = plt.subplot2grid((3, 2), (1, 0), rowspan=2, sharex=ax0)
-    # ax3 = plt.subplot2grid((3, 2), (1, 1), rowspan=2, sharex=ax1)
-    #
-    # p_v_dB = 10 * np.log10(np.abs(a_v) ** 2)
-    # p_v_dB -= p_v_dB.max()
-    # ax0.plot(1e-12 * v_grid, p_v_dB[0], color="b")
-    # ax0.plot(1e-12 * v_grid, p_v_dB[-1], color="g")
-    # ax2.pcolormesh(1e-12 * v_grid, 1e3 * z, p_v_dB, vmin=-40.0, vmax=0, shading="auto")
-    # ax0.set_ylim(bottom=-50, top=10)
-    # ax2.set_xlabel('Frequency (THz)')
-    #
-    # p_t_dB = 10 * np.log10(np.abs(a_t) ** 2)
-    # p_t_dB -= p_t_dB.max()
-    # ax1.plot(1e12 * t_grid, p_t_dB[0], color="b")
-    # ax1.plot(1e12 * t_grid, p_t_dB[-1], color="g")
-    # ax3.pcolormesh(1e12 * t_grid, 1e3 * z, p_t_dB, vmin=-40.0, vmax=0, shading="auto")
-    # ax1.set_ylim(bottom=-50, top=10)
-    # ax3.set_xlabel('Time (ps)')
-    #
-    # ax0.set_ylabel('Power (dB)')
-    # ax2.set_ylabel('Propagation Distance (mm)')
-    # fig.tight_layout()
-    # fig.show()
-
-np.save('sim_output/10-05-2022/v_grid.npy', v_grid)
-np.save('sim_output/10-05-2022/z.npy', z)
+    if save:
+        plt.savefig(f'fig/{i}.png')
+    else:
+        plt.pause(.01)

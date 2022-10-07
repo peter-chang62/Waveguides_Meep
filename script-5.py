@@ -21,7 +21,7 @@ def get_beta(res, plot=True, plot_freq=False):
     conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
     beta = res.kx.flatten() * 2 * np.pi
     beta1 = np.gradient(beta, omega, edge_order=2)
-    beta2 = np.gradient(beta1, omega, edge_order=2) * conversion
+    beta2 = np.gradient(beta1, omega, edge_order=2)
 
     if plot:
         # plt.figure()
