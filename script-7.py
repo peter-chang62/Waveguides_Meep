@@ -195,7 +195,7 @@ wl_grid = sc.c * 1e6 * 1e-12 / v_grid
 
 fig, ax = plt.subplots(2, 2, figsize=np.array([13.69, 4.8 * 2]))
 ax = ax.flatten()
-save = True
+save = False
 for i in range(len(names_)):
     data = np.load(path_ + names_[i])
     data = abs(data) ** 2
@@ -209,7 +209,8 @@ for i in range(len(names_)):
     ax[1].plot(wl_grid, 10 * np.log10(data[z_ind] / data[-1].max()))
     ax[1].set_xlabel("wavelength ($\mathrm{\mu m}$)")
 
-    plot_mode(i, 3, False, ax[2])
+    plot_mode(i + 19 * 2, 3, False, ax[2])
+    assert names[i + 19 * 2] == names_[i]
     freq, b, b1, b2 = get_disp(i).T
     wl = 1 / freq
     b2 *= conversion
