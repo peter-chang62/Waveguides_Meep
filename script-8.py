@@ -184,6 +184,29 @@ def simulate(pulse, mode, length=3e-3, npts=100):
     return pulse_out, z, a_t, a_v
 
 
+def aliasing_av(a_v):
+    x = abs(a_v) ** 2
+    x /= x.max()
+    x_v_min = x[:, 0]
+    x_v_max = x[:, -1]
+
+    ind_v_min_aliasing = np.where(x_v_min > 1e-3)[0]
+    ind_v_max_aliasing = np.where(x_v_max > 1e-3)[0]
+    List = []
+    side = []
+    if len(ind_v_min_aliasing) > 0:
+        List.append(ind_v_min_aliasing[0])
+        side.append("long")
+    if len(ind_v_max_aliasing) > 0:
+        List.append(ind_v_max_aliasing[0])
+        side.append("short")
+    if len(List) > 0:
+        ind = np.argmin(List)
+        return List[ind], side[ind]
+    else:
+        return False
+
+
 n_points = 2 ** 13
 v_min = sc.c / 4500e-9
 v_max = sc.c / 800e-9
@@ -196,3 +219,4 @@ pulse = instantiate_pulse(n_points=n_points,
                           t_fwhm=t_fwhm)
 mode = load_waveguide(pulse, 15)
 pulse_out, z, a_t, a_v = simulate(pulse, mode)
+ind_alias = aliasing_av(a_v)
