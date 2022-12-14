@@ -174,21 +174,19 @@ def load_waveguide(pulse, n):
     return mode
 
 
-def simulate(pulse, mode):
+def simulate(pulse, mode, length=3e-3, npts=100):
     model = pynlo.model.SM_UPE(pulse, mode)
     local_error = 1e-6
     dz = model.estimate_step_size(n=20, local_error=local_error)
 
-    length = 3e-3  # 10 mm
-    z_grid = np.linspace(0, length, 100)
+    z_grid = np.linspace(0, length, npts)
     pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
     return pulse_out, z, a_t, a_v
 
 
 n_points = 2 ** 13
-v_min = sc.c / 5000e-9
-v_max = sc.c / 100e-9
-v9 = sc.c / 1550e-9
+v_min = sc.c / 4500e-9
+v_max = sc.c / 800e-9
 e_p = 300e-3 * 1e-9
 t_fwhm = 50e-15
 pulse = instantiate_pulse(n_points=n_points,
@@ -197,3 +195,4 @@ pulse = instantiate_pulse(n_points=n_points,
                           e_p=e_p,
                           t_fwhm=t_fwhm)
 mode = load_waveguide(pulse, 15)
+pulse_out, z, a_t, a_v = simulate(pulse, mode)
