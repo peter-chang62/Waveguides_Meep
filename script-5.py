@@ -64,7 +64,7 @@ sim = wg.ThinFilmWaveguide(etch_width=3,
                            cell_height=4)
 
 # %%____________________________________________________________________________________________________________________
-# # single waveguide parameter (comment out if running the for loop block instead)
+# single waveguide parameter (comment out if running the for loop block instead)
 sim.etch_width = 3.0
 sim.etch_depth = 0.70
 
