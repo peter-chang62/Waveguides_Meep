@@ -207,6 +207,15 @@ def aliasing_av(a_v):
         return False
 
 
+def Omega(beta_spl, gamma, Pp, wl, wl_p=1550e-9):
+    beta_spl: InterpolatedUnivariateSpline
+
+    w = (sc.c / wl) * 2 * np.pi
+    wp = (sc.c / wl_p) * 2 * np.pi
+
+    dk = beta_spl(w) - beta_spl(wp) - beta_spl.derivative(n=1)(w - wp) - gamma * Pp
+
+
 n_points = 2 ** 13
 v_min = sc.c / 4500e-9
 v_max = sc.c / 800e-9
