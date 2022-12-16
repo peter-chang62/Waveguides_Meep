@@ -71,6 +71,8 @@ etch_depth = np.arange(0.1, 1.05, .05)
 etch_width = np.round(etch_width, 3)
 etch_depth = np.round(etch_depth, 3)
 
+path = r"/home/peterchang/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/"
+
 for w in etch_width:
     # for h in height:
     for d in etch_depth:
@@ -95,6 +97,9 @@ for w in etch_width:
         # np.save(f'sim_output/06-16-2022/E-fields/{w}_{h}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
         # np.save(f'sim_output/06-16-2022/eps/{w}_{h}.npy', sim.ms.get_epsilon())
 
-        np.save(f'sim_output/07-19-2022/dispersion-curves/{w}_{d}.npy', arr)
-        np.save(f'sim_output/07-19-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
-        np.save(f'sim_output/07-19-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
+        # np.save(f'sim_output/07-19-2022/dispersion-curves/{w}_{d}.npy', arr)
+        # np.save(f'sim_output/07-19-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
+        # np.save(f'sim_output/07-19-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
+        np.save(path + f'07-19-2022/dispersion-curves/{w}_{d}.npy', arr)  # same but push to synology
+        np.save(path + f'07-19-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
+        np.save(path + f'07-19-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
