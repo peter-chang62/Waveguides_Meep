@@ -126,7 +126,7 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
 
 
 # %% __________________________________________ RUN THROUGH PYNLO ______________________________________________________
-path_save = r"~/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/10-05-2022/"
+path_save = r"/home/peterchang/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/10-05-2022/"
 for ind in range(19 * 2, len(names)):
     # %% Pulse Properties ____________________________________________________________________________________________
     n_points = 2 ** 13
