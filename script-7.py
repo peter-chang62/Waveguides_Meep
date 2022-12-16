@@ -185,11 +185,15 @@ for ind in range(19 * 2, len(names)):
     pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
 
     # %% save data ___________________________________________________________________________________________________
-    np.save('sim_output/10-05-2022/time_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_t)
-    np.save('sim_output/10-05-2022/frequency_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
+    # np.save('sim_output/10-05-2022/time_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_t)
+    # np.save('sim_output/10-05-2022/frequency_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
 
     np.save(path_save + 'time_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_t)
     np.save(path_save + 'frequency_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
+
+# np.save('sim_output/10-05-2022/v_grid.npy', v_grid)
+# np.save('sim_output/10-05-2022/t_grid.npy', t_grid)
+# np.save('sim_output/10-05-2022/z.npy', z)
 
 np.save(path_save + 'v_grid.npy', v_grid)
 np.save(path_save + 't_grid.npy', t_grid)
