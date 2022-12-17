@@ -127,7 +127,8 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
 
 # %% __________________________________________ RUN THROUGH PYNLO ______________________________________________________
 # path_save = r"/home/peterchang/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/10-05-2022/"
-# for ind in range(19 * 2, len(names)):
+# # for ind in range(19 * 2, len(names)):
+# for ind in range(0, 19 * 2):
 #     # %% Pulse Properties ____________________________________________________________________________________________
 #     n_points = 2 ** 13
 #     v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
@@ -185,19 +186,21 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
 #     pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
 #
 #     # %% save data ___________________________________________________________________________________________________
-#     # np.save('sim_output/10-05-2022/time_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_t)
-#     # np.save('sim_output/10-05-2022/frequency_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
+#     np.save('sim_output/10-05-2022/time_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_t)
+#     np.save('sim_output/10-05-2022/frequency_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
 #
-#     np.save(path_save + 'time_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_t)
-#     np.save(path_save + 'frequency_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
+#     # np.save(path_save + 'time_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_t)
+#     # np.save(path_save + 'frequency_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_v)
 #
-# # np.save('sim_output/10-05-2022/v_grid.npy', v_grid)
-# # np.save('sim_output/10-05-2022/t_grid.npy', t_grid)
-# # np.save('sim_output/10-05-2022/z.npy', z)
+#     print(ind)
 #
-# np.save(path_save + 'v_grid.npy', v_grid)
-# np.save(path_save + 't_grid.npy', t_grid)
-# np.save(path_save + 'z.npy', z)
+# np.save('sim_output/10-05-2022/v_grid.npy', v_grid)
+# np.save('sim_output/10-05-2022/t_grid.npy', t_grid)
+# np.save('sim_output/10-05-2022/z.npy', z)
+#
+# # np.save(path_save + 'v_grid.npy', v_grid)
+# # np.save(path_save + 't_grid.npy', t_grid)
+# # np.save(path_save + 'z.npy', z)
 
 # %% ________________________________________ Plotting PYNLO SIMULATION RESULTS ________________________________________
 path_ = 'sim_output/10-05-2022/'
@@ -227,8 +230,8 @@ for i in range(len(names_)):
     ax[1].plot(wl_grid, 10 * np.log10(data[z_ind] / data[-1].max()))
     ax[1].set_xlabel("wavelength ($\mathrm{\mu m}$)")
 
-    plot_mode(i + 19 * 2, 3, False, ax[2])
-    assert names[i + 19 * 2] == names_[i]
+    plot_mode(i, 3, False, ax[2])
+    assert names[i] == names_[i]
     freq, b, b1, b2 = get_disp(i).T
     wl = 1 / freq
     b2 *= conversion
@@ -268,9 +271,3 @@ for i in range(len(names_)):
 # ind_best = np.argmax(max_power)
 # a_v_best = np.load(path_ + "frequency_domain/" + names_[ind_best])
 # a_t_best = np.load(path_ + "time_domain/" + names_[ind_best])
-#
-# # fig, ax = plt.subplots(1, 1)
-# # for i in abs(a_v_best) ** 2:
-# #     ax.clear()
-# #     ax.plot(wl_grid * 1e6, i)
-# #     plt.pause(.2)

@@ -1,3 +1,11 @@
+"""For the 06-16-2022 simulations, I varied the etch width and the waveguide height (I believe the etch depth was
+fixed at 300 nm). In a meeting, people pointed out it was more realistic to fix the height and vary the etch depth,
+and that is what is saved in 07-19-2022.
+
+The simulations for 06-16-2022 occured in two runs, where I continued the parameter sweep for the waveguide height.
+The simulations for fixed waveguide height also occured in two runs. However, it looks like one because the second
+time I extended the wavelength axis and just overwrote the previous simulation data. """
+
 import numpy as np
 import matplotlib.pyplot as plt
 import clipboard_and_style_sheet
