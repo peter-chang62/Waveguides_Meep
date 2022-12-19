@@ -142,8 +142,6 @@ def load_waveguide(pulse, n):
     v_grid = pulse.v_grid
     v0 = pulse.v0
 
-    a_eff = mode_area(get_field(n)[21]) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
-
     b_data = get_disp(n)
     wl, b = 1 / b_data[:, 0], b_data[:, 1]
     k = b * 1e6 / (2 * np.pi)  # 1/m
@@ -153,6 +151,9 @@ def load_waveguide(pulse, n):
 
     n_eff = n_wvgd(v_grid)
     beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
+
+    ind_center_wl = np.argmin(abs(wl - 1.55))
+    a_eff = mode_area(get_field(n)[ind_center_wl]) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
 
     # 2nd order nonlinearity
     d_eff = 27e-12  # 27 pm / V
@@ -215,28 +216,28 @@ def Omega(beta_spl, gamma, Pp, wl, wl_p=1550e-9):
 
     dk = beta_spl(w) - beta_spl(wp) - beta_spl.derivative(n=1)(w - wp) - gamma * Pp
 
-# n_points = 2 ** 13
-# v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
-# v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
-# e_p = 300e-3 * 1e-9
-# t_fwhm = 50e-15
-# pulse = instantiate_pulse(n_points=n_points,
-#                           v_min=v_min,
-#                           v_max=v_max,
-#                           e_p=e_p,
-#                           t_fwhm=t_fwhm)
-# mode = load_waveguide(pulse, 103)
-# pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3)
-# wl = sc.c / pulse.v_grid
-# ind_alias = aliasing_av(a_v)
-#
-#
-# def video():
-#     fig, ax = plt.subplots(1, 2)
-#     for n, i in enumerate(abs(a_v) ** 2):
-#         [i.clear() for i in ax]
-#         ax[0].semilogy(wl * 1e6, i)
-#         ax[0].axvline(4.07, color='r')
-#         ax[1].plot(pulse.t_grid * 1e12, abs(a_t[n]) ** 2)
-#         # ax[1].set_xlim(-.5, .5)
-#         plt.pause(.1)
+n_points = 2 ** 13
+v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
+v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
+e_p = 300e-3 * 1e-9
+t_fwhm = 50e-15
+pulse = instantiate_pulse(n_points=n_points,
+                          v_min=v_min,
+                          v_max=v_max,
+                          e_p=e_p,
+                          t_fwhm=t_fwhm)
+mode = load_waveguide(pulse, 103)
+pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3)
+wl = sc.c / pulse.v_grid
+ind_alias = aliasing_av(a_v)
+
+
+def video():
+    fig, ax = plt.subplots(1, 2)
+    for n, i in enumerate(abs(a_v) ** 2):
+        [i.clear() for i in ax]
+        ax[0].semilogy(wl * 1e6, i)
+        ax[0].axvline(4.07, color='r')
+        ax[1].plot(pulse.t_grid * 1e12, abs(a_t[n]) ** 2)
+        # ax[1].set_xlim(-.5, .5)
+        plt.pause(.1)
