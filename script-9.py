@@ -20,8 +20,8 @@ from pynlo_connor import utility as utils
 clipboard_and_style_sheet.style_sheet()
 
 resolution = 30
-etch_width = 2.055
-etch_depth = 0.65
+etch_width = 1.245
+etch_depth = 0.8
 
 
 def get_bp_ind(wl_grid, wl_ll, wl_ul):
@@ -153,6 +153,14 @@ conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
 beta = res.kx.flatten() * 2 * np.pi
 beta1 = np.gradient(beta, omega, edge_order=2)
 beta2 = np.gradient(beta1, omega, edge_order=2) * conversion
+
+# %%____________________________________________________________________________________________________________________
+# save
+# arr = np.c_[res.freq, beta, beta1, beta2]
+# path = ""
+# np.save(path + f'07-19-2022/dispersion-curves/{etch_width}_{etch_depth}.npy', arr)  # same but push to synology
+# np.save(path + f'07-19-2022/E-fields/{etch_width}_{etch_depth}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
+# np.save(path + f'07-19-2022/eps/{etch_width}_{etch_depth}.npy', sim.ms.get_epsilon())
 
 # %%____________________________________________________________________________________________________________________
 n_points = 2 ** 13
