@@ -49,6 +49,8 @@ path = 'sim_output/07-19-2022/'
 # path = 'sim_output/09-08-2022/'
 names = [i.name for i in os.scandir(path + 'dispersion-curves/')]
 
+# waveguides less than 1.245 um tend not to guide long wavelengths, so set this as a cutoff
+# the etch_depth can be varied the whole range, and the height is fixed at 1 um
 w_limit = 1.245
 [names.remove(i) for i in names.copy() if width(i) < w_limit]
 
@@ -127,7 +129,7 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
 
 # %% __________________________________________ RUN THROUGH PYNLO ______________________________________________________
 # path_save = r"/home/peterchang/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/10-05-2022/"
-path_save = r"/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/10-05-2022/"
+path_save = r"/Users/peterchang/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/10-05-2022/"
 for ind in range(len(names)):
     # %% Pulse Properties ____________________________________________________________________________________________
     n_points = 2 ** 13
