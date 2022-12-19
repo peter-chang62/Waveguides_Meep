@@ -20,6 +20,8 @@ from pynlo_connor import utility as utils
 clipboard_and_style_sheet.style_sheet()
 
 resolution = 30
+etch_width = 2.055
+etch_depth = 0.65
 
 
 def get_bp_ind(wl_grid, wl_ll, wl_ul):
@@ -55,7 +57,7 @@ def load_waveguide(pulse, res, sim):
 
     # a_eff = mode_area(get_field(n)[21]) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
 
-    wl, b = 1 / res.freq, res.kx.flatten * 2 * np.pi
+    wl, b = 1 / res.freq, res.kx.flatten() * 2 * np.pi
     k = b * 1e6 / (2 * np.pi)  # 1/m
     nu = sc.c / (wl * 1e-6)
     n = sc.c * k / nu
@@ -100,7 +102,7 @@ def simulate(pulse, mode, length=3e-3, npts=100):
 
 def aliasing_av(a_v):
     x = abs(a_v) ** 2
-    x /= x.max()
+    x /= x.max()  # normalize first, and check for 1e-3
     x_v_min = x[:, 0]
     x_v_max = x[:, -1]
 
@@ -128,9 +130,8 @@ def aliasing_av(a_v):
 eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 
 # %%____________________________________________________________________________________________________________________
-sim = wg.ThinFilmWaveguide(etch_width=3,
-                           etch_depth=.3,
-                           # film_thickness=.7,
+sim = wg.ThinFilmWaveguide(etch_width=etch_width,
+                           etch_depth=etch_depth,
                            film_thickness=1,  # I'll fix the height at 1 um now
                            substrate_medium=mtp.Al2O3,
                            waveguide_medium=mt.LiNbO3,
@@ -141,12 +142,9 @@ sim = wg.ThinFilmWaveguide(etch_width=3,
 
 # %%____________________________________________________________________________________________________________________
 # individual sampling (comment out if running the for loop block instead)
-sim.etch_width = 2.055
-sim.etch_depth = 0.65
-
 block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
 sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
-res = sim.calc_dispersion(.8, 5, 50, eps_func_wvgd=eps_func_wvgd)  # run simulation
+res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # run simulation
 sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
 wl = 1 / res.freq
@@ -156,7 +154,36 @@ beta = res.kx.flatten() * 2 * np.pi
 beta1 = np.gradient(beta, omega, edge_order=2)
 beta2 = np.gradient(beta1, omega, edge_order=2) * conversion
 
-# plt.figure()
+# %%____________________________________________________________________________________________________________________
+n_points = 2 ** 13
+v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
+v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
+e_p = 300e-3 * 1e-9
+t_fwhm = 50e-15
+pulse = instantiate_pulse(n_points=n_points,
+                          v_min=v_min,
+                          v_max=v_max,
+                          e_p=e_p,
+                          t_fwhm=t_fwhm)
+mode = load_waveguide(pulse, res, sim)
+pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3)
+wl_grid = sc.c / pulse.v_grid
+ind_alias = aliasing_av(a_v)
+
+
+def video():
+    fig, ax = plt.subplots(1, 2)
+    for n, i in enumerate(abs(a_v) ** 2):
+        [i.clear() for i in ax]
+        ax[0].semilogy(wl_grid * 1e6, i)
+        ax[0].axvline(4.07, color='r')
+        ax[1].plot(pulse.t_grid * 1e12, abs(a_t[n]) ** 2)
+        # ax[1].set_xlim(-.5, .5)
+        plt.pause(.1)
+
+
+# %%____________________________________________________________________________________________________________________
+plt.figure()
 plt.plot(wl, beta2, 'o-')
 plt.axhline(0, color='r')
 plt.axvline(1.55, color='r')
@@ -171,28 +198,5 @@ fig, ax = sim.plot_mode(0, 2)
 ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
                   '%.2f' % wl[2] + " $\mathrm{\mu m}$")
 
-n_points = 2 ** 13
-v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
-v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
-e_p = 300e-3 * 1e-9
-t_fwhm = 50e-15
-pulse = instantiate_pulse(n_points=n_points,
-                          v_min=v_min,
-                          v_max=v_max,
-                          e_p=e_p,
-                          t_fwhm=t_fwhm)
-mode = load_waveguide(pulse, res, sim)
-pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3)
-wl = sc.c / pulse.v_grid
-ind_alias = aliasing_av(a_v)
-
-
-def video():
-    fig, ax = plt.subplots(1, 2)
-    for n, i in enumerate(abs(a_v) ** 2):
-        [i.clear() for i in ax]
-        ax[0].semilogy(wl * 1e6, i)
-        ax[0].axvline(4.07, color='r')
-        ax[1].plot(pulse.t_grid * 1e12, abs(a_t[n]) ** 2)
-        # ax[1].set_xlim(-.5, .5)
-        plt.pause(.1)
+plt.figure()
+plt.pcolormesh(wl_grid * 1e6, z * 1e3, abs(a_v) ** 2)
