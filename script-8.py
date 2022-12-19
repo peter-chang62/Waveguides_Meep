@@ -215,7 +215,6 @@ def Omega(beta_spl, gamma, Pp, wl, wl_p=1550e-9):
 
     dk = beta_spl(w) - beta_spl(wp) - beta_spl.derivative(n=1)(w - wp) - gamma * Pp
 
-
 # n_points = 2 ** 13
 # v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
 # v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
