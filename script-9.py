@@ -193,18 +193,33 @@ def video():
 # %%____________________________________________________________________________________________________________________
 plt.figure()
 plt.plot(wl, beta2, 'o-')
-plt.axhline(0, color='r')
-plt.axvline(1.55, color='r')
+# plt.axhline(0, color='r')
+# plt.axvline(1.55, color='r')
 plt.xlabel("wavelength ($\mathrm{\mu m}$)")
 plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
 
-fig, ax = sim.plot_mode(0, 0)
+fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 3.5)))
 ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
-                  '%.2f' % wl[0] + " $\mathrm{\mu m}$")
+                  '%.2f' % wl[np.argmin(abs(wl - 3.5))] + " $\mathrm{\mu m}$")
 
-fig, ax = sim.plot_mode(0, 2)
+fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 4.0)))
 ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
-                  '%.2f' % wl[2] + " $\mathrm{\mu m}$")
+                  '%.2f' % wl[np.argmin(abs(wl - 4.0))] + " $\mathrm{\mu m}$")
 
 plt.figure()
-plt.pcolormesh(wl_grid * 1e6, z * 1e3, abs(a_v) ** 2)
+plt.pcolormesh(wl_grid * 1e6, z[:np.argmin(abs(z - 5e-3))] * 1e3,
+               abs(a_v[:np.argmin(abs(z - 5e-3))]) ** 2)
+plt.xlabel("wavelength ($\mathrm{\mu m}$)")
+plt.ylabel("z (mm)")
+
+fig, ax = plt.subplots(1, 2)
+ax[0].semilogy(wl_grid * 1e6, abs(a_v[10]) ** 2 / max(abs(a_v[10]) ** 2), linewidth=2)
+ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
+ax[0].set_ylabel("a. u.")
+ax[0].set_ylim(ymin=1e-2)
+ax[0].set_xlim(.6, 3.6)
+ax[1].plot(pulse.t_grid * 1e15, abs(a_t[10]) ** 2 / max(abs(a_t[10]) ** 2), linewidth=2)
+ax[1].set_xlabel("t (fs)")
+ax[1].set_ylabel("a.u.")
+ax[1].set_xlim(-75, 75)
+fig.suptitle("1 mm propagation")
