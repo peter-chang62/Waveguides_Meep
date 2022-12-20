@@ -186,7 +186,7 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
 #
 #     length = 10e-3  # 10 mm
 #     z_grid = np.linspace(0, length, 100)
-#     pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
+#     pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=None, plot=None)
 #
 #     # %% save data ___________________________________________________________________________________________________
 #     # np.save('sim_output/10-05-2022/time_domain/' + f'{width(names[ind])}_{depth(names[ind])}.npy', a_t)
@@ -277,3 +277,6 @@ max_power = np.max(POWER, axis=1)
 ind_best = np.argmax(max_power)
 a_v_best = np.load(path_ + "frequency_domain/" + names_[ind_best])
 a_t_best = np.load(path_ + "time_domain/" + names_[ind_best])
+
+end = POWER[:, -1]
+ind_pwr_3_5 = np.where(end > 20)[0]  # I've rerun these through waveguide_dispersion to get rid of spikes

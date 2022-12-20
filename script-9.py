@@ -102,7 +102,7 @@ def simulate(pulse, mode, length=3e-3, npts=100):
     dz = model.estimate_step_size(n=20, local_error=local_error)
 
     z_grid = np.linspace(0, length, npts)
-    pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=npts, plot=None)
+    pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=None, plot=None)
     return pulse_out, z, a_t, a_v
 
 
