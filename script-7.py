@@ -206,48 +206,48 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
 # np.save(path_save + 'z.npy', z)
 
 # %% ________________________________________ Plotting PYNLO SIMULATION RESULTS ________________________________________
-# path_ = 'sim_output/10-05-2022/'
-# names_ = [i.name for i in os.scandir('sim_output/10-05-2022/frequency_domain/')]
-#
-# names_.sort(key=depth)
-# names_.sort(key=width)
-#
-# z = np.load(path_ + 'z.npy') * 1e3
-# z_ind = np.argmin(abs(z - 1))
-# v_grid = np.load(path_ + 'v_grid.npy') * 1e-12
-# wl_grid = sc.c * 1e6 * 1e-12 / v_grid
-#
-# fig, ax = plt.subplots(2, 2, figsize=np.array([13.69, 4.8 * 2]))
-# ax = ax.flatten()
-# save = True
-# for i in range(len(names_)):
-#     data = np.load(path_ + 'frequency_domain/' + names_[i])
-#     data = abs(data) ** 2
-#     data /= data.max()
-#
-#     [i.clear() for i in ax]
-#
-#     ax[0].pcolormesh(wl_grid, z, data)
-#     ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
-#
-#     ax[1].plot(wl_grid, 10 * np.log10(data[z_ind] / data[-1].max()))
-#     ax[1].set_xlabel("wavelength ($\mathrm{\mu m}$)")
-#
-#     plot_mode(i, 3, False, ax[2])
-#     assert names[i] == names_[i]
-#     freq, b, b1, b2 = get_disp(i).T
-#     wl = 1 / freq
-#     b2 *= conversion
-#     ax[3].plot(wl, b2, 'o-')
-#     ax[3].axhline(0, linestyle='--', color='k')
-#     ax[3].set_ylim(-1000, 5500)
-#
-#     fig.suptitle(f"{i}")
-#
-#     if save:
-#         plt.savefig(f'fig/{i}.png')
-#     else:
-#         plt.pause(.01)
+path_ = 'sim_output/10-05-2022/'
+names_ = [i.name for i in os.scandir('sim_output/10-05-2022/frequency_domain/')]
+
+names_.sort(key=depth)
+names_.sort(key=width)
+
+z = np.load(path_ + 'z.npy') * 1e3
+z_ind = np.argmin(abs(z - 10))
+v_grid = np.load(path_ + 'v_grid.npy') * 1e-12
+wl_grid = sc.c * 1e6 * 1e-12 / v_grid
+
+fig, ax = plt.subplots(2, 2, figsize=np.array([13.69, 4.8 * 2]))
+ax = ax.flatten()
+save = True
+for i in range(len(names_)):
+    data = np.load(path_ + 'frequency_domain/' + names_[i])
+    data = abs(data) ** 2
+    data /= data.max()
+
+    [i.clear() for i in ax]
+
+    ax[0].pcolormesh(wl_grid, z, data)
+    ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
+
+    ax[1].plot(wl_grid, 10 * np.log10(data[z_ind] / data[-1].max()))
+    ax[1].set_xlabel("wavelength ($\mathrm{\mu m}$)")
+
+    plot_mode(i, 3, False, ax[2])
+    assert names[i] == names_[i]
+    freq, b, b1, b2 = get_disp(i).T
+    wl = 1 / freq
+    b2 *= conversion
+    ax[3].plot(wl, b2, 'o-')
+    ax[3].axhline(0, linestyle='--', color='k')
+    ax[3].set_ylim(-1000, 5500)
+
+    fig.suptitle(f"{i}")
+
+    if save:
+        plt.savefig(f'fig/{i}.png')
+    else:
+        plt.pause(.01)
 
 # %% ________________________________________ Analyzing PyNLO simulation results _______________________________________
 # path_ = 'sim_output/10-05-2022/'

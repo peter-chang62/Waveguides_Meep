@@ -20,8 +20,12 @@ from pynlo_connor import utility as utils
 clipboard_and_style_sheet.style_sheet()
 
 resolution = 30
-etch_width = 1.245
-etch_depth = 0.8
+
+# etch_width = 1.245
+# etch_depth = 0.8
+
+etch_width = 1.785
+etch_depth = 0.45
 
 
 def get_bp_ind(wl_grid, wl_ll, wl_ul):
@@ -34,13 +38,6 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
     return scint.simps(abs(a_v_filt) ** 2, axis=1, dx=dv)
 
 
-def instantiate_pulse(n_points, v_min, v_max, e_p=300e-3 * 1e-9, t_fwhm=50e-15):
-    v0 = sc.c / 1560e-9  # sc.c / 1550 nm
-    pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
-    pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
-    return pulse
-
-
 def mode_area(I):
     # integral(I * dA) ** 2  / integral(I ** 2 * dA) is the common definition that is used
     # reference: https://www.rp-photonics.com/effective_mode_area.html
@@ -50,25 +47,29 @@ def mode_area(I):
     return area
 
 
+def instantiate_pulse(n_points, v_min, v_max, e_p=300e-3 * 1e-9, t_fwhm=50e-15):
+    v0 = sc.c / 1560e-9  # sc.c / 1550 nm
+    pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
+    pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
+    return pulse
+
+
 def load_waveguide(pulse, res, sim):
     pulse: pynlo.light.Pulse
     v_grid = pulse.v_grid
     v0 = pulse.v0
-
-    # a_eff = mode_area(get_field(n)[21]) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
 
     wl, b = 1 / res.freq, res.kx.flatten() * 2 * np.pi
     k = b * 1e6 / (2 * np.pi)  # 1/m
     nu = sc.c / (wl * 1e-6)
     n = sc.c * k / nu
     n_wvgd = interp1d(nu, n, kind='cubic', bounds_error=True)
+    n_eff = n_wvgd(v_grid)
+    beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
 
     ind = np.argmin(abs(wl - 1.55))
     field = sim.E[ind][0][:, :, 1].__abs__() ** 2  # mp.Ey = 1
     a_eff = mode_area(field) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
-
-    n_eff = n_wvgd(v_grid)
-    beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
 
     # 2nd order nonlinearity
     d_eff = 27e-12  # 27 pm / V
@@ -96,7 +97,7 @@ def simulate(pulse, mode, length=3e-3, npts=100):
     dz = model.estimate_step_size(n=20, local_error=local_error)
 
     z_grid = np.linspace(0, length, npts)
-    pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
+    pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=npts, plot=None)
     return pulse_out, z, a_t, a_v
 
 
@@ -155,7 +156,7 @@ beta1 = np.gradient(beta, omega, edge_order=2)
 beta2 = np.gradient(beta1, omega, edge_order=2) * conversion
 
 # %%____________________________________________________________________________________________________________________
-# save
+# save sim results
 # arr = np.c_[res.freq, beta, beta1, beta2]
 # path = ""
 # np.save(path + f'07-19-2022/dispersion-curves/{etch_width}_{etch_depth}.npy', arr)  # same but push to synology
@@ -174,27 +175,20 @@ pulse = instantiate_pulse(n_points=n_points,
                           e_p=e_p,
                           t_fwhm=t_fwhm)
 mode = load_waveguide(pulse, res, sim)
-pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3)
+pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=500)
 wl_grid = sc.c / pulse.v_grid
 ind_alias = aliasing_av(a_v)
 
-
-def video():
-    fig, ax = plt.subplots(1, 2)
-    for n, i in enumerate(abs(a_v) ** 2):
-        [i.clear() for i in ax]
-        ax[0].semilogy(wl_grid * 1e6, i)
-        ax[0].axvline(4.07, color='r')
-        ax[1].plot(pulse.t_grid * 1e12, abs(a_t[n]) ** 2)
-        # ax[1].set_xlim(-.5, .5)
-        plt.pause(.1)
-
+frep = 1e9
+power = e_p_in_window(wl_grid=wl_grid,
+                      dv=np.diff(pulse.v_grid)[0],
+                      a_v=a_v,
+                      wl_ll=3e-6,
+                      wl_ul=5e-6) * frep
 
 # %%____________________________________________________________________________________________________________________
 plt.figure()
 plt.plot(wl, beta2, 'o-')
-# plt.axhline(0, color='r')
-# plt.axvline(1.55, color='r')
 plt.xlabel("wavelength ($\mathrm{\mu m}$)")
 plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
 
@@ -207,19 +201,42 @@ ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
                   '%.2f' % wl[np.argmin(abs(wl - 4.0))] + " $\mathrm{\mu m}$")
 
 plt.figure()
-plt.pcolormesh(wl_grid * 1e6, z[:np.argmin(abs(z - 5e-3))] * 1e3,
-               abs(a_v[:np.argmin(abs(z - 5e-3))]) ** 2)
+ind_z = np.argmin(abs(z * 1e3 - 10))
+plt.pcolormesh(wl_grid * 1e6, z[:ind_z] * 1e3,
+               abs(a_v[:ind_z]) ** 2)
 plt.xlabel("wavelength ($\mathrm{\mu m}$)")
 plt.ylabel("z (mm)")
 
+ind_z = np.argmin(abs(z * 1e3 - 4.0))
 fig, ax = plt.subplots(1, 2)
-ax[0].semilogy(wl_grid * 1e6, abs(a_v[10]) ** 2 / max(abs(a_v[10]) ** 2), linewidth=2)
+ax[0].semilogy(wl_grid * 1e6, abs(a_v[ind_z]) ** 2 / max(abs(a_v[ind_z]) ** 2), linewidth=2)
 ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
 ax[0].set_ylabel("a. u.")
 ax[0].set_ylim(ymin=1e-2)
 ax[0].set_xlim(.6, 3.6)
-ax[1].plot(pulse.t_grid * 1e15, abs(a_t[10]) ** 2 / max(abs(a_t[10]) ** 2), linewidth=2)
+ax[1].plot(pulse.t_grid * 1e15, abs(a_t[ind_z]) ** 2 / max(abs(a_t[ind_z]) ** 2), linewidth=2)
 ax[1].set_xlabel("t (fs)")
 ax[1].set_ylabel("a.u.")
 ax[1].set_xlim(-75, 75)
 fig.suptitle("1 mm propagation")
+
+
+# %%____________________________________________________________________________________________________________________
+def video(save=False):
+    fig, ax = plt.subplots(1, 2)
+    for n in range(len(a_v)):
+        [i.clear() for i in ax]
+        ax[0].semilogy(wl_grid * 1e6, abs(a_v[n]) ** 2 / max(abs(a_v[n]) ** 2), linewidth=2)
+        ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
+        ax[0].set_ylabel("a. u.")
+        ax[0].set_ylim(ymin=1e-2)
+        ax[0].set_xlim(.6, 3.6)
+        ax[1].plot(pulse.t_grid * 1e15, abs(a_t[n]) ** 2 / max(abs(a_t[n]) ** 2), linewidth=2)
+        ax[1].set_xlabel("t (fs)")
+        ax[1].set_ylabel("a.u.")
+        ax[1].set_xlim(-200, 200)
+        fig.suptitle(f"{np.round(z[n] * 1e3, 2)} mm propagation")
+        if save:
+            plt.savefig(f"fig/{n}.png")
+        else:
+            plt.pause(.05)
