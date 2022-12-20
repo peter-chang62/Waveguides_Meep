@@ -28,7 +28,6 @@ eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 # %%____________________________________________________________________________________________________________________
 sim = wg.ThinFilmWaveguide(etch_width=3,
                            etch_depth=.3,
-                           # film_thickness=.7,
                            film_thickness=1,  # I'll fix the height at 1 um now
                            substrate_medium=mtp.Al2O3,
                            waveguide_medium=mt.LiNbO3,
