@@ -88,26 +88,26 @@ etch_depth = np.array([0.75, 0.8, 0.85, 0.9, 0.95, 1., 0.7, 0.75, 0.8, 0.85, 0.9
                        0.7, 0.75, 0.35, 0.4, 0.45, 0.6, 0.35, 0.4, 0.45, 0.35, 0.4])
 
 path = r"/Users/peterchang/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/"
+# for w in etch_width:
+#     for d in etch_depth:
+for w, d in np.c_[etch_width, etch_depth]:
+    sim.etch_width = w
+    sim.etch_depth = d
 
-for w in etch_width:
-    for d in etch_depth:
-        sim.etch_width = w
-        sim.etch_depth = d
+    block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
+    sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
+    res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # run simulation
+    sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
-        block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
-        sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
-        res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # run simulation
-        sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
+    # _________________________________ calculate beta2 __________________________________________________________
+    omega = res.freq * 2 * np.pi
+    beta = res.kx.flatten() * 2 * np.pi
+    beta1 = np.gradient(beta, omega, edge_order=2)
+    beta2 = np.gradient(beta1, omega, edge_order=2)
 
-        # _________________________________ calculate beta2 __________________________________________________________
-        omega = res.freq * 2 * np.pi
-        beta = res.kx.flatten() * 2 * np.pi
-        beta1 = np.gradient(beta, omega, edge_order=2)
-        beta2 = np.gradient(beta1, omega, edge_order=2)
+    # _______________________________________ save the data ______________________________________________________
+    arr = np.c_[res.freq, beta, beta1, beta2]
 
-        # _______________________________________ save the data ______________________________________________________
-        arr = np.c_[res.freq, beta, beta1, beta2]
-
-        np.save(path + f'07-19-2022/dispersion-curves/{w}_{d}.npy', arr)  # same but push to synology
-        np.save(path + f'07-19-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
-        np.save(path + f'07-19-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
+    np.save(path + f'07-19-2022/dispersion-curves/{w}_{d}.npy', arr)  # same but push to synology
+    np.save(path + f'07-19-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
+    np.save(path + f'07-19-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
