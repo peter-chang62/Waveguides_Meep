@@ -279,4 +279,4 @@ a_v_best = np.load(path_ + "frequency_domain/" + names_[ind_best])
 a_t_best = np.load(path_ + "time_domain/" + names_[ind_best])
 
 end = POWER[:, -1]
-ind_pwr_3_5 = np.where(end > 20)[0]  # I've rerun these through waveguide_dispersion to get rid of spikes
+ind_pwr_3_5 = np.where(end > 20)[0]  # I've rerun these at higher spatial resolution to get rid of spikes

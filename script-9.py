@@ -21,8 +21,8 @@ clipboard_and_style_sheet.style_sheet()
 
 resolution = 30
 
-# etch_width = 1.245
-# etch_depth = 0.8
+etch_width = 1.245
+etch_depth = 0.8
 
 # etch_width = 1.785
 # etch_depth = 0.45
