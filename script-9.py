@@ -24,9 +24,14 @@ resolution = 30
 # etch_width = 1.245
 # etch_depth = 0.8
 
-etch_width = 1.785
-etch_depth = 0.45
+# etch_width = 1.785
+# etch_depth = 0.45
 
+etch_width = 1.65
+etch_depth = 0.65
+
+
+# ______________________________________________________________________________________________________________________
 
 def get_bp_ind(wl_grid, wl_ll, wl_ul):
     return np.where(np.logical_and(wl_grid >= wl_ll, wl_grid <= wl_ul), 1, 0)
@@ -156,14 +161,6 @@ beta1 = np.gradient(beta, omega, edge_order=2)
 beta2 = np.gradient(beta1, omega, edge_order=2) * conversion
 
 # %%____________________________________________________________________________________________________________________
-# save sim results
-# arr = np.c_[res.freq, beta, beta1, beta2]
-# path = ""
-# np.save(path + f'07-19-2022/dispersion-curves/{etch_width}_{etch_depth}.npy', arr)  # same but push to synology
-# np.save(path + f'07-19-2022/E-fields/{etch_width}_{etch_depth}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
-# np.save(path + f'07-19-2022/eps/{etch_width}_{etch_depth}.npy', sim.ms.get_epsilon())
-
-# %%____________________________________________________________________________________________________________________
 n_points = 2 ** 13
 v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
 v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
@@ -202,35 +199,47 @@ ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
 
 plt.figure()
 ind_z = np.argmin(abs(z * 1e3 - 10))
-plt.pcolormesh(wl_grid * 1e6, z[:ind_z] * 1e3,
-               abs(a_v[:ind_z]) ** 2)
+p_v_dB = 10 * np.log10(abs(a_v[:ind_z]) ** 2 / np.max(abs(a_v[:ind_z]) ** 2))
+plt.pcolormesh(wl_grid * 1e6, z[:ind_z] * 1e3, p_v_dB,
+               vmin=-40, vmax=0)
 plt.xlabel("wavelength ($\mathrm{\mu m}$)")
 plt.ylabel("z (mm)")
 
-ind_z = np.argmin(abs(z * 1e3 - 4.0))
-fig, ax = plt.subplots(1, 2)
-ax[0].semilogy(wl_grid * 1e6, abs(a_v[ind_z]) ** 2 / max(abs(a_v[ind_z]) ** 2), linewidth=2)
-ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
-ax[0].set_ylabel("a. u.")
-ax[0].set_ylim(ymin=1e-2)
-ax[0].set_xlim(.6, 3.6)
-ax[1].plot(pulse.t_grid * 1e15, abs(a_t[ind_z]) ** 2 / max(abs(a_t[ind_z]) ** 2), linewidth=2)
-ax[1].set_xlabel("t (fs)")
-ax[1].set_ylabel("a.u.")
-ax[1].set_xlim(-75, 75)
-fig.suptitle("1 mm propagation")
 
-
-# %%____________________________________________________________________________________________________________________
-def video(save=False):
+def plot_single(length):
+    ind_z = np.argmin(abs(z - length))
     fig, ax = plt.subplots(1, 2)
-    for n in range(len(a_v)):
+    p_v_dB = abs(a_v[ind_z]) ** 2
+    p_v_dB /= p_v_dB.max()
+    p_v_dB = 10 * np.log10(p_v_dB)
+    ax[0].plot(wl_grid * 1e6, p_v_dB, linewidth=2)
+    ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
+    ax[0].set_ylabel("a. u.")
+    ax[0].set_ylim(-40, 0)
+    ax[0].set_xlim(.6, 4.5)
+    ax[1].plot(pulse.t_grid * 1e15, abs(a_t[ind_z]) ** 2 / max(abs(a_t[ind_z]) ** 2), linewidth=2)
+    ax[1].set_xlabel("t (fs)")
+    ax[1].set_ylabel("a.u.")
+    ax[1].set_xlim(-75, 75)
+    fig.suptitle("1 mm propagation")
+
+
+def video(save=False, length=False):
+    fig, ax = plt.subplots(1, 2)
+    if length:
+        ind = np.argmin(abs(z - length))
+    else:
+        ind = len(a_v)
+    for n in range(ind):
         [i.clear() for i in ax]
-        ax[0].semilogy(wl_grid * 1e6, abs(a_v[n]) ** 2 / max(abs(a_v[n]) ** 2), linewidth=2)
+        p_v_dB = abs(a_v[n]) ** 2
+        p_v_dB /= p_v_dB.max()
+        p_v_dB = 10 * np.log10(p_v_dB)
+        ax[0].plot(wl_grid * 1e6, p_v_dB, linewidth=2)
         ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
         ax[0].set_ylabel("a. u.")
-        ax[0].set_ylim(ymin=1e-2)
-        ax[0].set_xlim(.6, 3.6)
+        ax[0].set_ylim(-40, 0)
+        ax[0].set_xlim(.6, 4.5)
         ax[1].plot(pulse.t_grid * 1e15, abs(a_t[n]) ** 2 / max(abs(a_t[n]) ** 2), linewidth=2)
         ax[1].set_xlabel("t (fs)")
         ax[1].set_ylabel("a.u.")
@@ -240,3 +249,11 @@ def video(save=False):
             plt.savefig(f"fig/{n}.png")
         else:
             plt.pause(.05)
+
+# %%____________________________________________________________________________________________________________________
+# save sim results
+# arr = np.c_[res.freq, beta, beta1, beta2]
+# path = ""
+# np.save(path + f'07-19-2022/dispersion-curves/{etch_width}_{etch_depth}.npy', arr)  # same but push to synology
+# np.save(path + f'07-19-2022/E-fields/{etch_width}_{etch_depth}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
+# np.save(path + f'07-19-2022/eps/{etch_width}_{etch_depth}.npy', sim.ms.get_epsilon())
