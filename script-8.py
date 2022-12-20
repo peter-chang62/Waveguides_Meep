@@ -79,18 +79,6 @@ def plot_field(n, k_index, alpha=0.9, ax=None):
         plt.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap='RdBu', alpha=alpha)
 
 
-def is_guided(kx, freq):
-    # __________________________________________________________________________________________________________________
-    # bulk propagation is omega = c * k / n
-    # to be guided we need omega < omega_bulk
-    # __________________________________________________________________________________________________________________
-
-    index_substrate = 1
-    freq_substrate = kx / index_substrate
-    print(freq, freq_substrate, freq - freq_substrate)
-    return freq < freq_substrate
-
-
 def plot_mode(n, k_index, new_figure=True, ax=None):
     assert not np.all([new_figure, ax is not None])
     if new_figure:
@@ -99,25 +87,21 @@ def plot_mode(n, k_index, new_figure=True, ax=None):
     plot_field(n, k_index, 0.9, ax)
     data = get_disp(n)  # np.c_[res.freq, beta, beta1, beta2]
     freq = data[:, 0]
-    kx = data[:, 1] / (2 * np.pi)  # kx = beta / (2 pi)
-    guided = is_guided(kx[k_index], freq[k_index])
     wl = 1 / freq[k_index]
-    if guided:
-        s = "guided"
-    else:
-        s = "NOT guided"
     if ax is not None:
-        ax.set_title(
-            f'{np.round(width(names_wvgd[n]), 3)} x {np.round(depth(names_wvgd[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
-            "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
-            '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-            ' $\mathrm{\mu m^2}$')
+        ax.set_title(f'{np.round(width(names_wvgd[n]), 3)} x {np.round(depth(names_wvgd[n]), 3)} x 1'
+                     + ' $\mathrm{\mu m}$' '\n' +
+                     "$\mathrm{\lambda = }$" + '%.2f' % wl
+                     + ' $\mathrm{\mu m}$' + '\n' +
+                     '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+                     ' $\mathrm{\mu m^2}$')
     else:
-        plt.title(
-            f'{np.round(width(names_wvgd[n]), 3)} x {np.round(depth(names_wvgd[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
-            "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
-            '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-            ' $\mathrm{\mu m^2}$')
+        plt.title(f'{np.round(width(names_wvgd[n]), 3)} x {np.round(depth(names_wvgd[n]), 3)} x 1'
+                  + ' $\mathrm{\mu m}$' '\n' +
+                  "$\mathrm{\lambda = }$" + '%.2f' % wl
+                  + ' $\mathrm{\mu m}$' + '\n' +
+                  '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+                  ' $\mathrm{\mu m^2}$')
 
 
 def get_bp_ind(wl_grid, wl_ll, wl_ul):
