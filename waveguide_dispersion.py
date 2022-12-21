@@ -14,8 +14,12 @@ from meep import mpb
 import matplotlib.pyplot as plt
 import time
 import scipy.integrate as scint
+import scipy.constants as sc
 
 clipboard_and_style_sheet.style_sheet()
+
+# conversion of beta2 calculated here to beta2 in ps^2/km
+conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
 
 
 def store_fields(ms, which_band, cls):
