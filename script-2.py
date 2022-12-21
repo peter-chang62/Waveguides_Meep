@@ -53,7 +53,7 @@ beta = res.kx.flatten() * 2 * np.pi
 beta1 = np.gradient(beta, omega, edge_order=2)
 beta2 = np.gradient(beta1, omega, edge_order=2)
 
-# plt.figure()
+# plotting
 plt.plot(wl, beta2, 'o-')
 plt.axhline(0, color='r')
 plt.axvline(1.55, color='r')
@@ -68,6 +68,7 @@ fig, ax = sim.plot_mode(0, 2)
 ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
                   '%.2f' % wl[2] + " $\mathrm{\mu m}$")
 
+# saving
 arr = np.c_[res.freq, beta, beta1, beta2]
 path = r"/Users/peterchang/SynologyDrive/Research_Projects/Waveguide Simulations/sim_output/"
 np.save(path + f'07-19-2022/dispersion-curves/{sim.etch_width}_{sim.etch_depth}.npy', arr)  # save to synology
