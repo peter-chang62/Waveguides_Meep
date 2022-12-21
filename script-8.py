@@ -46,7 +46,6 @@ def mode_area(I):
 resolution = 30
 conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9  # already multiplied for some sim data (should be obvious)
 path_wvgd = 'sim_output/07-19-2022/'
-# path_wvgd = 'sim_output/09-08-2022/'
 names_wvgd = [i.name for i in os.scandir(path_wvgd + 'dispersion-curves/')]
 
 width_limit = 1.245
@@ -54,9 +53,6 @@ width_limit = 1.245
 
 names_wvgd = sorted(names_wvgd, key=depth)
 names_wvgd = sorted(names_wvgd, key=width)
-
-# to match indexing of pynlo simulations
-# names_wvgd = names_wvgd[38:]
 
 # %%____________________________________________________________________________________________________________________
 get_disp = lambda n: np.load(path_wvgd + 'dispersion-curves/' + names_wvgd[n])
@@ -121,12 +117,12 @@ def instantiate_pulse(n_points, v_min, v_max, e_p=300e-3 * 1e-9, t_fwhm=50e-15):
     return pulse
 
 
-def load_waveguide(pulse, n):
+def load_waveguide(pulse, n_sim):
     pulse: pynlo.light.Pulse
     v_grid = pulse.v_grid
     v0 = pulse.v0
 
-    b_data = get_disp(n)
+    b_data = get_disp(n_sim)
     wl, b = 1 / b_data[:, 0], b_data[:, 1]
     k = b * 1e6 / (2 * np.pi)  # 1/m
     nu = sc.c / (wl * 1e-6)
@@ -137,7 +133,7 @@ def load_waveguide(pulse, n):
     beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
 
     ind_center_wl = np.argmin(abs(wl - 1.55))
-    a_eff = mode_area(get_field(n)[ind_center_wl]) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
+    a_eff = mode_area(get_field(n_sim)[ind_center_wl]) * 1e-12  # um^2 -> m^2 @ lamda = 1560 nm
 
     # 2nd order nonlinearity
     d_eff = 27e-12  # 27 pm / V
@@ -165,7 +161,7 @@ def simulate(pulse, mode, length=3e-3, npts=100):
     dz = model.estimate_step_size(n=20, local_error=local_error)
 
     z_grid = np.linspace(0, length, npts)
-    pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
+    pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=None, plot=None)
     return pulse_out, z, a_t, a_v
 
 
@@ -212,8 +208,15 @@ pulse = instantiate_pulse(n_points=n_points,
                           v_max=v_max,
                           e_p=e_p,
                           t_fwhm=t_fwhm)
-mode = load_waveguide(pulse, 103)
-pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3)
+
+ind_pwr_3_5 = np.array([13, 14, 15, 16, 17, 18, 31, 32, 33, 34, 35, 36, 47,
+                        48, 49, 50, 51, 52, 53, 64, 65, 66, 67, 68, 69, 70,
+                        71, 82, 83, 84, 85, 86, 87, 88, 89, 100, 101, 102, 105,
+                        119, 120, 121, 138, 139])
+
+# mode = load_waveguide(pulse, ind_pwr_3_5[0])
+mode = load_waveguide(pulse, ind_pwr_3_5[1])
+pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=250)
 wl = sc.c / pulse.v_grid
 ind_alias = aliasing_av(a_v)
 
