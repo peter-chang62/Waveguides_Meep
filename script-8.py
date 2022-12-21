@@ -201,7 +201,7 @@ def Omega(beta_spl, gamma, Pp, wl, wl_p=1550e-9):
 n_points = 2 ** 13
 v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
 v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
-e_p = 300e-3 * 1e-9
+e_p = 300e-12
 t_fwhm = 50e-15
 pulse = instantiate_pulse(n_points=n_points,
                           v_min=v_min,
@@ -214,8 +214,7 @@ ind_pwr_3_5 = np.array([13, 14, 15, 16, 17, 18, 31, 32, 33, 34, 35, 36, 47,
                         71, 82, 83, 84, 85, 86, 87, 88, 89, 100, 101, 102, 105,
                         119, 120, 121, 138, 139])
 
-# mode = load_waveguide(pulse, ind_pwr_3_5[0])
-mode = load_waveguide(pulse, ind_pwr_3_5[1])
+mode = load_waveguide(pulse, ind_pwr_3_5[0])
 pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=250)
 wl = sc.c / pulse.v_grid
 ind_alias = aliasing_av(a_v)
