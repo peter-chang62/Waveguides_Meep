@@ -39,7 +39,7 @@ sim = wg.ThinFilmWaveguide(etch_width=3,  # will be changed later
 
 # %%____________________________________________________________________________________________________________________
 # individual sampling (comment out if running the for loop block instead)
-sim.etch_width, sim.etch_depth = (2.055, 0.45)
+sim.etch_width, sim.etch_depth = (1.38, 0.65)
 
 block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
 sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
