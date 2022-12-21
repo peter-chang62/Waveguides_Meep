@@ -197,105 +197,107 @@ ind_pwr_3_5 = np.array([13, 14, 15, 16, 17, 18, 31, 32, 33, 34, 35, 36, 47,
                         119, 120, 121, 138, 139])
 
 # ______________________________________________________________________________________________________________________
-# h = 0
-# center = len(ind_pwr_3_5) // 3
-# for n in ind_pwr_3_5[center * 2:]:
-#     n_points = 2 ** 13
-#     v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
-#     v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
-#     e_p = 100e-12
-#     t_fwhm = 50e-15
-#     pulse = instantiate_pulse(n_points=n_points,
-#                               v_min=v_min,
-#                               v_max=v_max,
-#                               e_p=e_p,
-#                               t_fwhm=t_fwhm)
+h = 1
+N = np.arange(len(names_wvgd))
+center = len(N) // 4
+chunks = N[:center], N[center:center * 2], N[center * 2:center * 3], N[center * 3:]
+for n in chunks[3]:
+    n_points = 2 ** 13
+    v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
+    v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
+    e_p = 100e-12
+    t_fwhm = 50e-15
+    pulse = instantiate_pulse(n_points=n_points,
+                              v_min=v_min,
+                              v_max=v_max,
+                              e_p=e_p,
+                              t_fwhm=t_fwhm)
+
+    mode = load_waveguide(pulse, n)
+    pulse_out, z, a_t, a_v = simulate(pulse, mode, length=20e-3, npts=250)
+    p_v_dB = abs(a_v) ** 2
+    p_v_dB /= p_v_dB.max()
+    p_v_dB = 10 * np.log10(p_v_dB)
+    wl = sc.c / pulse.v_grid
+    ind_alias = aliasing_av(a_v)
+
+    np.save(f"sim_output/12-20-2022/a_v/{names_wvgd[n]}", a_v)
+    np.save(f"sim_output/12-20-2022/a_t/{names_wvgd[n]}", a_t)
+
+    print(len(N) // center - h)
+    h += 1
+
+np.save("sim_output/12-20-2022/v_grid.npy", pulse.v_grid)
+np.save("sim_output/12-20-2022/t.npy", pulse.t_grid)
+np.save("sim_output/12-20-2022/z.npy", z)
+
+# ______________________________________________________________________________________________________________________
+# names_spm = [i.name for i in os.scandir('sim_output/12-20-2022/a_v/')]
+# load_a_v = lambda n: np.load(f'sim_output/12-20-2022/a_v/{names_spm[n]}')
+# load_a_t = lambda n: np.load(f'sim_output/12-20-2022/a_t/{names_spm[n]}')
+# v_grid = np.load('sim_output/12-20-2022/v_grid.npy')
+# wl = sc.c / v_grid
+# t = np.load('sim_output/12-20-2022/t.npy')
+# z = np.load('sim_output/12-20-2022/z.npy')
 #
-#     mode = load_waveguide(pulse, n)
-#     pulse_out, z, a_t, a_v = simulate(pulse, mode, length=20e-3, npts=250)
+#
+# def plot2D(n, fig=None, ax=None):
+#     a_v = load_a_v(n)
+#     a_t = load_a_t(n)
+#
 #     p_v_dB = abs(a_v) ** 2
 #     p_v_dB /= p_v_dB.max()
 #     p_v_dB = 10 * np.log10(p_v_dB)
-#     wl = sc.c / pulse.v_grid
-#     ind_alias = aliasing_av(a_v)
 #
-#     np.save(f"sim_output/12-20-2022/a_v/{names_wvgd[n]}", a_v)
-#     np.save(f"sim_output/12-20-2022/a_t/{names_wvgd[n]}", a_t)
-#
-#     print(len(ind_pwr_3_5) - h - 1)
-#     h += 1
-#
-# np.save("sim_output/12-20-2022/v_grid.npy", pulse.v_grid)
-# np.save("sim_output/12-20-2022/t.npy", pulse.t_grid)
-# np.save("sim_output/12-20-2022/z.npy", z)
-
-# ______________________________________________________________________________________________________________________
-names_spm = [i.name for i in os.scandir('sim_output/12-20-2022/a_v/')]
-load_a_v = lambda n: np.load(f'sim_output/12-20-2022/a_v/{names_spm[n]}')
-load_a_t = lambda n: np.load(f'sim_output/12-20-2022/a_t/{names_spm[n]}')
-v_grid = np.load('sim_output/12-20-2022/v_grid.npy')
-wl = sc.c / v_grid
-t = np.load('sim_output/12-20-2022/t.npy')
-z = np.load('sim_output/12-20-2022/z.npy')
-
-
-def plot2D(n, fig=None, ax=None):
-    a_v = load_a_v(n)
-    a_t = load_a_t(n)
-
-    p_v_dB = abs(a_v) ** 2
-    p_v_dB /= p_v_dB.max()
-    p_v_dB = 10 * np.log10(p_v_dB)
-
-    p_t_dB = abs(a_t) ** 2
-    p_t_dB /= p_t_dB.max()
-    p_t_dB = 10 * np.log10(p_t_dB)
-    if fig is None:
-        fig, ax = plt.subplots(1, 2, figsize=np.array([8.66, 4.8]))
-    else:
-        assert ax is not None
-    ax[0].pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0)
-    ax[1].pcolormesh(t * 1e15, z * 1e3, p_t_dB, vmin=-40, vmax=0)
-    ax[1].set_xlim(-500, 500)
-
-    ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
-    ax[1].set_xlabel("t (fs)")
-    ax[0].set_ylabel("propagation distance (mm)")
-    ax[1].set_ylabel("propagation distance (mm)")
-    return fig, ax
-
-
-def plot_single(n, length, fig=None, ax=None):
-    a_v = load_a_v(n)
-    a_t = load_a_t(n)
-
-    ind = np.argmin(abs(z - length))
-    a_v = a_v[ind]
-    a_t = a_t[ind]
-
-    p_v_dB = abs(a_v) ** 2
-    p_v_dB /= p_v_dB.max()
-    p_v_dB = 10 * np.log10(p_v_dB)
-
-    if fig is None:
-        fig, ax = plt.subplots(1, 2)
-    else:
-        assert ax is not None
-
-    ax[0].plot(wl * 1e6, p_v_dB)
-    ax[0].set_ylim(-40, 0)
-    ax[1].plot(t * 1e15, abs(a_t) ** 2 / max(abs(a_t) ** 2))
-    ax[1].set_xlim(-500, 500)
-    return fig, ax
-
-
-# for i in range(len(names_spm)):
-#     if i == 0:
-#         fig, ax = plot2D(i)
+#     p_t_dB = abs(a_t) ** 2
+#     p_t_dB /= p_t_dB.max()
+#     p_t_dB = 10 * np.log10(p_t_dB)
+#     if fig is None:
+#         fig, ax = plt.subplots(1, 2, figsize=np.array([8.66, 4.8]))
 #     else:
-#         [i.clear() for i in ax]
-#         plot2D(i, fig, ax)
-#     plt.savefig(f'fig/{i}.png')
-
-dv = np.diff(v_grid)[0]
-power = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6) for i in range(len(names_spm))])
+#         assert ax is not None
+#     ax[0].pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0)
+#     ax[1].pcolormesh(t * 1e15, z * 1e3, p_t_dB, vmin=-40, vmax=0)
+#     ax[1].set_xlim(-500, 500)
+#
+#     ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
+#     ax[1].set_xlabel("t (fs)")
+#     ax[0].set_ylabel("propagation distance (mm)")
+#     ax[1].set_ylabel("propagation distance (mm)")
+#     return fig, ax
+#
+#
+# def plot_single(n, length, fig=None, ax=None):
+#     a_v = load_a_v(n)
+#     a_t = load_a_t(n)
+#
+#     ind = np.argmin(abs(z - length))
+#     a_v = a_v[ind]
+#     a_t = a_t[ind]
+#
+#     p_v_dB = abs(a_v) ** 2
+#     p_v_dB /= p_v_dB.max()
+#     p_v_dB = 10 * np.log10(p_v_dB)
+#
+#     if fig is None:
+#         fig, ax = plt.subplots(1, 2)
+#     else:
+#         assert ax is not None
+#
+#     ax[0].plot(wl * 1e6, p_v_dB)
+#     ax[0].set_ylim(-40, 0)
+#     ax[1].plot(t * 1e15, abs(a_t) ** 2 / max(abs(a_t) ** 2))
+#     ax[1].set_xlim(-500, 500)
+#     return fig, ax
+#
+#
+# # for i in range(len(names_spm)):
+# #     if i == 0:
+# #         fig, ax = plot2D(i)
+# #     else:
+# #         [i.clear() for i in ax]
+# #         plot2D(i, fig, ax)
+# #     plt.savefig(f'fig/{i}.png')
+#
+# dv = np.diff(v_grid)[0]
+# power = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6) for i in range(len(names_spm))])
