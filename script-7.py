@@ -17,7 +17,7 @@ try:
     import materials as mtp
 
     on_linux = True
-except:
+except ImportError:
     Al2O3 = np.load('convenience/freq_epsilon_data.npy')
     Al2O3 = InterpolatedUnivariateSpline(Al2O3[:, 0], Al2O3[:, 1])
     on_linux = False
