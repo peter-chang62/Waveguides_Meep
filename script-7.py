@@ -362,11 +362,11 @@ fig.dpi = 300
 fig, ax = plt.subplots(1, 1, dpi=300)
 plot_mode(ind_pwr_3_5_100pJ[0], 5, new_figure=False, ax=ax)
 
-for n in ind_pwr_3_5_100pJ:
-    fig, ax = plot2D(n, a_v_only=True)
-    fig.dpi = 300
-    fig, ax = plt.subplots(1, 1, dpi=300)
-    plot_mode(n, 5, new_figure=False, ax=ax)
+# for n in ind_pwr_3_5_100pJ:
+#     fig, ax = plot2D(n, a_v_only=True)
+#     fig.dpi = 300
+#     fig, ax = plt.subplots(1, 1, dpi=300)
+#     plot_mode(n, 5, new_figure=False, ax=ax)
 
 fig, ax = plot_single(ind_pwr_3_5_100pJ[0], 3.1e-3, a_v_only=True)
 fig.dpi = 300
