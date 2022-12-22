@@ -245,7 +245,7 @@ t = np.load('sim_output/12-20-2022/t.npy')
 z = np.load('sim_output/12-20-2022/z.npy')
 
 
-def plot2D(n, fig=None, ax=None):
+def plot2D(n, fig=None, ax=None, a_v_only=False):
     a_v = load_a_v(n)
     a_t = load_a_t(n)
 
@@ -257,21 +257,30 @@ def plot2D(n, fig=None, ax=None):
     p_t_dB /= p_t_dB.max()
     p_t_dB = 10 * np.log10(p_t_dB)
     if fig is None:
-        fig, ax = plt.subplots(1, 2, figsize=np.array([8.66, 4.8]))
+        if not a_v_only:
+            fig, ax = plt.subplots(1, 2, figsize=np.array([8.66, 4.8]))
+        else:
+            fig, ax = plt.subplots(1, 1)
     else:
         assert ax is not None
-    ax[0].pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0)
-    ax[1].pcolormesh(t * 1e15, z * 1e3, p_t_dB, vmin=-40, vmax=0)
-    ax[1].set_xlim(-500, 500)
+    if not a_v_only:
+        ax[0].pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0)
+        ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
+        ax[0].set_ylabel("propagation distance (mm)")
 
-    ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
-    ax[1].set_xlabel("t (fs)")
-    ax[0].set_ylabel("propagation distance (mm)")
-    ax[1].set_ylabel("propagation distance (mm)")
+        ax[1].pcolormesh(t * 1e15, z * 1e3, p_t_dB, vmin=-40, vmax=0)
+        ax[1].set_xlim(-500, 500)
+        ax[1].set_xlabel("t (fs)")
+        ax[1].set_ylabel("propagation distance (mm)")
+    else:
+        ax.pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0)
+        ax.set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
+        ax.set_ylabel("propagation distance (mm)")
     return fig, ax
 
 
-def plot_single(n, length, fig=None, ax=None):
+def plot_single(n, length, fig=None, ax=None, a_v_only=False, a_t_only=False):
+    assert not np.all([a_v_only, a_t_only])
     a_v = load_a_v(n)
     a_t = load_a_t(n)
 
@@ -283,15 +292,36 @@ def plot_single(n, length, fig=None, ax=None):
     p_v_dB /= p_v_dB.max()
     p_v_dB = 10 * np.log10(p_v_dB)
 
+    wl_label = "wavelength ($\\mathrm{\\mu m}$)"
+    t_label = "t (fs)"
+
     if fig is None:
-        fig, ax = plt.subplots(1, 2)
+        if a_v_only or a_t_only:
+            fig, ax = plt.subplots(1, 1)
+        else:
+            fig, ax = plt.subplots(1, 2)
     else:
         assert ax is not None
 
-    ax[0].plot(wl * 1e6, p_v_dB)
-    ax[0].set_ylim(-40, 0)
-    ax[1].plot(t * 1e15, abs(a_t) ** 2 / max(abs(a_t) ** 2))
-    ax[1].set_xlim(-500, 500)
+    if a_v_only:
+        ax.plot(wl * 1e6, p_v_dB)
+        ax.set_ylim(-40, 0)
+        ax.set_xlabel(wl_label)
+        ax.set_ylabel("a.u. (dB)")
+    elif a_t_only:
+        ax.plot(t * 1e15, abs(a_t) ** 2 / max(abs(a_t) ** 2))
+        ax.set_xlim(-100, 100)
+        ax.set_xlabel(t_label)
+        ax.set_ylabel("a.u.")
+    else:
+        ax[0].plot(wl * 1e6, p_v_dB)
+        ax[0].set_ylim(-40, 0)
+        ax[0].set_xlabel(wl_label)
+        ax[0].set_ylabel("a.u. (dB)")
+        ax[1].plot(t * 1e15, abs(a_t) ** 2 / max(abs(a_t) ** 2))
+        ax[1].set_xlim(-100, 100)
+        ax[1].set_xlabel(t_label)
+        ax[1].set_ylabel("a.u.")
     return fig, ax
 
 
@@ -325,3 +355,26 @@ power = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6) for i in rang
 #         plt.savefig(f'fig/{i}.png')
 #     else:
 #         plt.pause(.05)
+
+
+fig, ax = plot2D(ind_pwr_3_5_100pJ[0], a_v_only=True)
+fig.dpi = 300
+fig, ax = plt.subplots(1, 1, dpi=300)
+plot_mode(ind_pwr_3_5_100pJ[0], 5, new_figure=False, ax=ax)
+
+for n in ind_pwr_3_5_100pJ:
+    fig, ax = plot2D(n, a_v_only=True)
+    fig.dpi = 300
+    fig, ax = plt.subplots(1, 1, dpi=300)
+    plot_mode(n, 5, new_figure=False, ax=ax)
+
+fig, ax = plot_single(ind_pwr_3_5_100pJ[0], 3.1e-3, a_v_only=True)
+fig.dpi = 300
+ax.set_xlim(.6, 3.6)
+fig, ax = plot_single(ind_pwr_3_5_100pJ[0], 3.1e-3, a_t_only=True)
+fig.dpi = 300
+
+# plot_single(ind_pwr_3_5_100pJ[1], 3.8e-3, fig, ax)
+# plot_single(ind_pwr_3_5_100pJ[2], 4.6e-3, fig, ax)
+# plot_single(ind_pwr_3_5_100pJ[3], 6.6e-3, fig, ax)
+# plot_single(ind_pwr_3_5_100pJ[4], 8.4e-3, fig, ax)
