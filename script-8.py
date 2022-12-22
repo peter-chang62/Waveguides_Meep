@@ -177,23 +177,23 @@ power = e_p_in_window(wl_grid=wl_grid,
 # %%____________________________________________________________________________________________________________________
 plt.figure()
 plt.plot(wl, beta2, 'o-')
-plt.xlabel("wavelength ($\mathrm{\mu m}$)")
-plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
 
 fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 3.5)))
-ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
-                  '%.2f' % wl[np.argmin(abs(wl - 3.5))] + " $\mathrm{\mu m}$")
+ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
+                  '%.2f' % wl[np.argmin(abs(wl - 3.5))] + " $\\mathrm{\\mu m}$")
 
 fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 4.0)))
-ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
-                  '%.2f' % wl[np.argmin(abs(wl - 4.0))] + " $\mathrm{\mu m}$")
+ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
+                  '%.2f' % wl[np.argmin(abs(wl - 4.0))] + " $\\mathrm{\\mu m}$")
 
 plt.figure()
 ind_z = np.argmin(abs(z * 1e3 - 10))
 p_v_dB = 10 * np.log10(abs(a_v[:ind_z]) ** 2 / np.max(abs(a_v[:ind_z]) ** 2))
 plt.pcolormesh(wl_grid * 1e6, z[:ind_z] * 1e3, p_v_dB,
                vmin=-40, vmax=0)
-plt.xlabel("wavelength ($\mathrm{\mu m}$)")
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
 plt.ylabel("z (mm)")
 
 
@@ -204,7 +204,7 @@ def plot_single(length):
     p_v_dB /= p_v_dB.max()
     p_v_dB = 10 * np.log10(p_v_dB)
     ax[0].plot(wl_grid * 1e6, p_v_dB, linewidth=2)
-    ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
+    ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
     ax[0].set_ylabel("a. u.")
     ax[0].set_ylim(-40, 0)
     ax[0].set_xlim(.6, 4.5)
@@ -227,7 +227,7 @@ def video(save=False, length=False):
         p_v_dB /= p_v_dB.max()
         p_v_dB = 10 * np.log10(p_v_dB)
         ax[0].plot(wl_grid * 1e6, p_v_dB, linewidth=2)
-        ax[0].set_xlabel("wavelength ($\mathrm{\mu m}$)")
+        ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
         ax[0].set_ylabel("a. u.")
         ax[0].set_ylim(-40, 0)
         ax[0].set_xlim(.6, 4.5)
