@@ -55,9 +55,11 @@ names_wvgd = sorted(names_wvgd, key=depth)
 names_wvgd = sorted(names_wvgd, key=width)
 
 # %%____________________________________________________________________________________________________________________
-get_disp = lambda n: np.load(path_wvgd + 'dispersion-curves/' + names_wvgd[n])
-get_eps = lambda n: np.load(path_wvgd + 'eps/' + names_wvgd[n])
-get_field = lambda n: np.squeeze(np.load(path_wvgd + 'E-fields/' + names_wvgd[n]))
+
+
+def get_disp(n): return np.load(path_wvgd + 'dispersion-curves/' + names_wvgd[n])
+def get_eps(n): return np.load(path_wvgd + 'eps/' + names_wvgd[n])
+def get_field(n): return np.squeeze(np.load(path_wvgd + 'E-fields/' + names_wvgd[n]))
 
 
 # %%____________________________________________________________________________________________________________________
@@ -86,19 +88,19 @@ def plot_mode(n, k_index, new_figure=True, ax=None):
     wl = 1 / freq[k_index]
     if ax is not None:
         ax.set_title(f'{np.round(width(names_wvgd[n]), 3)} x {np.round(depth(names_wvgd[n]), 3)} x 1'
-                     + ' $\mathrm{\mu m}$' '\n' +
-                     "$\mathrm{\lambda = }$" + '%.2f' % wl
-                     + ' $\mathrm{\mu m}$' + '\n' +
-                     '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-                     ' $\mathrm{\mu m^2}$')
+                     + ' $\\mathrm{\\mu m}$' '\n' +
+                     "$\\mathrm{\\lambda = }$" + '%.2f' % wl
+                     + ' $\\mathrm{\\mu m}$' + '\n' +
+                     '$\\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+                     ' $\\mathrm{\\mu m^2}$')
         ax.axis(False)
     else:
         plt.title(f'{np.round(width(names_wvgd[n]), 3)} x {np.round(depth(names_wvgd[n]), 3)} x 1'
-                  + ' $\mathrm{\mu m}$' '\n' +
-                  "$\mathrm{\lambda = }$" + '%.2f' % wl
-                  + ' $\mathrm{\mu m}$' + '\n' +
-                  '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-                  ' $\mathrm{\mu m^2}$')
+                  + ' $\\mathrm{\\mu m}$' '\n' +
+                  "$\\mathrm{\\lambda = }$" + '%.2f' % wl
+                  + ' $\\mathrm{\\mu m}$' + '\n' +
+                  '$\\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+                  ' $\\mathrm{\\mu m^2}$')
         plt.axis(False)
 
 
@@ -237,8 +239,11 @@ names_spm = [i.name for i in os.scandir('sim_output/12-20-2022/a_v/')]
 names_spm = sorted(names_spm, key=depth)
 names_spm = sorted(names_spm, key=width)
 
-load_a_v = lambda n: np.load(f'sim_output/12-20-2022/a_v/{names_spm[n]}')
-load_a_t = lambda n: np.load(f'sim_output/12-20-2022/a_t/{names_spm[n]}')
+
+def load_a_v(n): return np.load(f'sim_output/12-20-2022/a_v/{names_spm[n]}')
+def load_a_t(n): return np.load(f'sim_output/12-20-2022/a_t/{names_spm[n]}')
+
+
 v_grid = np.load('sim_output/12-20-2022/v_grid.npy')
 wl = sc.c / v_grid
 t = np.load('sim_output/12-20-2022/t.npy')
@@ -378,3 +383,5 @@ fig.dpi = 300
 # plot_single(ind_pwr_3_5_100pJ[2], 4.6e-3, fig, ax)
 # plot_single(ind_pwr_3_5_100pJ[3], 6.6e-3, fig, ax)
 # plot_single(ind_pwr_3_5_100pJ[4], 8.4e-3, fig, ax)
+
+plt.show()
