@@ -23,6 +23,7 @@ except ImportError:
     on_linux = False
 
 clipboard_and_style_sheet.style_sheet()
+plt.ion()
 
 
 def width(s):
@@ -383,5 +384,3 @@ ax.set_xlim(.6, 3.6)
 # plot_single(ind_pwr_3_5_100pJ[2], 4.6e-3, fig, ax, a_v_only=True)
 # plot_single(ind_pwr_3_5_100pJ[3], 6.6e-3, fig, ax, a_v_only=True)
 # plot_single(ind_pwr_3_5_100pJ[4], 8.4e-3, fig, ax, a_v_only=True)
-
-plt.show()
