@@ -251,7 +251,7 @@ t = np.load('sim_output/12-20-2022/t.npy')
 z = np.load('sim_output/12-20-2022/z.npy')
 
 
-def plot2D(n, fig=None, ax=None, a_v_only=False):
+def plot2D(n, fig=None, ax=None, a_v_only=False, dpi=None):
     a_v = load_a_v(n)
     a_t = load_a_t(n)
 
@@ -264,9 +264,9 @@ def plot2D(n, fig=None, ax=None, a_v_only=False):
     p_t_dB = 10 * np.log10(p_t_dB)
     if fig is None:
         if not a_v_only:
-            fig, ax = plt.subplots(1, 2, figsize=np.array([8.66, 4.8]))
+            fig, ax = plt.subplots(1, 2, figsize=np.array([8.66, 4.8]), dpi=dpi)
         else:
-            fig, ax = plt.subplots(1, 1)
+            fig, ax = plt.subplots(1, 1, dpi=dpi)
     else:
         assert ax is not None
     if not a_v_only:
@@ -285,7 +285,7 @@ def plot2D(n, fig=None, ax=None, a_v_only=False):
     return fig, ax
 
 
-def plot_single(n, length, fig=None, ax=None, a_v_only=False, a_t_only=False):
+def plot_single(n, length, fig=None, ax=None, a_v_only=False, a_t_only=False, dpi=None):
     assert not np.all([a_v_only, a_t_only])
     a_v = load_a_v(n)
     a_t = load_a_t(n)
@@ -303,9 +303,9 @@ def plot_single(n, length, fig=None, ax=None, a_v_only=False, a_t_only=False):
 
     if fig is None:
         if a_v_only or a_t_only:
-            fig, ax = plt.subplots(1, 1)
+            fig, ax = plt.subplots(1, 1, dpi=dpi)
         else:
-            fig, ax = plt.subplots(1, 2)
+            fig, ax = plt.subplots(1, 2, dpi=dpi)
     else:
         assert ax is not None
 
@@ -362,10 +362,9 @@ power = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6) for i in rang
 #     else:
 #         plt.pause(.05)
 
-
-fig, ax = plot2D(ind_pwr_3_5_100pJ[0], a_v_only=True)
-fig.dpi = 300
-fig, ax = plt.subplots(1, 1, dpi=300)
+dpi = None
+fig, ax = plot2D(ind_pwr_3_5_100pJ[0], a_v_only=True, dpi=dpi)
+fig, ax = plt.subplots(1, 1, dpi=dpi)
 plot_mode(ind_pwr_3_5_100pJ[0], 5, new_figure=False, ax=ax)
 
 # for n in ind_pwr_3_5_100pJ:
@@ -374,10 +373,8 @@ plot_mode(ind_pwr_3_5_100pJ[0], 5, new_figure=False, ax=ax)
 #     fig, ax = plt.subplots(1, 1, dpi=300)
 #     plot_mode(n, 5, new_figure=False, ax=ax)
 
-fig, ax = plot_single(ind_pwr_3_5_100pJ[0], 3.1e-3, a_t_only=True)
-fig.dpi = 300
-fig, ax = plot_single(ind_pwr_3_5_100pJ[0], 3.1e-3, a_v_only=True)
-fig.dpi = 300
+fig, ax = plot_single(ind_pwr_3_5_100pJ[0], 3.1e-3, a_t_only=True, dpi=dpi)
+fig, ax = plot_single(ind_pwr_3_5_100pJ[0], 3.1e-3, a_v_only=True, dpi=dpi)
 ax.set_xlim(.6, 3.6)
 
 # plot_single(ind_pwr_3_5_100pJ[1], 3.8e-3, fig, ax, a_v_only=True)
