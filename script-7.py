@@ -2,6 +2,7 @@
 
 This script runs all the dispersion curves through PyNLO"""
 
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
 import clipboard_and_style_sheet
@@ -55,9 +56,8 @@ width_limit = 1.245
 names_wvgd = sorted(names_wvgd, key=depth)
 names_wvgd = sorted(names_wvgd, key=width)
 
+
 # %%____________________________________________________________________________________________________________________
-
-
 def get_disp(n): return np.load(path_wvgd + 'dispersion-curves/' + names_wvgd[n])
 def get_eps(n): return np.load(path_wvgd + 'eps/' + names_wvgd[n])
 def get_field(n): return np.squeeze(np.load(path_wvgd + 'E-fields/' + names_wvgd[n]))
@@ -193,14 +193,14 @@ def aliasing_av(a_v):
         return False
 
 
-# ______________________________________________________________________________________________________________________
+# %% ___________________________________________________________________________________________________________________
 ind_pwr_3_5_300pJ = np.array([13, 14, 15, 16, 17, 18, 31, 32, 33, 34, 35, 36, 47,
                               48, 49, 50, 51, 52, 53, 64, 65, 66, 67, 68, 69, 70,
                               71, 82, 83, 84, 85, 86, 87, 88, 89, 100, 101, 102, 105,
                               119, 120, 121, 138, 139])
 ind_pwr_3_5_100pJ = np.array([13, 30, 48, 65, 83, ])
 
-# ______________________________________________________________________________________________________________________
+# %% ___________________________________________________________________________________________________________________
 # h = 1
 # N = np.arange(len(names_wvgd))
 # center = len(N) // 4
@@ -235,7 +235,7 @@ ind_pwr_3_5_100pJ = np.array([13, 30, 48, 65, 83, ])
 # np.save("sim_output/12-20-2022/t.npy", pulse.t_grid)
 # np.save("sim_output/12-20-2022/z.npy", z)
 
-# ______________________________________________________________________________________________________________________
+# %% ___________________________________________________________________________________________________________________
 names_spm = [i.name for i in os.scandir('sim_output/12-20-2022/a_v/')]
 names_spm = sorted(names_spm, key=depth)
 names_spm = sorted(names_spm, key=width)
@@ -347,6 +347,7 @@ def plot_all(n, k_index, fig=None, ax=None):
     return fig, ax
 
 
+# %% ___________________________________________________________________________________________________________________
 dv = np.diff(v_grid)[0]
 power = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6) for i in range(len(names_spm))])
 
