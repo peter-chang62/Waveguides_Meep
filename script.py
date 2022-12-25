@@ -3,6 +3,10 @@ import waveguide_dispersion as wg
 import materials as mtp
 import meep as mp
 import matplotlib.pyplot as plt
+import clipboard_and_style_sheet as cr
+
+cr.style_sheet()
+plt.ion()
 
 ridge = wg.RidgeWaveguide(
     width=5,

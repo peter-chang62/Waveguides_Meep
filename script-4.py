@@ -14,12 +14,13 @@ try:
     import materials as mtp
 
     on_linux = True
-except:
+except ImportError:
     Al2O3 = np.load('convenience/freq_epsilon_data.npy')
     Al2O3 = InterpolatedUnivariateSpline(Al2O3[:, 0], Al2O3[:, 1])
     on_linux = False
 
 clipboard_and_style_sheet.style_sheet()
+plt.ion()
 
 
 def width(s):
@@ -118,10 +119,10 @@ def plot_mode(n, k_index, new_figure=True):
         s = "guided"
     else:
         s = "NOT guided"
-    plt.title(f'{np.round(width(name_eps[n]), 3)} x {np.round(height(name_eps[n]), 3)}' + ' $\mathrm{\mu m}$' '\n' +
-              "$\mathrm{\lambda = }$" + '%.2f' % wl + ' $\mathrm{\mu m}$' + '\n' +
-              '$\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-              ' $\mathrm{\mu m^2}$' + '\n' + s)
+    plt.title(f'{np.round(width(name_eps[n]), 3)} x {np.round(height(name_eps[n]), 3)}' + ' $\\mathrm{\\mu m}$' '\n' +
+              "$\\mathrm{\\lambda = }$" + '%.2f' % wl + ' $\\mathrm{\\mu m}$' + '\n' +
+              '$\\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
+              ' $\\mathrm{\\mu m^2}$' + '\n' + s)
 
 
 # %%____________________________________________________________________________________________________________________
@@ -170,10 +171,10 @@ for n in range(len(name_disp)):
         ax.clear()
         ax.axhline(0, color='k', linestyle='--')
         ax.axvline(1.55, color='k', linestyle='--')
-        ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\mathrm{\mu m}$')
+        ax.set_title(f'{np.round(width(name_disp[n]), 3)} x {np.round(height(name_disp[n]), 3)}' + ' $\\mathrm{\\mu m}$')
     ax.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
-    ax.set_xlabel("wavelength $\mathrm{\mu m}$")
-    ax.set_ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
+    ax.set_xlabel("wavelength $\\mathrm{\\mu m}$")
+    ax.set_ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
     if savefig:
         plt.savefig(f'fig/{n}.png')
         print(n)
@@ -181,8 +182,10 @@ for n in range(len(name_disp)):
         plt.pause(.1)
 plt.axhline(0, color='k', linestyle='--')
 plt.axvline(1.55, color='k', linestyle='--')
-plt.xlabel("wavelength $\mathrm{\mu m}$")
-plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
+plt.xlabel("wavelength $\\mathrm{\\mu m}$")
+plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
+plt.xlim(.8, 5)
+plt.ylim(-1000, 6000)
 
 # %%____________________________________________________________________________________________________________________
 # plotting the analysis of the results
@@ -224,16 +227,16 @@ cmap = 'afmhot'
 fig, ax = plt.subplots(1, 1)
 img = ax.pcolormesh(w, h, wl_zdw_short_2D, cmap=cmap)
 plt.colorbar(img)
-ax.set_xlabel("width ($\mathrm{\mu m}$)")
-ax.set_ylabel("height ($\mathrm{\mu m}$)")
-ax.set_title("$\mathrm{\lambda_{ZDW}}$ shortest")
+ax.set_xlabel("width ($\\mathrm{\\mu m}$)")
+ax.set_ylabel("height ($\\mathrm{\\mu m}$)")
+ax.set_title("$\\mathrm{\\lambda_{ZDW}}$ shortest")
 
 fig, ax = plt.subplots(1, 1)
 img = ax.pcolormesh(w, h, wl_zdw_long_2D, cmap=cmap)
 plt.colorbar(img)
-ax.set_xlabel("width ($\mathrm{\mu m}$)")
-ax.set_ylabel("height ($\mathrm{\mu m}$)")
-ax.set_title("$\mathrm{\lambda_{ZDW}}$ longest")
+ax.set_xlabel("width ($\\mathrm{\\mu m}$)")
+ax.set_ylabel("height ($\\mathrm{\\mu m}$)")
+ax.set_title("$\\mathrm{\\lambda_{ZDW}}$ longest")
 
 ind_shortest = np.unravel_index(np.argmin(wl_zdw_short_2D), h.shape)
 ind_longest = np.unravel_index(np.argmax(wl_zdw_long_2D), h.shape)
