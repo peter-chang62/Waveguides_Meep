@@ -1,5 +1,6 @@
-"""Combine MEEP simulations and PyNLO into one script (will only run on a linux computer). This is good for sort of
-point sampling of the big simulation outputs. You can make small adjustment to parameters here """
+"""Combine MEEP simulations and PyNLO into one script (will only run on a 
+linux computer). This is good for sort of point sampling of the big simulation 
+outputs. You can make small adjustment to parameters here """
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -35,15 +36,18 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
 
 
 def mode_area(I):
-    # integral(I * dA) ** 2  / integral(I ** 2 * dA) is the common definition that is used
+    # integral(I * dA) ** 2  / integral(I ** 2 * dA) is the
+    # common definition that is used
     # reference: https://www.rp-photonics.com/effective_mode_area.html
     # this gives an overall dimension of dA in the numerator
-    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(scint.simpson(I ** 2))
+    area = scint.simpson(scint.simpson(I)) ** 2 / \
+        scint.simpson(scint.simpson(I ** 2))
     area /= resolution ** 2
     return area
 
 
-def instantiate_pulse(n_points, v_min, v_max, e_p=300e-3 * 1e-9, t_fwhm=50e-15):
+def instantiate_pulse(n_points, v_min, v_max,
+                      e_p=300e-3 * 1e-9, t_fwhm=50e-15):
     v0 = sc.c / 1560e-9  # sc.c / 1550 nm
     pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
     pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
@@ -93,7 +97,8 @@ def simulate(pulse, mode, length=3e-3, npts=100):
     dz = model.estimate_step_size(n=20, local_error=local_error)
 
     z_grid = np.linspace(0, length, npts)
-    pulse_out, z, a_t, a_v = model.simulate(z_grid, dz=dz, local_error=local_error, n_records=None, plot=None)
+    pulse_out, z, a_t, a_v = model.simulate(
+        z_grid, dz=dz, local_error=local_error, n_records=None, plot=None)
     return pulse_out, z, a_t, a_v
 
 
@@ -121,10 +126,15 @@ def aliasing_av(a_v):
 
 
 """Copy from script-2.py"""
-# %%____________________________________________________________________________________________________________________
+# %%___________________________________________________________________________
 # Gayer paper Sellmeier equation for ne (taken from PyNLO
-# 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go from ne to eps
-eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+# 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go
+# from ne to eps
+
+
+def eps_func_wvgd(omega):
+    return Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+
 
 # %%____________________________________________________________________________________________________________________
 sim = wg.ThinFilmWaveguide(etch_width=etch_width,
@@ -137,11 +147,13 @@ sim = wg.ThinFilmWaveguide(etch_width=etch_width,
                            cell_width=10,
                            cell_height=4)
 
-# %%____________________________________________________________________________________________________________________
+# %%___________________________________________________________________________
 # individual sampling (comment out if running the for loop block instead)
 block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
-sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
-res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # run simulation
+sim.blk_wvgd = geometry.convert_block_to_trapezoid(
+    sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
+# run simulation
+res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)
 sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
 wl = 1 / res.freq
@@ -151,7 +163,7 @@ beta = res.kx.flatten() * 2 * np.pi
 beta1 = np.gradient(beta, omega, edge_order=2)
 beta2 = np.gradient(beta1, omega, edge_order=2) * conversion
 
-# %%____________________________________________________________________________________________________________________
+# %%___________________________________________________________________________
 n_points = 2 ** 13
 v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
 v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
@@ -174,7 +186,7 @@ power = e_p_in_window(wl_grid=wl_grid,
                       wl_ll=3e-6,
                       wl_ul=5e-6) * frep
 
-# %%____________________________________________________________________________________________________________________
+# %%___________________________________________________________________________
 plt.figure()
 plt.plot(wl, beta2, 'o-')
 plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
@@ -182,11 +194,13 @@ plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
 
 fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 3.5)))
 ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
-                  '%.2f' % wl[np.argmin(abs(wl - 3.5))] + " $\\mathrm{\\mu m}$")
+                  '%.2f' % wl[np.argmin(abs(wl - 3.5))] +
+                  " $\\mathrm{\\mu m}$")
 
 fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 4.0)))
 ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
-                  '%.2f' % wl[np.argmin(abs(wl - 4.0))] + " $\\mathrm{\\mu m}$")
+                  '%.2f' % wl[np.argmin(abs(wl - 4.0))] +
+                  " $\\mathrm{\\mu m}$")
 
 plt.figure()
 ind_z = np.argmin(abs(z * 1e3 - 10))
@@ -208,7 +222,8 @@ def plot_single(length):
     ax[0].set_ylabel("a. u.")
     ax[0].set_ylim(-40, 0)
     ax[0].set_xlim(.6, 4.5)
-    ax[1].plot(pulse.t_grid * 1e15, abs(a_t[ind_z]) ** 2 / max(abs(a_t[ind_z]) ** 2), linewidth=2)
+    ax[1].plot(pulse.t_grid * 1e15, abs(a_t[ind_z]) **
+               2 / max(abs(a_t[ind_z]) ** 2), linewidth=2)
     ax[1].set_xlabel("t (fs)")
     ax[1].set_ylabel("a.u.")
     ax[1].set_xlim(-75, 75)
@@ -231,7 +246,8 @@ def video(save=False, length=False):
         ax[0].set_ylabel("a. u.")
         ax[0].set_ylim(-40, 0)
         ax[0].set_xlim(.6, 4.5)
-        ax[1].plot(pulse.t_grid * 1e15, abs(a_t[n]) ** 2 / max(abs(a_t[n]) ** 2), linewidth=2)
+        ax[1].plot(pulse.t_grid * 1e15, abs(a_t[n]) **
+                   2 / max(abs(a_t[n]) ** 2), linewidth=2)
         ax[1].set_xlabel("t (fs)")
         ax[1].set_ylabel("a.u.")
         ax[1].set_xlim(-200, 200)
@@ -241,10 +257,14 @@ def video(save=False, length=False):
         else:
             plt.pause(.05)
 
-# %%____________________________________________________________________________________________________________________
+
+# %%___________________________________________________________________________
 # save sim results
 # arr = np.c_[res.freq, beta, beta1, beta2]
 # path = ""
-# np.save(path + f'07-19-2022/dispersion-curves/{etch_width}_{etch_depth}.npy', arr)  # same but push to synology
-# np.save(path + f'07-19-2022/E-fields/{etch_width}_{etch_depth}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
-# np.save(path + f'07-19-2022/eps/{etch_width}_{etch_depth}.npy', sim.ms.get_epsilon())
+# np.save(path + f'07-19-2022/dispersion-curves/{etch_width}_{etch_depth}.npy',
+#         arr)  # same but push to synology
+# np.save(path + f'07-19-2022/E-fields/{etch_width}_{etch_depth}.npy',
+#         sim.E[:, :, :, :, 1].__abs__() ** 2)
+# np.save(path + f'07-19-2022/eps/{etch_width}_{etch_depth}.npy',
+#         sim.ms.get_epsilon())

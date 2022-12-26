@@ -31,3 +31,5 @@ def dk_func(omega, omega_p, beta, beta_1, gamma, P):
     """
 
     return beta(omega) - beta(omega_p) - beta_1(omega_p) * (omega - omega_p) - gamma * P
+
+# %%
