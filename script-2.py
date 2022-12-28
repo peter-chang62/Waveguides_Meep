@@ -24,14 +24,15 @@ import itertools
 
 clipboard_and_style_sheet.style_sheet()
 
-# %%____________________________________________________________________________
+# %%___________________________________________________________________________
 
 # Gayer paper Sellmeier equation for ne (taken from PyNLO
 # 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go
 # from ne to eps
-eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n(
+    (1 / omega) * 1e3) ** 2
 
-# %%____________________________________________________________________________
+# %%___________________________________________________________________________
 sim = wg.ThinFilmWaveguide(etch_width=3,  # will be changed later
                            etch_depth=.3,  # will be changed later
                            film_thickness=1,  # I'll fix the height at 1 um now
@@ -42,7 +43,7 @@ sim = wg.ThinFilmWaveguide(etch_width=3,  # will be changed later
                            cell_width=10,
                            cell_height=4)
 
-# %%____________________________________________________________________________
+# %%___________________________________________________________________________
 # individual sampling (comment out if running the for loop block instead)
 sim.etch_width, sim.etch_depth = (1.38, 0.65)
 
@@ -86,7 +87,7 @@ np.save(path + f'07-19-2022/E-fields/{sim.etch_width}_{sim.etch_depth}.npy',
 np.save(path + f'07-19-2022/eps/{sim.etch_width}_{sim.etch_depth}.npy',
         sim.ms.get_epsilon())
 
-# %%____________________________________________________________________________
+# %%___________________________________________________________________________
 # # 300 nm to 3 um in 135 nm steps
 # etch_width = wg.get_omega_axis(1 / 3, 1 / 0.3, 20)
 # etch_depth = np.arange(0.1, 1.05, .05)
@@ -122,13 +123,13 @@ for w, d in params[:center]:
                               eps_func_wvgd=eps_func_wvgd)  # run simulation
     sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
-    # _________________________________ calculate beta2 ______________________
+    # _________________________________ calculate beta2 _______________________
     omega = res.freq * 2 * np.pi
     beta = res.kx.flatten() * 2 * np.pi
     beta1 = np.gradient(beta, omega, edge_order=2)
     beta2 = np.gradient(beta1, omega, edge_order=2)
 
-    # _______________________________________ save the data __________________
+    # _______________________________________ save the data ___________________
     arr = np.c_[res.freq, beta, beta1, beta2]
 
     np.save(path + f'07-19-2022/dispersion-curves/{w}_{d}.npy',
