@@ -443,9 +443,9 @@ def plot_all(n, k_index, fig=None, ax=None):
 
 
 # %% __________________________________________________________________________
-# dv = np.diff(v_grid)[0]
-# power = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6)
-#                     for i in range(len(names_spm))])
+dv = np.diff(v_grid)[0]
+E_P = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6)
+                  for i in range(len(names_spm))])
 
 # dpi = None
 # fig, ax = plot2D(ind_pwr_3_5_100pJ[0], a_v_only=True, dpi=dpi)
@@ -468,5 +468,5 @@ def plot_all(n, k_index, fig=None, ax=None):
 # # plot_single(ind_pwr_3_5_100pJ[4], 8.4e-3, fig, ax, a_v_only=True)
 
 # %% __________________________________________________________________________
-for i in ind_pwr_3_5_100pJ:
-    fig, ax = plot_all(i, 4)
+# for i in ind_pwr_3_5_100pJ:
+#     fig, ax = plot_all(i, 4)

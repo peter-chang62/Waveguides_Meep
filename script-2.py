@@ -1,10 +1,13 @@
-"""For the 06-16-2022 simulations, I varied the etch width and the waveguide height (I believe the etch depth was
-fixed at 300 nm). In a meeting, people pointed out it was more realistic to fix the height and vary the etch depth,
+"""For the 06-16-2022 simulations, I varied the etch width and the waveguide
+height (I believe the etch depth was fixed at 300 nm). In a meeting, people
+pointed out it was more realistic to fix the height and vary the etch depth,
 and that is what is saved in 07-19-2022.
 
-The simulations for 06-16-2022 occured in two runs, where I continued the parameter sweep for the waveguide height.
-The simulations for fixed waveguide height also occured in two runs. However, it looks like one because the second
-time I extended the wavelength axis and just overwrote the previous simulation data. """
+The simulations for 06-16-2022 occured in two runs, where I continued the
+parameter sweep for the waveguide height. The simulations for fixed waveguide
+height also occured in two runs. However, it looks like one because the
+second time I extended the wavelength axis and just overwrote the previous
+simulation data. """
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,12 +24,12 @@ import itertools
 
 clipboard_and_style_sheet.style_sheet()
 
-# %%____________________________________________________________________________________________________________________
+# %%____________________________________________________________________________
 # Gayer paper Sellmeier equation for ne (taken from PyNLO
 # 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go from ne to eps
 eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 
-# %%____________________________________________________________________________________________________________________
+# %%____________________________________________________________________________
 sim = wg.ThinFilmWaveguide(etch_width=3,  # will be changed later
                            etch_depth=.3,  # will be changed later
                            film_thickness=1,  # I'll fix the height at 1 um now
@@ -37,7 +40,7 @@ sim = wg.ThinFilmWaveguide(etch_width=3,  # will be changed later
                            cell_width=10,
                            cell_height=4)
 
-# %%____________________________________________________________________________________________________________________
+# %%____________________________________________________________________________
 # individual sampling (comment out if running the for loop block instead)
 sim.etch_width, sim.etch_depth = (1.38, 0.65)
 
@@ -105,13 +108,13 @@ np.save(path + f'07-19-2022/eps/{sim.etch_width}_{sim.etch_depth}.npy', sim.ms.g
 #     res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # run simulation
 #     sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 #
-#     # _________________________________ calculate beta2 __________________________________________________________
+#     # _________________________________ calculate beta2 ______________________
 #     omega = res.freq * 2 * np.pi
 #     beta = res.kx.flatten() * 2 * np.pi
 #     beta1 = np.gradient(beta, omega, edge_order=2)
 #     beta2 = np.gradient(beta1, omega, edge_order=2)
 #
-#     # _______________________________________ save the data ______________________________________________________
+#     # _______________________________________ save the data __________________
 #     arr = np.c_[res.freq, beta, beta1, beta2]
 #
 #     np.save(path + f'07-19-2022/dispersion-curves/{w}_{d}.npy', arr)  # same but push to synology
