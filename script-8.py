@@ -23,7 +23,7 @@ clipboard_and_style_sheet.style_sheet()
 resolution = 30
 
 
-# ______________________________________________________________________________________________________________________
+# ______________________________________________________________________________
 
 def get_bp_ind(wl_grid, wl_ll, wl_ul):
     return np.where(np.logical_and(wl_grid >= wl_ll, wl_grid <= wl_ul), 1, 0)
@@ -136,7 +136,7 @@ def eps_func_wvgd(omega):
     return Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 
 
-# %%____________________________________________________________________________________________________________________
+# %%____________________________________________________________________________
 sim = wg.ThinFilmWaveguide(etch_width=etch_width,
                            etch_depth=etch_depth,
                            film_thickness=1,  # I'll fix the height at 1 um now
