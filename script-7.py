@@ -290,20 +290,6 @@ pulse = instantiate_pulse(n_points=n_points,
 
 
 def dk_func(w, w_p, b_w, b_w_p, b_1_w_p, gamma, P):
-    """Summary
-
-    Args:
-        w (TYPE): angular frequency axis
-        w_p (TYPE): center angular frequency
-        b_w (TYPE): beta axis
-        b_w_p (TYPE): beta at center frequency
-        b_1_w_p (TYPE): beta_1 at center frequency
-        gamma (TYPE): fiber nonlinear coefficient (1/W*m)
-        P (TYPE): peak power
-
-    Returns:
-        TYPE: phase mismatch 1D array
-    """
     return b_w - b_w_p - b_1_w_p * (w - w_p) - gamma * P
 
 
