@@ -65,16 +65,16 @@ beta2 = np.gradient(beta1, omega, edge_order=2)
 plt.plot(wl, beta2, 'o-')
 plt.axhline(0, color='r')
 plt.axvline(1.55, color='r')
-plt.xlabel("wavelength ($\mathrm{\mu m}$)")
-plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
 
 fig, ax = sim.plot_mode(0, 0)
-ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
-                  '%.2f' % wl[0] + " $\mathrm{\mu m}$")
+ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
+                  '%.2f' % wl[0] + " $\\mathrm{\\mu m}$")
 
 fig, ax = sim.plot_mode(0, 2)
-ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
-                  '%.2f' % wl[2] + " $\mathrm{\mu m}$")
+ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
+                  '%.2f' % wl[2] + " $\\mathrm{\\mu m}$")
 
 # saving
 arr = np.c_[res.freq, beta, beta1, beta2]

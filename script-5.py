@@ -33,8 +33,8 @@ def get_beta(res, plot=True, plot_freq=False):
             plt.plot(wl, beta2, 'o-')
             plt.axvline(1.55, color='r')
         plt.axhline(0, color='r')
-        plt.xlabel("wavelength ($\mathrm{\mu m}$)")
-        plt.ylabel("$\mathrm{\\beta_2 \; (ps^2/km})$")
+        plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+        plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
 
     return wl, omega, beta, beta1, beta2
 
@@ -42,16 +42,18 @@ def get_beta(res, plot=True, plot_freq=False):
 def plot_mode(res, sim, band_index, k_index):
     wl = 1 / res.freq
     fig, ax = sim.plot_mode(band_index, k_index)
-    ax.title.set_text(ax.title.get_text() + "\n" + "$\mathrm{\lambda = }$" +
-                      '%.2f' % wl[k_index] + " $\mathrm{\mu m}$")
+    ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
+                      '%.2f' % wl[k_index] + " $\\mathrm{\\mu m}$")
 
 
-# %%____________________________________________________________________________________________________________________
+# %%___________________________________________________________________________
 # Gayer paper Sellmeier equation for ne (taken from PyNLO
-# 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go from ne to eps
-eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+# 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go
+# from ne to eps
+eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n(
+    (1 / omega) * 1e3) ** 2
 
-# %%____________________________________________________________________________________________________________________
+# %%___________________________________________________________________________
 sim = wg.ThinFilmWaveguide(etch_width=3,
                            etch_depth=.3,
                            film_thickness=1,
@@ -63,20 +65,22 @@ sim = wg.ThinFilmWaveguide(etch_width=3,
                            cell_width=10,
                            cell_height=4)
 
-# %%____________________________________________________________________________________________________________________
+# %%___________________________________________________________________________
 # single waveguide parameter (comment out if running the for loop block instead)
 sim.etch_width = 3.0
 sim.etch_depth = 0.70
 
 block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
-sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
-res = sim.calc_dispersion(.8, 5, 50, eps_func_wvgd=eps_func_wvgd)  # run simulation
+sim.blk_wvgd = geometry.convert_block_to_trapezoid(
+    sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
+res = sim.calc_dispersion(.8, 5, 50,
+                          eps_func_wvgd=eps_func_wvgd)  # run simulation
 sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
 wl, omega, beta, beta1, beta2 = get_beta(res, plot_freq=True)
 plot_mode(res, sim, 0, 0)
 
-# %%____________________________________________________________________________________________________________________
+# %%___________________________________________________________________________
 # for loop sweep through parameters
 # I've verified that these are all guided (really only had to check 2.5 x .3 um)
 # etch_width = wg.get_omega_axis(1 / 5, 1 / 2.5, 5)
@@ -91,17 +95,20 @@ plot_mode(res, sim, 0, 0)
 #         sim.etch_depth = d
 #
 #         block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
-#         sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
-#         res = sim.calc_dispersion(.8, 5, 50, eps_func_wvgd=eps_func_wvgd)  # run simulation
+#         sim.blk_wvgd = geometry.convert_block_to_trapezoid(
+#             sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
+#         res = sim.calc_dispersion(.8, 5, 50,
+#                                   eps_func_wvgd=eps_func_wvgd)  # run simulation
 #         sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 #
 #         wl, omega, beta, beta1, beta2 = get_beta(res, False)
 #         arr = np.c_[res.freq, beta, beta1, beta2]
 #
-#         # _______________________________________ save the data ______________________________________________________
+#         # ______________________________________ save the data ______________
 #         np.save(f'sim_output/09-08-2022/dispersion-curves/{w}_{d}.npy', arr)
-#         np.save(f'sim_output/09-08-2022/E-fields/{w}_{d}.npy', sim.E[:, :, :, :, 1].__abs__() ** 2)
+#         np.save(f'sim_output/09-08-2022/E-fields/{w}_{d}.npy',
+#                 sim.E[:, :, :, :, 1].__abs__() ** 2)
 #         np.save(f'sim_output/09-08-2022/eps/{w}_{d}.npy', sim.ms.get_epsilon())
 #
 #         h += 1
-#         print(f'______________________________________finished {h} of {NPTS}________________________________')
+#         print(f'_____________________finished {h} of {NPTS}________________')

@@ -1,6 +1,8 @@
-"""Combine MEEP simulations and PyNLO into one script (will only run on a 
-linux computer). This is good for sort of point sampling of the big simulation 
-outputs. You can make small adjustment to parameters here """
+"""
+Combine MEEP simulations and PyNLO into one script (will only run on a linux
+computer). This is good for sort of point sampling of the big simulation
+outputs. You can make small adjustment to parameters here
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -126,6 +128,8 @@ def aliasing_av(a_v):
 
 
 """Copy from script-2.py"""
+
+
 # %%___________________________________________________________________________
 # Gayer paper Sellmeier equation for ne (taken from PyNLO
 # 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go
@@ -137,6 +141,8 @@ def eps_func_wvgd(omega):
 
 
 # %%____________________________________________________________________________
+etch_width = 1.245
+etch_depth = 0.7
 sim = wg.ThinFilmWaveguide(etch_width=etch_width,
                            etch_depth=etch_depth,
                            film_thickness=1,  # I'll fix the height at 1 um now
@@ -150,10 +156,8 @@ sim = wg.ThinFilmWaveguide(etch_width=etch_width,
 # %%___________________________________________________________________________
 # individual sampling (comment out if running the for loop block instead)
 block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
-sim.blk_wvgd = geometry.convert_block_to_trapezoid(
-    sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
-# run simulation
-res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)
+sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # ->trapezoid
+res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # simulate
 sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
 wl = 1 / res.freq
@@ -256,7 +260,6 @@ def video(save=False, length=False):
             plt.savefig(f"fig/{n}.png")
         else:
             plt.pause(.05)
-
 
 # %%___________________________________________________________________________
 # save sim results
