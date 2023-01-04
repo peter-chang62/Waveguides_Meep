@@ -291,9 +291,9 @@ def dk_func(w, w_p, b_w, b_w_p, b_1_w_p, gamma, P):
     return b_w - b_w_p - b_1_w_p * (w - w_p) - gamma * P
 
 
-def get_dk(mode):
+def get_dk(mode, v_P):
     w = mode._w_grid
-    w_p = 2 * np.pi * sc.c / 1560e-9  # 1560 nm
+    w_p = 2 * np.pi * v_P
     b_w = mode.beta()
     b_w_p = interp1d(w, b_w, bounds_error=True)(w_p)
     b_1_w = mode.beta(m=1, z=None)
@@ -398,7 +398,7 @@ def plot_all(n, k_index, fig=None, ax=None):
     plot_mode(n, k_index, False, ax[2])
 
     mode = load_waveguide(pulse, n)
-    dk = get_dk(mode)
+    dk = get_dk(mode, sc.c / 1560e-9)
     ax[3].plot(wl * 1e6, dk)
     ax[3].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
     ax[3].set_ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
@@ -416,7 +416,7 @@ E_P = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6)
 DK = np.zeros((len(names_wvgd), len(pulse.v_grid)))
 ROOTS = []
 for n in range(len(DK)):
-    DK[n] = get_dk(load_waveguide(pulse, n))
+    DK[n] = get_dk(load_waveguide(pulse, n), sc.c / 1550e-9)
     spl = InterpolatedUnivariateSpline(v_grid, DK[n])
     ROOTS.append(spl.roots())
 
@@ -424,92 +424,113 @@ for n in range(len(DK)):
 ROOTS = [sc.c * 1e6 / i for i in ROOTS]
 ROOTS = [list(i) for i in ROOTS]
 roots = copy.deepcopy(ROOTS)
-[[i.remove(e) for e in i if abs(e - 1.56) < 1e-3] for i in roots]
-[[i.remove(e) for e in i if abs(e - 1.56) < 1e-3] for i in roots]
+[[i.remove(e) for e in i if abs(e - 1.550) < 1e-3] for i in roots]
+[[i.remove(e) for e in i if abs(e - 1.550) < 1e-3] for i in roots]
+
+n_roots = np.asarray([len(i) for i in roots])
+r_short = np.zeros(len(n_roots))
+r_long = np.zeros(len(n_roots))
+for n, i in enumerate(n_roots):
+    if i > 0:
+        list_r = []
+        list_s = []
+        for j in roots[n]:
+            if j > 1.550:
+                list_r.append(j)
+            if j < 1.550:
+                list_s.append(j)
+
+            if len(list_r) > 0:
+                r_long[n] = max(list_r)
+            else:
+                r_long[n] = np.nan
+
+            if len(list_s) > 0:
+                r_short[n] = min(list_s)
+            else:
+                r_short[n] = np.nan
+    else:
+        r_long[n] = np.nan
+        r_short[n] = np.nan
 
 # %% __________________________________________________________________________
 # plt.figure()
 # for n, i in enumerate(roots):
 #     if len(i) > 0:
 #         plt.plot(np.repeat(n, len(i)), i, 'o', color='C0')
-# plt.axhline(1.56, color='r', linestyle='--')
+# plt.axhline(1.550, color='r', linestyle='--')
 # plt.xlabel("simulation #")
 # plt.ylabel("wavelength ($\\mathrm{\\mu m}$)")
 
+plt.figure()
+plt.plot(r_short, 'o', label="shortest dispersive wave")
+plt.plot(r_long, 'o', label="longest dispersive wave")
+plt.xlabel("simulationn #")
+plt.ylabel("wavelength ($\\mathrm{\\mu m}$)")
+
+w = np.asarray([width(i) for i in names_wvgd])
+d = np.asarray([depth(i) for i in names_wvgd])
+
+
 # %% __________________________________________________________________________
-# def temp():
-#     n_points = 2 ** 13
-#     v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
-#     v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
-#     e_p = 300e-12
-#     t_fwhm = 50e-15
-#     pulse = instantiate_pulse(n_points=n_points,
-#                               v_min=v_min,
-#                               v_max=v_max,
-#                               v0=sc.c / 1550e-9,  # this time 1550 not 1560!
-#                               e_p=e_p,
-#                               t_fwhm=t_fwhm)
-#     mode = load_waveguide(pulse, 125)
-#     pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=250)
-#     return pulse_out, mode, z, a_t, a_v
-#
-#
-# pulse_out, mode, z, a_t, a_v = temp()
-# p_v = abs(a_v) ** 2
-# p_v /= p_v.max()
-# p_v_dB = 10 * np.log10(p_v)
-# p_t = abs(a_t) ** 2
-# p_t /= p_t.max()
-# wl = sc.c * 1e6 / pulse_out.v_grid
-#
-# # %%
-# save = True
-# fig, ax = plt.subplots(1, 2)
-# # for n in np.where(abs(z * 1e3 - 3.0) < 1)[0]:
-# for n in range(len(z)):
-#     [i.clear() for i in ax]
-#     ax[0].plot(wl, p_v[n])
-#     ax[1].plot(pulse_out.t_grid * 1e12, p_t[n])
-#     ax[1].set_xlim(-.2, .2)
-#     fig.suptitle('%.3f' % (z[n] * 1e3))
-#     if save:
-#         plt.savefig(f'fig/{n}.png')
-#     else:
-#         plt.pause(.1)
-#
-# # %%
-# plt.figure()
-# plt.pcolormesh(wl, z * 1e3, p_v_dB, vmin=-40, vmax=0, cmap='jet')
-# if aliasing_av(a_v):
-#     plt.ylim(0, z[aliasing_av(a_v)[0]] * 1e3 + 1)
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylabel("propagation distance (mm)")
-#
-# # %%
-# ind = np.argmin(abs(z * 1e3 - 5.4))
-# plt.figure()
-# plt.plot(wl, p_v_dB[ind], label="output")
-# plt.plot(wl, p_v_dB[0], label="input")
-# plt.legend(loc='best')
-# plt.ylim(ymin=-50, ymax=0)
-# plt.xlim(wl.min(), wl.max())
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylabel("a.u. (dB)")
-#
+def temp():
+    n_points = 2 ** 13
+    v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
+    v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
+    e_p = 300e-12
+    t_fwhm = 50e-15
+    pulse = instantiate_pulse(n_points=n_points,
+                              v_min=v_min,
+                              v_max=v_max,
+                              v0=sc.c / 1550e-9,  # this time 1550 not 1560!
+                              e_p=e_p,
+                              t_fwhm=t_fwhm)
+    mode = load_waveguide(pulse, 125)
+    pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=250)
+    return pulse_out, mode, z, a_t, a_v
+
+
+pulse_out, mode, z, a_t, a_v = temp()
+p_v = abs(a_v) ** 2
+p_v /= p_v.max()
+p_v_dB = 10 * np.log10(p_v)
+p_t = abs(a_t) ** 2
+p_t /= p_t.max()
+wl = sc.c * 1e6 / pulse_out.v_grid
+
 # %%
-# plt.figure()
-# plt.plot(pulse.t_grid * 1e15, p_t[ind], label="output")
-# plt.plot(pulse.t_grid * 1e15, p_t[0], label="input")
-# plt.legend(loc='best')
-# plt.ylabel("a.u.")
-# plt.xlabel("t (fs)")
-# plt.xlim(-150, 250)
-#
-# # %%
-# dk = get_dk(mode)
-# plt.figure()
-# plt.plot(wl, dk)
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylim(-.05, .05)
-# plt.xlim(wl.min(), wl.max())
-# plt.ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
+plt.figure()
+plt.pcolormesh(wl, z * 1e3, p_v_dB, vmin=-40, vmax=0, cmap='jet')
+if aliasing_av(a_v):
+    plt.ylim(0, z[aliasing_av(a_v)[0]] * 1e3 + 1)
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylabel("propagation distance (mm)")
+
+# %%
+ind = np.argmin(abs(z * 1e3 - 5.4))
+plt.figure()
+plt.plot(wl, p_v_dB[ind], label="output")
+plt.plot(wl, p_v_dB[0], label="input")
+plt.legend(loc='best')
+plt.ylim(ymin=-50, ymax=0)
+plt.xlim(wl.min(), wl.max())
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylabel("a.u. (dB)")
+
+# %%
+plt.figure()
+plt.plot(pulse.t_grid * 1e15, p_t[ind], label="output")
+plt.plot(pulse.t_grid * 1e15, p_t[0], label="input")
+plt.legend(loc='best')
+plt.ylabel("a.u.")
+plt.xlabel("t (fs)")
+plt.xlim(-150, 250)
+
+# %%
+dk = get_dk(mode, sc.c / 1550e-9)
+plt.figure()
+plt.plot(wl, dk)
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylim(-.05, .05)
+plt.xlim(wl.min(), wl.max())
+plt.ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
