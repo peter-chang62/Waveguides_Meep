@@ -29,8 +29,11 @@ clipboard_and_style_sheet.style_sheet()
 # Gayer paper Sellmeier equation for ne (taken from PyNLO
 # 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go
 # from ne to eps
-eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n(
-    (1 / omega) * 1e3) ** 2
+
+
+def eps_func_wvgd(omega):
+    return Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+
 
 # %%___________________________________________________________________________
 sim = wg.ThinFilmWaveguide(etch_width=3,  # will be changed later
