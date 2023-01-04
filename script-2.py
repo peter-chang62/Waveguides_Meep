@@ -24,6 +24,7 @@ import itertools
 
 clipboard_and_style_sheet.style_sheet()
 
+
 # %%___________________________________________________________________________
 
 # Gayer paper Sellmeier equation for ne (taken from PyNLO
@@ -91,26 +92,12 @@ np.save(path + f'07-19-2022/eps/{sim.etch_width}_{sim.etch_depth}.npy',
         sim.ms.get_epsilon())
 
 # %%___________________________________________________________________________
-# # 300 nm to 3 um in 135 nm steps
-# etch_width = wg.get_omega_axis(1 / 3, 1 / 0.3, 20)
-# etch_depth = np.arange(0.1, 1.05, .05)
-# etch_width = np.round(etch_width, 3)  # round the etch width
-# etch_depth = np.round(etch_depth, 3)  # round the etch depth
-# params = np.asarray(list(itertools.product(etch_width, etch_depth)))
-
-# ported from script-7.py
-etch_width = np.array(
-    [1.245, 1.245, 1.245, 1.245, 1.245, 1.245, 1.38, 1.38, 1.38,
-     1.38, 1.38, 1.38, 1.515, 1.515, 1.515, 1.515, 1.515, 1.515,
-     1.515, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65, 1.65,
-     1.785, 1.785, 1.785, 1.785, 1.785, 1.785, 1.785, 1.785, 1.92,
-     1.92, 1.92, 1.92, 2.055, 2.055, 2.055, 2.19, 2.19])
-etch_depth = np.array(
-    [0.75, 0.8, 0.85, 0.9, 0.95, 1., 0.7, 0.75, 0.8, 0.85, 0.9,
-     0.95, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.45, 0.5, 0.55,
-     0.6, 0.65, 0.7, 0.75, 0.8, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65,
-     0.7, 0.75, 0.35, 0.4, 0.45, 0.6, 0.35, 0.4, 0.45, 0.35, 0.4])
-params = np.c_[etch_width, etch_depth]
+# 300 nm to 3 um in 135 nm steps
+etch_width = wg.get_omega_axis(1 / 3, 1 / 0.3, 20)
+etch_depth = np.arange(0.1, 1.05, .05)
+etch_width = np.round(etch_width, 3)  # round the etch width
+etch_depth = np.round(etch_depth, 3)  # round the etch depth
+params = np.asarray(list(itertools.product(etch_width, etch_depth)))
 
 path = r"/Users/peterchang/SynologyDrive/Research_Projects/Waveguide " \
        r"Simulations/sim_output/ "
