@@ -15,6 +15,7 @@ from scipy.interpolate import interp1d
 import pynlo_connor as pynlo
 from pynlo_connor import utility as utils
 import copy
+import time
 
 try:
     import materials as mtp
@@ -470,65 +471,70 @@ plt.ylabel("wavelength ($\\mathrm{\\mu m}$)")
 w = np.asarray([width(i) for i in names_wvgd])
 d = np.asarray([depth(i) for i in names_wvgd])
 
+
 # %% __________________________________________________________________________
-# def temp():
-#     n_points = 2 ** 13
-#     v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
-#     v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
-#     e_p = 300e-12
-#     t_fwhm = 50e-15
-#     pulse = instantiate_pulse(n_points=n_points,
-#                               v_min=v_min,
-#                               v_max=v_max,
-#                               v0=sc.c / 1550e-9,  # this time 1550 not 1560!
-#                               e_p=e_p,
-#                               t_fwhm=t_fwhm)
-#     mode = load_waveguide(pulse, 125)
-#     pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=250)
-#     return pulse_out, mode, z, a_t, a_v
-#
-#
-# pulse_out, mode, z, a_t, a_v = temp()
-# p_v = abs(a_v) ** 2
-# p_v /= p_v.max()
-# p_v_dB = 10 * np.log10(p_v)
-# p_t = abs(a_t) ** 2
-# p_t /= p_t.max()
-# wl = sc.c * 1e6 / pulse_out.v_grid
-#
-# # %%
-# plt.figure()
-# plt.pcolormesh(wl, z * 1e3, p_v_dB, vmin=-40, vmax=0, cmap='jet')
-# if aliasing_av(a_v):
-#     plt.ylim(0, z[aliasing_av(a_v)[0]] * 1e3 + 1)
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylabel("propagation distance (mm)")
-#
-# # %%
-# ind = np.argmin(abs(z * 1e3 - 5.4))
-# plt.figure()
-# plt.plot(wl, p_v_dB[ind], label="output")
-# plt.plot(wl, p_v_dB[0], label="input")
-# plt.legend(loc='best')
-# plt.ylim(ymin=-50, ymax=0)
-# plt.xlim(wl.min(), wl.max())
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylabel("a.u. (dB)")
-#
-# # %%
-# plt.figure()
-# plt.plot(pulse.t_grid * 1e15, p_t[ind], label="output")
-# plt.plot(pulse.t_grid * 1e15, p_t[0], label="input")
-# plt.legend(loc='best')
-# plt.ylabel("a.u.")
-# plt.xlabel("t (fs)")
-# plt.xlim(-150, 250)
-#
-# # %%
-# dk = get_dk(mode, sc.c / 1550e-9)
-# plt.figure()
-# plt.plot(wl, dk)
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylim(-.05, .05)
-# plt.xlim(wl.min(), wl.max())
-# plt.ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
+def temp():
+    n_points = 2 ** 13
+    v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
+    v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
+    e_p = 300e-12
+    t_fwhm = 50e-15
+    pulse = instantiate_pulse(n_points=n_points,
+                              v_min=v_min,
+                              v_max=v_max,
+                              v0=sc.c / 1550e-9,  # this time 1550 not 1560!
+                              e_p=e_p,
+                              t_fwhm=t_fwhm)
+    mode = load_waveguide(pulse, 125)
+    pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=250)
+    return pulse_out, mode, z, a_t, a_v
+
+
+t1 = time.time()
+pulse_out, mode, z, a_t, a_v = temp()
+t2 = time.time()
+print("total calc time is", t2 - t1)
+
+p_v = abs(a_v) ** 2
+p_v /= p_v.max()
+p_v_dB = 10 * np.log10(p_v)
+p_t = abs(a_t) ** 2
+p_t /= p_t.max()
+wl = sc.c * 1e6 / pulse_out.v_grid
+
+# %%
+plt.figure()
+plt.pcolormesh(wl, z * 1e3, p_v_dB, vmin=-40, vmax=0, cmap='jet')
+if aliasing_av(a_v):
+    plt.ylim(0, z[aliasing_av(a_v)[0]] * 1e3 + 1)
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylabel("propagation distance (mm)")
+
+# %%
+ind = np.argmin(abs(z * 1e3 - 5.4))
+plt.figure()
+plt.plot(wl, p_v_dB[ind], label="output")
+plt.plot(wl, p_v_dB[0], label="input")
+plt.legend(loc='best')
+plt.ylim(ymin=-50, ymax=0)
+plt.xlim(wl.min(), wl.max())
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylabel("a.u. (dB)")
+
+# %%
+plt.figure()
+plt.plot(pulse.t_grid * 1e15, p_t[ind], label="output")
+plt.plot(pulse.t_grid * 1e15, p_t[0], label="input")
+plt.legend(loc='best')
+plt.ylabel("a.u.")
+plt.xlabel("t (fs)")
+plt.xlim(-150, 250)
+
+# %%
+dk = get_dk(mode, sc.c / 1550e-9)
+plt.figure()
+plt.plot(wl, dk)
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylim(-.05, .05)
+plt.xlim(wl.min(), wl.max())
+plt.ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
