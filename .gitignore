@@ -9,3 +9,7 @@ PowerPoint/~$Updates.pptx
 .DS_Store
 
 sim_output
+
+.spyproject/
+
+.vscode/
