@@ -9,6 +9,7 @@ H fields that I intend to use to calculate mode-area. I realize now that I
 don't need to store the H-fields, but honestly the memory requirement here is
 small so I don't really care. """
 
+# %% package imports
 import meep as mp
 import numpy as np
 import copy
@@ -21,10 +22,12 @@ import scipy.constants as sc
 
 clipboard_and_style_sheet.style_sheet()
 
+# %% global variables
 # conversion of beta2 calculated here to beta2 in ps^2/km
 conversion = sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9
 
 
+# %% function defs
 def store_fields(ms, which_band, cls):
     assert isinstance(
         cls, RidgeWaveguide
@@ -68,6 +71,7 @@ def mode_area(I, resolution):
     return area
 
 
+# %% RidgeWaveguide Class, this one is inherited by all ThinFilmWaveguide
 class RidgeWaveguide:
     """
     The RidgeWaveguide class is for calculating the waveguide dispersion of a
@@ -436,7 +440,7 @@ class RidgeWaveguide:
 
                         NPTS (int): number of k points to interpolate from shortest ->
             longest wavelength
-            
+
             eps_func_wvgd (function, optional): takes wavelength as the input
             and returns epsilon. Defaults to None. eps_func_sbstrt (function,
             optional): takes wavelength as the input and returns epsilon.
@@ -696,26 +700,26 @@ class RidgeWaveguide:
 
         Args:
             p (int): parity (i.e. taken from mp.NO_PARITY ...)
-            
+
             omega (float): frequency
-            
+
             band_min (int): minimum band index
-            
+
             band_max (int): maximum band index
-            
+
             korig_and_kdir (object): k direction (i.e. taken from mp.Vector3(1)
-            
+
             tol (float): tolerance
-            
+
             kmag_guess (float): guess for wavevector magnitude (n/wl)
-            
+
             kmag_min (float): minimum wavevector magnitude (.1 * kmag_guess)
-            
+
             kmag_max (float): maximum wavevector magnitude (10 * kmag_guess)
-            
+
             eps_func_wvgd (function, optional): takes wavelength as the input
             and returns epsilon. Defaults to None.
-            
+
             eps_func_sbstrt (function, optional): takes wavelength as the input
             and returns epsilon. Defaults to None.
 
@@ -726,7 +730,7 @@ class RidgeWaveguide:
         (*band_funcs), eps_func_wvgd and eps_func_sbstrt comes at the end of
         that list of functions as keyword arguments
         """
-        
+
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
 
@@ -762,6 +766,7 @@ class RidgeWaveguide:
         return self.ms.find_k(*args)
 
 
+# %% Inherits RidgeWaveguide and constructs the ThinFilmWaveguide
 class ThinFilmWaveguide(RidgeWaveguide):
     """
     height will be redundant for film thickness and will likely be fixed (you
