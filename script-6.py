@@ -3,7 +3,7 @@ np.c_[res.freq, beta, beta1, beta2]
 
 This script runs all the dispersion curves through PyNLO"""
 
-# %%
+# %% package imports
 import numpy as np
 import matplotlib.pyplot as plt
 import clipboard_and_style_sheet
@@ -23,20 +23,19 @@ try:
 
     on_linux = True
 except ImportError:
-    Al2O3 = np.load('convenience/freq_epsilon_data.npy')
+    Al2O3 = np.load("convenience/freq_epsilon_data.npy")
     Al2O3 = InterpolatedUnivariateSpline(Al2O3[:, 0], Al2O3[:, 1])
     on_linux = False
 
 clipboard_and_style_sheet.style_sheet()
-plt.ion()
 
-
+# %%
 def width(s):
-    return float(s.split('_')[0])
+    return float(s.split("_")[0])
 
 
 def depth(s):
-    return float(s.split('_')[1].split('.npy')[0])
+    return float(s.split("_")[1].split(".npy")[0])
 
 
 def mode_area(I):
@@ -44,18 +43,17 @@ def mode_area(I):
     # that is used
     # reference: https://www.rp-photonics.com/effective_mode_area.html
     # this gives an overall dimension of dA in the numerator
-    area = scint.simpson(scint.simpson(I)) ** 2 / \
-           scint.simpson(scint.simpson(I ** 2))
-    area /= resolution ** 2
+    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(scint.simpson(I**2))
+    area /= resolution**2
     return area
 
 
-# %%___________________________________________________________________________
+# %% global variables
 resolution = 30
 # already multiplied for some sim data (should be obvious)
-conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
-path_wvgd = 'sim_output/07-19-2022/'
-names_wvgd = [i.name for i in os.scandir(path_wvgd + 'dispersion-curves/')]
+conversion = sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9
+path_wvgd = "sim_output/07-19-2022/"
+names_wvgd = [i.name for i in os.scandir(path_wvgd + "dispersion-curves/")]
 
 width_limit = 1.245
 [names_wvgd.remove(i) for i in names_wvgd.copy() if width(i) < width_limit]
@@ -64,36 +62,32 @@ names_wvgd = sorted(names_wvgd, key=depth)
 names_wvgd = sorted(names_wvgd, key=width)
 
 
-# %%___________________________________________________________________________
+# %%
 def get_disp(n):
-    return np.load(path_wvgd + 'dispersion-curves/' + names_wvgd[n])
+    return np.load(path_wvgd + "dispersion-curves/" + names_wvgd[n])
 
 
 def get_eps(n):
-    return np.load(path_wvgd + 'eps/' + names_wvgd[n])
+    return np.load(path_wvgd + "eps/" + names_wvgd[n])
 
 
 def get_field(n):
-    return np.squeeze(np.load(path_wvgd + 'E-fields/' + names_wvgd[n]))
+    return np.squeeze(np.load(path_wvgd + "E-fields/" + names_wvgd[n]))
 
 
-# %%___________________________________________________________________________
+# %%
 def plot_eps(n, ax=None):
     if ax is not None:
-        ax.imshow(get_eps(n)[::-1, ::-1].T,
-                  interpolation='spline36', cmap='binary')
+        ax.imshow(get_eps(n)[::-1, ::-1].T, interpolation="spline36", cmap="binary")
     else:
-        plt.imshow(get_eps(n)[::-1, ::-1].T,
-                   interpolation='spline36', cmap='binary')
+        plt.imshow(get_eps(n)[::-1, ::-1].T, interpolation="spline36", cmap="binary")
 
 
 def plot_field(n, k_index, alpha=0.9, ax=None):
     if ax is not None:
-        ax.imshow(get_field(n)[k_index][::-1, ::-1].T,
-                  cmap='RdBu', alpha=alpha)
+        ax.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap="RdBu", alpha=alpha)
     else:
-        plt.imshow(get_field(n)[k_index][::-1, ::-1].T,
-                   cmap='RdBu', alpha=alpha)
+        plt.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap="RdBu", alpha=alpha)
 
 
 def plot_mode(n, k_index, new_figure=True, ax=None):
@@ -106,24 +100,30 @@ def plot_mode(n, k_index, new_figure=True, ax=None):
     freq = data[:, 0]
     wl = 1 / freq[k_index]
     if ax is not None:
-        ax.set_title(f'{np.round(width(names_wvgd[n]), 3)} x'
-                     f'{np.round(depth(names_wvgd[n]), 3)} x 1'
-                     + ' $\\mathrm{\\mu m}$' '\n' +
-                     "$\\mathrm{\\lambda = }$" + '%.2f' % wl
-                     + ' $\\mathrm{\\mu m}$' + '\n' +
-                     '$\\mathrm{A_{eff}}$ = %.3f' %
-                     mode_area(get_field(n)[k_index]) +
-                     ' $\\mathrm{\\mu m^2}$')
+        ax.set_title(
+            f"{np.round(width(names_wvgd[n]), 3)} x"
+            f"{np.round(depth(names_wvgd[n]), 3)} x 1" + " $\\mathrm{\\mu m}$"
+            "\n"
+            + "$\\mathrm{\\lambda = }$"
+            + "%.2f" % wl
+            + " $\\mathrm{\\mu m}$"
+            + "\n"
+            + "$\\mathrm{A_{eff}}$ = %.3f" % mode_area(get_field(n)[k_index])
+            + " $\\mathrm{\\mu m^2}$"
+        )
         ax.axis(False)
     else:
-        plt.title(f'{np.round(width(names_wvgd[n]), 3)} x'
-                  f'{np.round(depth(names_wvgd[n]), 3)} x 1'
-                  + ' $\\mathrm{\\mu m}$' '\n' +
-                  "$\\mathrm{\\lambda = }$" + '%.2f' % wl
-                  + ' $\\mathrm{\\mu m}$' + '\n' +
-                  '$\\mathrm{A_{eff}}$ = %.3f' %
-                  mode_area(get_field(n)[k_index]) +
-                  ' $\\mathrm{\\mu m^2}$')
+        plt.title(
+            f"{np.round(width(names_wvgd[n]), 3)} x"
+            f"{np.round(depth(names_wvgd[n]), 3)} x 1" + " $\\mathrm{\\mu m}$"
+            "\n"
+            + "$\\mathrm{\\lambda = }$"
+            + "%.2f" % wl
+            + " $\\mathrm{\\mu m}$"
+            + "\n"
+            + "$\\mathrm{A_{eff}}$ = %.3f" % mode_area(get_field(n)[k_index])
+            + " $\\mathrm{\\mu m^2}$"
+        )
         plt.axis(False)
 
 
@@ -137,8 +137,9 @@ def e_p_in_window(wl_grid, dv, a_v, wl_ll, wl_ul):
     return scint.simps(abs(a_v_filt) ** 2, axis=1, dx=dv)
 
 
-def instantiate_pulse(n_points, v_min, v_max, v0=sc.c / 1560e-9,
-                      e_p=300e-3 * 1e-9, t_fwhm=50e-15):
+def instantiate_pulse(
+    n_points, v_min, v_max, v0=sc.c / 1560e-9, e_p=300e-3 * 1e-9, t_fwhm=50e-15
+):
     v0 = sc.c / 1560e-9  # sc.c / 1560 nm
     pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
     pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
@@ -155,7 +156,7 @@ def load_waveguide(pulse, n_sim):
     k = b * 1e6 / (2 * np.pi)  # 1/m
     nu = sc.c / (wl * 1e-6)
     n = sc.c * k / nu
-    n_wvgd = interp1d(nu, n, kind='cubic', bounds_error=True)
+    n_wvgd = interp1d(nu, n, kind="cubic", bounds_error=True)
 
     n_eff = n_wvgd(v_grid)
     beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
@@ -174,12 +175,7 @@ def load_waveguide(pulse, n_sim):
     g3 = utils.chi3.g3_spm(n_eff, a_eff, chi3_eff)
 
     mode = pynlo.media.Mode(
-        v_grid=v_grid,
-        beta_v=beta,
-        g2_v=g2,
-        g2_inv=None,
-        g3_v=g3,
-        z=0.0
+        v_grid=v_grid, beta_v=beta, g2_v=g2, g2_inv=None, g3_v=g3, z=0.0
     )
     return mode
 
@@ -191,7 +187,8 @@ def simulate(pulse, mode, length=3e-3, npts=100):
 
     z_grid = np.linspace(0, length, npts)
     pulse_out, z, a_t, a_v = model.simulate(
-        z_grid, dz=dz, local_error=local_error, n_records=None, plot=None)
+        z_grid, dz=dz, local_error=local_error, n_records=None, plot=None
+    )
     return pulse_out, z, a_t, a_v
 
 
@@ -218,7 +215,7 @@ def aliasing_av(a_v):
         return False
 
 
-# %% ___________________________ Run PyNLO Simulations! _______________________
+# %% Run PyNLO Simulations!
 # h = 1
 # N = np.arange(len(names_wvgd))
 # center = len(N) // 4
@@ -254,39 +251,37 @@ def aliasing_av(a_v):
 # np.save("sim_output/12-20-2022/t_grid.npy", pulse.t_grid)
 # np.save("sim_output/12-20-2022/z.npy", z)
 
-# %% __________________________________________________________________________
+# %%
 # 10-05-2022 was 300 pJ, whereas 12-20-2022 was 100 pJ
-path_spm = 'sim_output/10-05-2022/'
+path_spm = "sim_output/10-05-2022/"
 # path_spm = 'sim_output/12-20-2022/'
 
-names_spm = [i.name for i in os.scandir(path_spm + 'a_v')]
+names_spm = [i.name for i in os.scandir(path_spm + "a_v")]
 names_spm = sorted(names_spm, key=depth)
 names_spm = sorted(names_spm, key=width)
 
 
 def load_a_v(n):
-    return np.load(path_spm + f'a_v/{names_spm[n]}')
+    return np.load(path_spm + f"a_v/{names_spm[n]}")
 
 
 def load_a_t(n):
-    return np.load(path_spm + f'a_t/{names_spm[n]}')
+    return np.load(path_spm + f"a_t/{names_spm[n]}")
 
 
-v_grid = np.load(path_spm + 'v_grid.npy')
+v_grid = np.load(path_spm + "v_grid.npy")
 wl = sc.c / v_grid
-t = np.load(path_spm + 't_grid.npy')
-z = np.load(path_spm + 'z.npy')
+t = np.load(path_spm + "t_grid.npy")
+z = np.load(path_spm + "z.npy")
 
-n_points = 2 ** 13
+n_points = 2**13
 v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
 v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
 e_p = 100e-12
 t_fwhm = 50e-15
-pulse = instantiate_pulse(n_points=n_points,
-                          v_min=v_min,
-                          v_max=v_max,
-                          e_p=e_p,
-                          t_fwhm=t_fwhm)
+pulse = instantiate_pulse(
+    n_points=n_points, v_min=v_min, v_max=v_max, e_p=e_p, t_fwhm=t_fwhm
+)
 
 
 def dk_func(w, w_p, b_w, b_w_p, b_1_w_p, gamma, P):
@@ -305,7 +300,7 @@ def get_dk(mode, v_P):
     return dk
 
 
-def plot2D(n, fig=None, ax=None, a_v_only=False, dpi=None, shading='auto'):
+def plot2D(n, fig=None, ax=None, a_v_only=False, dpi=None, shading="auto"):
     a_v = load_a_v(n)
     a_t = load_a_t(n)
 
@@ -318,33 +313,28 @@ def plot2D(n, fig=None, ax=None, a_v_only=False, dpi=None, shading='auto'):
     p_t_dB = 10 * np.log10(p_t_dB)
     if fig is None:
         if not a_v_only:
-            fig, ax = plt.subplots(
-                1, 2, figsize=np.array([8.66, 4.8]), dpi=dpi)
+            fig, ax = plt.subplots(1, 2, figsize=np.array([8.66, 4.8]), dpi=dpi)
         else:
             fig, ax = plt.subplots(1, 1, dpi=dpi)
     else:
         assert ax is not None
     if not a_v_only:
-        ax[0].pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0,
-                         shading=shading)
+        ax[0].pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0, shading=shading)
         ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
         ax[0].set_ylabel("propagation distance (mm)")
 
-        ax[1].pcolormesh(t * 1e15, z * 1e3, p_t_dB, vmin=-40, vmax=0,
-                         shading=shading)
+        ax[1].pcolormesh(t * 1e15, z * 1e3, p_t_dB, vmin=-40, vmax=0, shading=shading)
         ax[1].set_xlim(-500, 500)
         ax[1].set_xlabel("t (fs)")
         ax[1].set_ylabel("propagation distance (mm)")
     else:
-        ax.pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0,
-                      shading=shading)
+        ax.pcolormesh(wl * 1e6, z * 1e3, p_v_dB, vmin=-40, vmax=0, shading=shading)
         ax.set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
         ax.set_ylabel("propagation distance (mm)")
     return fig, ax
 
 
-def plot_single(n, length, fig=None, ax=None,
-                a_v_only=False, a_t_only=False, dpi=None):
+def plot_single(n, length, fig=None, ax=None, a_v_only=False, a_t_only=False, dpi=None):
     assert not np.all([a_v_only, a_t_only])
     a_v = load_a_v(n)
     a_t = load_a_t(n)
@@ -404,17 +394,18 @@ def plot_all(n, k_index, fig=None, ax=None):
     ax[3].plot(wl * 1e6, dk)
     ax[3].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
     ax[3].set_ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
-    ax[3].set_ylim(-.05, .05)
+    ax[3].set_ylim(-0.05, 0.05)
     ax[3].grid(True)
     return fig, ax
 
 
-# %% __________________________________________________________________________
+# %%
 dv = np.diff(v_grid)[0]
-E_P = np.asarray([e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6)
-                  for i in range(len(names_spm))])
+E_P = np.asarray(
+    [e_p_in_window(wl, dv, load_a_v(i), 3e-6, 5e-6) for i in range(len(names_spm))]
+)
 
-# %% __________________________________________________________________________
+# %%
 DK = np.zeros((len(names_wvgd), len(pulse.v_grid)))
 ROOTS = []
 for n in range(len(DK)):
@@ -462,7 +453,7 @@ for n, i in enumerate(n_roots):
         r_long[n] = ma.masked
         r_short[n] = ma.masked
 
-# %% __________________________________________________________________________
+# %%
 # plt.figure()
 # plt.plot(r_short, 'o', label="shortest dispersive wave")
 # plt.plot(r_long, 'o', label="longest dispersive wave")
@@ -481,12 +472,12 @@ for n in range(0, len(w), step):
     plot_mode(n + step - 1, 1, False, ax[1])
     plot_mode(n, 35, False, ax[2])
     plot_mode(n + step - 1, 35, False, ax[3])
-    ax[-2].plot(d[n:n + step] * 1000, r_short[n:n + step], 'o')
-    ax[-1].plot(d[n:n + step] * 1000, r_long[n:n + step], 'o')
+    ax[-2].plot(d[n : n + step] * 1000, r_short[n : n + step], "o")
+    ax[-1].plot(d[n : n + step] * 1000, r_long[n : n + step], "o")
     [i.set_xlabel("etch depth (nm)") for i in ax[[-2, -1]]]
     [i.set_ylabel("wavelength ($\\mathrm{\\mu m}$)") for i in ax[[-2, -1]]]
 
-# %% __________________________________________________________________________
+# %%
 # def temp():
 #     n_points = 2 ** 13
 #     v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
