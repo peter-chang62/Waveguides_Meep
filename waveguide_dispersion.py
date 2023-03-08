@@ -1,14 +1,15 @@
 """MPB can solve for omega's given k, or solve for k's given omegas. The
-former is called with ms.run() (and its variations), and the latter is
-called using ms.find_k(). Just like MEEP's Simulation run() function,
-you can pass arguments to MPB's ModeSolver's find_k() and run(). For
-example, you can tell it to output z and y parities, and any function you
-define takes arguments: func(ms_instance, band_index) that will be called at
-each (k, band) or ( omega, band) point. In my case, I pass a function that
-retrieves and stores the E and H fields that I intend to use to calculate
-mode-area. I realize now that I don't need to store the H-fields,
-but honestly the memory requirement here is small so I don't really care. """
+former is called with ms.run() (and its variations), and the latter is called
+using ms.find_k(). Just like MEEP's Simulation run() function, you can pass
+arguments to MPB's ModeSolver's find_k() and run(). For example, you can tell
+it to output z and y parities, and any function you define takes arguments:
+func(ms_instance, band_index) that will be called at each (k, band) or ( omega,
+band) point. In my case, I pass a function that retrieves and stores the E and
+H fields that I intend to use to calculate mode-area. I realize now that I
+don't need to store the H-fields, but honestly the memory requirement here is
+small so I don't really care. """
 
+# %% package imports
 import meep as mp
 import numpy as np
 import copy
@@ -21,10 +22,12 @@ import scipy.constants as sc
 
 clipboard_and_style_sheet.style_sheet()
 
+# %% global variables
 # conversion of beta2 calculated here to beta2 in ps^2/km
 conversion = sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9
 
 
+# %% function defs
 def store_fields(ms, which_band, cls):
     assert isinstance(
         cls, RidgeWaveguide
@@ -68,6 +71,7 @@ def mode_area(I, resolution):
     return area
 
 
+# %% RidgeWaveguide Class, this one is inherited by all ThinFilmWaveguide
 class RidgeWaveguide:
     """
     The RidgeWaveguide class is for calculating the waveguide dispersion of a
@@ -89,6 +93,7 @@ class RidgeWaveguide:
         cell_width=2,
         cell_height=2,
     ):
+
         self.init_finished = False
 
         # create the lattice (cell)
@@ -311,11 +316,11 @@ class RidgeWaveguide:
             self.redef_sim()
 
     # _________________________________________________________________________
-    # I only do this for the waveguide GeometricObject: You can substitute
-    # the waveguide geometric object via self.blk_wvgd = mp.GeometricObject(
-    # ), and it will update the geometry list, which will incorporate the
-    # changes into the simulation. I don't see the need to do this for any
-    # other geometric object in the simulation cell.
+    # I only do this for the waveguide GeometricObject: You can substitute the
+    # waveguide geometric object via self.blk_wvgd = mp.GeometricObject( ), and
+    # it will update the geometry list, which will incorporate the changes into
+    # the simulation. I don't see the need to do this for any other geometric
+    # object in the simulation cell.
 
     # The main use case for this, (although you can always create your own
     # waveguide geometry), is to substitute:
@@ -349,12 +354,12 @@ class RidgeWaveguide:
 
     def plot2D(self):
         """
-        call sim.plot2D() to visualize the supercell. I realized that plot2D(
-        ) might not capture small changes in waveguide dimensions (less than
-        20 nm for example), but the changes are actually there in the epsilon
-        grid ( returned with plot_eps). The sub-pixel smoothing feature is
-        also clear there, since I can see noticeable changes with plot_eps()
-        even if I change the dimensions by something less than 1 / resolution
+        call sim.plot2D() to visualize the supercell. I realized that plot2D( )
+        might not capture small changes in waveguide dimensions (less than 20
+        nm for example), but the changes are actually there in the epsilon grid
+        ( returned with plot_eps). The sub-pixel smoothing feature is also
+        clear there, since I can see noticeable changes with plot_eps() even if
+        I change the dimensions by something less than 1 / resolution
         """
 
         self.sim.plot2D()
@@ -427,27 +432,34 @@ class RidgeWaveguide:
     def calc_dispersion(
         self, wl_min, wl_max, NPTS, eps_func_wvgd=None, eps_func_sbstrt=None
     ):
-        """
-        :param wl_min: shortest wavelength
-        :param wl_max: longest wavelength
-        :param NPTS: number of k_points to interpolate from shortest ->
-        longest wavelength
-        :return: result instance with attributes kx (shape: kx, num_bands),
-        freq (shape: kx), *notice the difference in array shapes from
-        calc_w_from_k
+        """_summary_
+
+        Args:
+            wl_min (float): shortest wavelength wl_max (float): longest
+            wavelength
+
+                        NPTS (int): number of k points to interpolate from shortest ->
+            longest wavelength
+
+            eps_func_wvgd (function, optional): takes wavelength as the input
+            and returns epsilon. Defaults to None. eps_func_sbstrt (function,
+            optional): takes wavelength as the input and returns epsilon.
+            Defaults to None.
+
+        Returns:
+            object: result class
         """
 
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
 
         # _____________________________________________________________________
-        # MPB's find_k functions uses Newton's method which needs bounds and
-        # an initial guess that is somewhat close to the real answer (order
-        # magnitude). We expect materials to have weak dispersion, and so I
-        # set epsilon to epsilon( f_center), and solve for waveguide
-        # dispersion omega(k). From there, I interpolate to get a k(omega)
-        # that can be used to extrapolate out and provide good gueses for
-        # kmag_guess
+        # MPB's find_k functions uses Newton's method which needs bounds and an
+        # initial guess that is somewhat close to the real answer (order
+        # magnitude). We expect materials to have weak dispersion, and so I set
+        # epsilon to epsilon( f_center), and solve for waveguide dispersion
+        # omega(k). From there, I interpolate to get a k(omega) that can be
+        # used to extrapolate out and provide good gueses for kmag_guess
         # _____________________________________________________________________
 
         k_min, k_max = 1 / wl_max, 1 / wl_min
@@ -456,12 +468,12 @@ class RidgeWaveguide:
         # _____________________________________________________________________
 
         # if eps_func_wvgd is not provided, then set the material epsilon via
-        # calling the usual mp.Medium().epsilon otherwise, you can set
-        # epsilon to something you provide. The use case for this is that
-        # MEEP materials can only use the simple Sellmeier equation,
-        # but sometimes you would like to use the extended formulas that are
-        # more accurate over broad bandwidths or at your particular
-        # experiment temperature. originally this was:
+        # calling the usual mp.Medium().epsilon otherwise, you can set epsilon
+        # to something you provide. The use case for this is that MEEP
+        # materials can only use the simple Sellmeier equation, but sometimes
+        # you would like to use the extended formulas that are more accurate
+        # over broad bandwidths or at your particular experiment temperature.
+        # originally this was:
         #
         #   self.blk_wvgd.material = mp.Medium(
         #       epsilon=self.wvgd_mdm.epsilon(f_center)[2, 2])
@@ -487,8 +499,8 @@ class RidgeWaveguide:
 
         # I just use the fundamental band for the interpolation (
         # which_band=1), I just interpolate over 10 pts, if using the
-        # user-provided NPTS, we might get an overkill of data points,
-        # or not enough
+        # user-provided NPTS, we might get an overkill of data points, or not
+        # enough
         num_bands = self.num_bands  # store self.num_bands
         self.num_bands = 1  # set the mode-solver to only calculate one band
         # wl_min * 0.5: interpolation will cover close to wl_min
@@ -578,13 +590,16 @@ class RidgeWaveguide:
         return results(self)
 
     def calc_w_from_k(self, wl_min, wl_max, NPTS):
-        """
-        :param wl_min: shortest wavelength
-        :param wl_max: longest wavelength
-        :param NPTS: number of k_points to interpolate from shortest ->
-        longest wavelength
-        :return: result instance with attributes kx (shape: kx), freq (shape:
-        kx, num_bands)
+        """_summary_
+
+        Args:
+            wl_min (float): shortest wavelength
+            wl_max (float): longest wavelength
+            NPTS (int): number of k points to interpolate from shortest ->
+            longest wavelength
+
+        Returns:
+            object: result class
         """
 
         # calc_dispersion calls calc_w_from_k before going on to calculate
@@ -661,8 +676,8 @@ class RidgeWaveguide:
     # _________________________________________________________________________
     # this was originally meant to take the same arguments as find_k() from
     # mpb.ModeSolver(). However, I've now added eps_func_wvgd and
-    # eps_func_sbstrt *make sure that if you decide to use these, that you
-    # pass them in as kwargs!!* Otherwise they'll be interpreted as part of
+    # eps_func_sbstrt *make sure that if you decide to use these, that you pass
+    # them in as kwargs!!* Otherwise they'll be interpreted as part of
     # band_funcs (not to worry too much, you'll just get an error and then
     # it'll be obvious what you did wrong)
     # _________________________________________________________________________
@@ -681,23 +696,39 @@ class RidgeWaveguide:
         eps_func_wvgd=None,
         eps_func_sbstrt=None,
     ):
-        """
-        :param p: parity
-        :param omega: frequency
-        :param band_min: minimum band index
-        :param band_max: maximum band index
-        :param korig_and_kdir: k direction (unit vector)
-        :param tol: tolerance
-        :param kmag_guess: guess for the wave-vector magnitude (n/lambda)
-        :param kmag_min: minimum wave-vector magnitude
-        :param kmag_max: maximum wave-vector magnitude
-        :param band_funcs: additional arguments to pass to ms.find_k()
-        :param eps_func_wvgd: default None, function that takes omega and
-        returns eps (float) for the waveguide
-        :param eps_func_sbstrt: default None, function that takes omega and
-        returns eps (float) for the substrate
+        """_summary_
 
-        :return: k (list of float(s))
+        Args:
+            p (int): parity (i.e. taken from mp.NO_PARITY ...)
+
+            omega (float): frequency
+
+            band_min (int): minimum band index
+
+            band_max (int): maximum band index
+
+            korig_and_kdir (object): k direction (i.e. taken from mp.Vector3(1)
+
+            tol (float): tolerance
+
+            kmag_guess (float): guess for wavevector magnitude (n/wl)
+
+            kmag_min (float): minimum wavevector magnitude (.1 * kmag_guess)
+
+            kmag_max (float): maximum wavevector magnitude (10 * kmag_guess)
+
+            eps_func_wvgd (function, optional): takes wavelength as the input
+            and returns epsilon. Defaults to None.
+
+            eps_func_sbstrt (function, optional): takes wavelength as the input
+            and returns epsilon. Defaults to None.
+
+        Returns:
+            object: result class
+
+        after kmag_max, find_k can take an unpacked list of functions
+        (*band_funcs), eps_func_wvgd and eps_func_sbstrt comes at the end of
+        that list of functions as keyword arguments
         """
 
         # make sure all geometric and material parameters are up to date
@@ -735,6 +766,7 @@ class RidgeWaveguide:
         return self.ms.find_k(*args)
 
 
+# %% Inherits RidgeWaveguide and constructs the ThinFilmWaveguide
 class ThinFilmWaveguide(RidgeWaveguide):
     """
     height will be redundant for film thickness and will likely be fixed (you
@@ -760,8 +792,8 @@ class ThinFilmWaveguide(RidgeWaveguide):
         ), "the etch depth cannot exceed the film thickness!"
 
         # create a ridgewaveguide with width etch_width, and height
-        # film_thickness we will add a second waveguide block for the
-        # remainder of the film below
+        # film_thickness we will add a second waveguide block for the remainder
+        # of the film below
         super().__init__(
             etch_width,
             film_thickness,
@@ -773,9 +805,9 @@ class ThinFilmWaveguide(RidgeWaveguide):
             cell_height,
         )
 
-        # calculate the remaining film thickness after the etch depth and add
-        # a block with the appropriate z offset to place it below the etched
-        # out waveguide
+        # calculate the remaining film thickness after the etch depth and add a
+        # block with the appropriate z offset to place it below the etched out
+        # waveguide
         blk_film_thickness = film_thickness - etch_depth
         self._blk_film = mp.Block(
             size=mp.Vector3(mp.inf, mp.inf, blk_film_thickness),
@@ -796,9 +828,9 @@ class ThinFilmWaveguide(RidgeWaveguide):
         self.etch_depth = etch_depth
 
     def redef_sbstrt_dim(self):
-        # in addition to redef_sbstrt_dim() from RidgeWaveguide,
-        # also re-initialize the remaining film block, this is basically a
-        # copy of what was done in __init__
+        # in addition to redef_sbstrt_dim() from RidgeWaveguide, also
+        # re-initialize the remaining film block, this is basically a copy of
+        # what was done in __init__
 
         super().redef_sbstrt_dim()
         blk_film_thickness = self.film_thickness - self.etch_depth
@@ -916,8 +948,8 @@ class ThinFilmWaveguide(RidgeWaveguide):
     # _________________________________________________________________________
     # this was originally meant to take the same arguments as find_k() from
     # mpb.ModeSolver(). However, I've now added eps_func_wvgd and
-    # eps_func_sbstrt *make sure that if you decide to use these, that you
-    # pass them in as kwargs!!* Otherwise they'll be interpreted as part of
+    # eps_func_sbstrt *make sure that if you decide to use these, that you pass
+    # them in as kwargs!!* Otherwise they'll be interpreted as part of
     # band_funcs (not to worry too much, you'll just get an error and then
     # it'll be obvious what you did wrong)
     # _________________________________________________________________________
@@ -936,6 +968,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
         eps_func_wvgd=None,
         eps_func_sbstrt=None,
     ):
+
         # _____________________________________________________________________
 
         # this is the same as find_k from RidgeWaveguide but with the added

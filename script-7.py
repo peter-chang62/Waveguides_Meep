@@ -4,6 +4,7 @@ computer). This is good for sort of point sampling of the big simulation
 outputs. You can make small adjustment to parameters here
 """
 
+# %% package imports
 import numpy as np
 import matplotlib.pyplot as plt
 import clipboard_and_style_sheet
@@ -19,14 +20,16 @@ import scipy.integrate as scint
 from scipy.interpolate import interp1d
 import pynlo_connor as pynlo
 from pynlo_connor import utility as utils
+import time
 
 clipboard_and_style_sheet.style_sheet()
 
+# %% global variables
 resolution = 30
+time_0 = time.time()
 
 
-# ______________________________________________________________________________
-
+# %% function defs
 def get_bp_ind(wl_grid, wl_ll, wl_ul):
     return np.where(np.logical_and(wl_grid >= wl_ll, wl_grid <= wl_ul), 1, 0)
 
@@ -42,14 +45,12 @@ def mode_area(I):
     # common definition that is used
     # reference: https://www.rp-photonics.com/effective_mode_area.html
     # this gives an overall dimension of dA in the numerator
-    area = scint.simpson(scint.simpson(I)) ** 2 / \
-        scint.simpson(scint.simpson(I ** 2))
-    area /= resolution ** 2
+    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(scint.simpson(I**2))
+    area /= resolution**2
     return area
 
 
-def instantiate_pulse(n_points, v_min, v_max,
-                      e_p=300e-3 * 1e-9, t_fwhm=50e-15):
+def instantiate_pulse(n_points, v_min, v_max, e_p=300e-3 * 1e-9, t_fwhm=50e-15):
     v0 = sc.c / 1560e-9  # sc.c / 1550 nm
     pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
     pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
@@ -65,7 +66,7 @@ def load_waveguide(pulse, res, sim):
     k = b * 1e6 / (2 * np.pi)  # 1/m
     nu = sc.c / (wl * 1e-6)
     n = sc.c * k / nu
-    n_wvgd = interp1d(nu, n, kind='cubic', bounds_error=True)
+    n_wvgd = interp1d(nu, n, kind="cubic", bounds_error=True)
     n_eff = n_wvgd(v_grid)
     beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
 
@@ -83,12 +84,7 @@ def load_waveguide(pulse, res, sim):
     g3 = utils.chi3.g3_spm(n_eff, a_eff, chi3_eff)
 
     mode = pynlo.media.Mode(
-        v_grid=v_grid,
-        beta_v=beta,
-        g2_v=g2,
-        g2_inv=None,
-        g3_v=g3,
-        z=0.0
+        v_grid=v_grid, beta_v=beta, g2_v=g2, g2_inv=None, g3_v=g3, z=0.0
     )
     return mode
 
@@ -100,7 +96,8 @@ def simulate(pulse, mode, length=3e-3, npts=100):
 
     z_grid = np.linspace(0, length, npts)
     pulse_out, z, a_t, a_v = model.simulate(
-        z_grid, dz=dz, local_error=local_error, n_records=None, plot=None)
+        z_grid, dz=dz, local_error=local_error, n_records=None, plot=None
+    )
     return pulse_out, z, a_t, a_v
 
 
@@ -130,87 +127,91 @@ def aliasing_av(a_v):
 """Copy from script-2.py"""
 
 
-# %%___________________________________________________________________________
-# Gayer paper Sellmeier equation for ne (taken from PyNLO
-# 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go
-# from ne to eps
-
-
+# %% Gayer paper Sellmeier equation for ne (taken from PyNLO 1 / omega is in um
+# -> multiply by 1e3 to get to nm -> then square to go from ne to eps
 def eps_func_wvgd(omega):
     return Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 
 
-# %%____________________________________________________________________________
+# %% create sim instance
 etch_width = 1.245
 etch_depth = 0.7
-sim = wg.ThinFilmWaveguide(etch_width=etch_width,
-                           etch_depth=etch_depth,
-                           film_thickness=1,  # I'll fix the height at 1 um now
-                           substrate_medium=mtp.Al2O3,
-                           waveguide_medium=mt.LiNbO3,
-                           resolution=resolution,
-                           num_bands=1,
-                           cell_width=10,
-                           cell_height=4)
+sim = wg.ThinFilmWaveguide(
+    etch_width=etch_width,
+    etch_depth=etch_depth,
+    film_thickness=1,  # I'll fix the height at 1 um now
+    substrate_medium=mtp.Al2O3,
+    waveguide_medium=mt.LiNbO3,
+    resolution=resolution,
+    num_bands=1,
+    cell_width=10,
+    cell_height=4,
+)
 
-# %%___________________________________________________________________________
+# %% waveguide simulation
 # individual sampling (comment out if running the for loop block instead)
 block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
 sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # ->trapezoid
-res = sim.calc_dispersion(.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # simulate
+res = sim.calc_dispersion(0.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # simulate
 sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
 wl = 1 / res.freq
 omega = res.freq * 2 * np.pi
-conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
+conversion = sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9
 beta = res.kx.flatten() * 2 * np.pi
 beta1 = np.gradient(beta, omega, edge_order=2)
 beta2 = np.gradient(beta1, omega, edge_order=2) * conversion
 
-# %%___________________________________________________________________________
-n_points = 2 ** 13
+# %% PyNLO simulation
+n_points = 2**13
 v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
 v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
 e_p = 300e-3 * 1e-9
 t_fwhm = 50e-15
-pulse = instantiate_pulse(n_points=n_points,
-                          v_min=v_min,
-                          v_max=v_max,
-                          e_p=e_p,
-                          t_fwhm=t_fwhm)
+pulse = instantiate_pulse(
+    n_points=n_points, v_min=v_min, v_max=v_max, e_p=e_p, t_fwhm=t_fwhm
+)
 mode = load_waveguide(pulse, res, sim)
 pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=500)
 wl_grid = sc.c / pulse.v_grid
 ind_alias = aliasing_av(a_v)
 
 frep = 1e9
-power = e_p_in_window(wl_grid=wl_grid,
-                      dv=np.diff(pulse.v_grid)[0],
-                      a_v=a_v,
-                      wl_ll=3e-6,
-                      wl_ul=5e-6) * frep
+power = (
+    e_p_in_window(
+        wl_grid=wl_grid, dv=np.diff(pulse.v_grid)[0], a_v=a_v, wl_ll=3e-6, wl_ul=5e-6
+    )
+    * frep
+)
 
-# %%___________________________________________________________________________
+# %% plotting
 plt.figure()
-plt.plot(wl, beta2, 'o-')
+plt.plot(wl, beta2, "o-")
 plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
 plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
 
 fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 3.5)))
-ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
-                  '%.2f' % wl[np.argmin(abs(wl - 3.5))] +
-                  " $\\mathrm{\\mu m}$")
+ax.title.set_text(
+    ax.title.get_text()
+    + "\n"
+    + "$\\mathrm{\\lambda = }$"
+    + "%.2f" % wl[np.argmin(abs(wl - 3.5))]
+    + " $\\mathrm{\\mu m}$"
+)
 
 fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 4.0)))
-ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
-                  '%.2f' % wl[np.argmin(abs(wl - 4.0))] +
-                  " $\\mathrm{\\mu m}$")
+ax.title.set_text(
+    ax.title.get_text()
+    + "\n"
+    + "$\\mathrm{\\lambda = }$"
+    + "%.2f" % wl[np.argmin(abs(wl - 4.0))]
+    + " $\\mathrm{\\mu m}$"
+)
 
 plt.figure()
 ind_z = np.argmin(abs(z * 1e3 - 10))
 p_v_dB = 10 * np.log10(abs(a_v[:ind_z]) ** 2 / np.max(abs(a_v[:ind_z]) ** 2))
-plt.pcolormesh(wl_grid * 1e6, z[:ind_z] * 1e3, p_v_dB,
-               vmin=-40, vmax=0)
+plt.pcolormesh(wl_grid * 1e6, z[:ind_z] * 1e3, p_v_dB, vmin=-40, vmax=0)
 plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
 plt.ylabel("z (mm)")
 
@@ -225,9 +226,12 @@ def plot_single(length):
     ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
     ax[0].set_ylabel("a. u.")
     ax[0].set_ylim(-40, 0)
-    ax[0].set_xlim(.6, 4.5)
-    ax[1].plot(pulse.t_grid * 1e15, abs(a_t[ind_z]) **
-               2 / max(abs(a_t[ind_z]) ** 2), linewidth=2)
+    ax[0].set_xlim(0.6, 4.5)
+    ax[1].plot(
+        pulse.t_grid * 1e15,
+        abs(a_t[ind_z]) ** 2 / max(abs(a_t[ind_z]) ** 2),
+        linewidth=2,
+    )
     ax[1].set_xlabel("t (fs)")
     ax[1].set_ylabel("a.u.")
     ax[1].set_xlim(-75, 75)
@@ -249,9 +253,10 @@ def video(save=False, length=False):
         ax[0].set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
         ax[0].set_ylabel("a. u.")
         ax[0].set_ylim(-40, 0)
-        ax[0].set_xlim(.6, 4.5)
-        ax[1].plot(pulse.t_grid * 1e15, abs(a_t[n]) **
-                   2 / max(abs(a_t[n]) ** 2), linewidth=2)
+        ax[0].set_xlim(0.6, 4.5)
+        ax[1].plot(
+            pulse.t_grid * 1e15, abs(a_t[n]) ** 2 / max(abs(a_t[n]) ** 2), linewidth=2
+        )
         ax[1].set_xlabel("t (fs)")
         ax[1].set_ylabel("a.u.")
         ax[1].set_xlim(-200, 200)
@@ -259,9 +264,15 @@ def video(save=False, length=False):
         if save:
             plt.savefig(f"fig/{n}.png")
         else:
-            plt.pause(.05)
+            plt.pause(0.05)
 
-# %%___________________________________________________________________________
+
+time_1 = time.time()
+
+# %% total run time
+print(time_1 - time_0)
+
+# %% save waveguide simulation results
 # save sim results
 # arr = np.c_[res.freq, beta, beta1, beta2]
 # path = ""
