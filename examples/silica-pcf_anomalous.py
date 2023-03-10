@@ -73,7 +73,7 @@ dz = model.estimate_step_size(n=20, local_error=local_error)
 # %% Simulate
 
 pulse_out, z, a_t, a_v = model.simulate(
-    length, dz=dz, local_error=local_error, n_records=100, plot=None)
+    length, dz=dz, local_error=local_error, n_records=100, plot="wvl")
 
 # %% Plot Results
 

@@ -18,7 +18,7 @@ clipboard_and_style_sheet.style_sheet()
 def get_beta(res, plot=True, plot_freq=False):
     wl = 1 / res.freq
     omega = res.freq * 2 * np.pi
-    conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
+    conversion = sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9
     beta = res.kx.flatten() * 2 * np.pi
     beta1 = np.gradient(beta, omega, edge_order=2)
     beta2 = np.gradient(beta1, omega, edge_order=2)
@@ -27,12 +27,12 @@ def get_beta(res, plot=True, plot_freq=False):
         # plt.figure()
         if plot_freq:
             nu = sc.c * 1e-12 / (wl * 1e-6)
-            plt.plot(nu, beta2, 'o-')
-            plt.axvline(sc.c * 1e-12 / 1.55e-6, color='r')
+            plt.plot(nu, beta2, "o-")
+            plt.axvline(sc.c * 1e-12 / 1.55e-6, color="r")
         else:
-            plt.plot(wl, beta2, 'o-')
-            plt.axvline(1.55, color='r')
-        plt.axhline(0, color='r')
+            plt.plot(wl, beta2, "o-")
+            plt.axvline(1.55, color="r")
+        plt.axhline(0, color="r")
         plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
         plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
 
@@ -42,28 +42,34 @@ def get_beta(res, plot=True, plot_freq=False):
 def plot_mode(res, sim, band_index, k_index):
     wl = 1 / res.freq
     fig, ax = sim.plot_mode(band_index, k_index)
-    ax.title.set_text(ax.title.get_text() + "\n" + "$\\mathrm{\\lambda = }$" +
-                      '%.2f' % wl[k_index] + " $\\mathrm{\\mu m}$")
+    ax.title.set_text(
+        ax.title.get_text()
+        + "\n"
+        + "$\\mathrm{\\lambda = }$"
+        + "%.2f" % wl[k_index]
+        + " $\\mathrm{\\mu m}$"
+    )
 
 
 # %%___________________________________________________________________________
 # Gayer paper Sellmeier equation for ne (taken from PyNLO
 # 1 / omega is in um -> multiply by 1e3 to get to nm -> then square to go
 # from ne to eps
-eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n(
-    (1 / omega) * 1e3) ** 2
+eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
 
 # %%___________________________________________________________________________
-sim = wg.ThinFilmWaveguide(etch_width=3,
-                           etch_depth=.3,
-                           film_thickness=1,
-                           # substrate_medium=mp.Medium(index=1),
-                           substrate_medium=mtp.Al2O3,
-                           waveguide_medium=mt.LiNbO3,
-                           resolution=30,
-                           num_bands=1,
-                           cell_width=10,
-                           cell_height=4)
+sim = wg.ThinFilmWaveguide(
+    etch_width=3,
+    etch_depth=0.3,
+    film_thickness=1,
+    # substrate_medium=mp.Medium(index=1),
+    substrate_medium=mtp.Al2O3,
+    waveguide_medium=mt.LiNbO3,
+    resolution=30,
+    num_bands=1,
+    cell_width=10,
+    cell_height=4,
+)
 
 # %%___________________________________________________________________________
 # single waveguide parameter (comment out if running the for loop block instead)
@@ -72,9 +78,9 @@ sim.etch_depth = 0.70
 
 block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
 sim.blk_wvgd = geometry.convert_block_to_trapezoid(
-    sim.blk_wvgd)  # set the blk_wvgd to a trapezoid
-res = sim.calc_dispersion(.8, 5, 50,
-                          eps_func_wvgd=eps_func_wvgd)  # run simulation
+    sim.blk_wvgd
+)  # set the blk_wvgd to a trapezoid
+res = sim.calc_dispersion(0.8, 5, 50, eps_func_wvgd=eps_func_wvgd)  # run simulation
 sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
 wl, omega, beta, beta1, beta2 = get_beta(res, plot_freq=True)

@@ -17,7 +17,7 @@ try:
 
     on_linux = True
 except ImportError:
-    Al2O3 = np.load('convenience/freq_epsilon_data.npy')
+    Al2O3 = np.load("convenience/freq_epsilon_data.npy")
     Al2O3 = InterpolatedUnivariateSpline(Al2O3[:, 0], Al2O3[:, 1])
     on_linux = False
 
@@ -26,17 +26,19 @@ plt.ion()
 
 
 def width(s):
-    return float(s.split('_')[0])
+    return float(s.split("_")[0])
 
 
 def height(s):
-    return float(s.split('_')[1].split('.npy')[0])
+    return float(s.split("_")[1].split(".npy")[0])
 
 
 def eps_func_sbstrt(freq):
-    assert isinstance(freq, float) or isinstance(freq, int) or \
-           all([isinstance(freq, np.ndarray), len(freq.shape) == 1,
-                freq.shape[0] > 1])  # 1D array with length > 1
+    assert (
+        isinstance(freq, float)
+        or isinstance(freq, int)
+        or all([isinstance(freq, np.ndarray), len(freq.shape) == 1, freq.shape[0] > 1])
+    )  # 1D array with length > 1
 
     if isinstance(freq, float) or isinstance(freq, int):
         if on_linux:
@@ -67,53 +69,53 @@ def mode_area(I):
     # definition that is used
     # reference: https://www.rp-photonics.com/effective_mode_area.html
     # this gives an overall dimension of dA in the numerator
-    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(
-        scint.simpson(I ** 2))
-    area /= resolution ** 2
+    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(scint.simpson(I**2))
+    area /= resolution**2
     return area
 
 
-eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n(
-    (1 / omega) * 1e3) ** 2
-conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9
+eps_func_wvgd = lambda omega: Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+conversion = sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9
 path_sim_output = "sim_output/07-19-2022/"
 
 # %%___________________________________________________________________________
 # Dispersion Simulation Data
-path_disp = path_sim_output + 'dispersion-curves/'
+path_disp = path_sim_output + "dispersion-curves/"
 name_disp = [i.name for i in os.scandir(path_disp)]
 name_disp = sorted(name_disp, key=height)
 name_disp = sorted(name_disp, key=width)
 
 get_disp = lambda n: np.load(path_disp + name_disp[n])
-plot_nu_eps = lambda n: plt.plot(get_disp(n)[:, 1],
-                                 (get_disp(n)[:, 0] / get_disp(n)[:, 1]) ** 2,
-                                 '.-')
-plot_wl_eps = lambda n: plt.plot(1 / get_disp(n)[:, 1],
-                                 (get_disp(n)[:, 0] / get_disp(n)[:, 1]) ** 2,
-                                 '.-')
+plot_nu_eps = lambda n: plt.plot(
+    get_disp(n)[:, 1], (get_disp(n)[:, 0] / get_disp(n)[:, 1]) ** 2, ".-"
+)
+plot_wl_eps = lambda n: plt.plot(
+    1 / get_disp(n)[:, 1], (get_disp(n)[:, 0] / get_disp(n)[:, 1]) ** 2, ".-"
+)
 
 # %%___________________________________________________________________________
 # E-field Simulation Data corresponding to the dispersion simulation data
-path_fields = path_sim_output + 'E-fields/'
+path_fields = path_sim_output + "E-fields/"
 name_fields = [i.name for i in os.scandir(path_fields)]
 name_fields = sorted(name_fields, key=height)
 name_fields = sorted(name_fields, key=width)
 
 get_field = lambda n: np.squeeze(np.load(path_fields + name_fields[n]))
 plot_field = lambda n, k_index, alpha=0.9: plt.imshow(
-    get_field(n)[k_index][::-1, ::-1].T, cmap='RdBu', alpha=alpha)
+    get_field(n)[k_index][::-1, ::-1].T, cmap="RdBu", alpha=alpha
+)
 
 # %%___________________________________________________________________________
 # epsilon grid simulation data corresponding to the dispersion simulation data
-path_eps = path_sim_output + 'eps/'
+path_eps = path_sim_output + "eps/"
 name_eps = [i.name for i in os.scandir(path_eps)]
 name_eps = sorted(name_eps, key=height)
 name_eps = sorted(name_eps, key=width)
 
 get_eps = lambda n: np.load(path_eps + name_eps[n])
-plot_eps = lambda n: plt.imshow(get_eps(n)[::-1, ::-1].T,
-                                interpolation='spline36', cmap='binary')
+plot_eps = lambda n: plt.imshow(
+    get_eps(n)[::-1, ::-1].T, interpolation="spline36", cmap="binary"
+)
 
 
 # %%___________________________________________________________________________
@@ -132,12 +134,18 @@ def plot_mode(n, k_index, new_figure=True):
     else:
         s = "NOT guided"
     plt.title(
-        f'{np.round(width(name_eps[n]), 3)} x '
-        f'{np.round(height(name_eps[n]), 3)}' + ' $\\mathrm{\\mu m}$' '\n' +
-        "$\\mathrm{\\lambda = }$" + '%.2f' % wl +
-        ' $\\mathrm{\\mu m}$' + '\n' +
-        '$\\mathrm{A_{eff}}$ = %.3f' % mode_area(get_field(n)[k_index]) +
-        ' $\\mathrm{\\mu m^2}$' + '\n' + s)
+        f"{np.round(width(name_eps[n]), 3)} x "
+        f"{np.round(height(name_eps[n]), 3)}" + " $\\mathrm{\\mu m}$"
+        "\n"
+        + "$\\mathrm{\\lambda = }$"
+        + "%.2f" % wl
+        + " $\\mathrm{\\mu m}$"
+        + "\n"
+        + "$\\mathrm{A_{eff}}$ = %.3f" % mode_area(get_field(n)[k_index])
+        + " $\\mathrm{\\mu m^2}$"
+        + "\n"
+        + s
+    )
 
 
 # %%___________________________________________________________________________
@@ -184,24 +192,25 @@ for n in range(len(name_disp)):
     beta2_plt = spl_beta2(omega_plt)
     if animate:
         ax.clear()
-        ax.axhline(0, color='k', linestyle='--')
-        ax.axvline(1.55, color='k', linestyle='--')
+        ax.axhline(0, color="k", linestyle="--")
+        ax.axvline(1.55, color="k", linestyle="--")
         ax.set_title(
-            f'{np.round(width(name_disp[n]), 3)} x '
-            f'{np.round(height(name_disp[n]), 3)}' + ' $\\mathrm{\\mu m}$')
+            f"{np.round(width(name_disp[n]), 3)} x "
+            f"{np.round(height(name_disp[n]), 3)}" + " $\\mathrm{\\mu m}$"
+        )
     ax.plot(2 * np.pi / omega_plt, beta2_plt * conversion)
     ax.set_xlabel("wavelength $\\mathrm{\\mu m}$")
     ax.set_ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
     if savefig:
-        plt.savefig(f'fig/{n}.png')
+        plt.savefig(f"fig/{n}.png")
         print(n)
     elif animate:
-        plt.pause(.1)
-plt.axhline(0, color='k', linestyle='--')
-plt.axvline(1.55, color='k', linestyle='--')
+        plt.pause(0.1)
+plt.axhline(0, color="k", linestyle="--")
+plt.axvline(1.55, color="k", linestyle="--")
 plt.xlabel("wavelength $\\mathrm{\\mu m}$")
 plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
-plt.xlim(.8, 5)
+plt.xlim(0.8, 5)
 plt.ylim(-1000, 6000)
 
 # %%___________________________________________________________________________
@@ -240,7 +249,7 @@ wl_zdw_long_2D = np.zeros(w.shape)
 wl_zdw_long_2D[ind_zdw_long_2D] = wl_zdw_long
 wl_zdw_long_2D = ma.masked_values(wl_zdw_long_2D, 0)
 
-cmap = 'afmhot'
+cmap = "afmhot"
 fig, ax = plt.subplots(1, 1)
 img = ax.pcolormesh(w, h, wl_zdw_short_2D, cmap=cmap)
 plt.colorbar(img)

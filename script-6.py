@@ -29,6 +29,7 @@ except ImportError:
 
 clipboard_and_style_sheet.style_sheet()
 
+
 # %%
 def width(s):
     return float(s.split("_")[0])

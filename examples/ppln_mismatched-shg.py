@@ -19,7 +19,7 @@ start_time = time.time()
 
 # %% Pulse Properties
 
-n_points = 2 ** 13
+n_points = 2**13
 v_min = c / 3500e-9  # c / 3500 nm
 v_max = c / 450e-9  # c / 900 nm
 v0 = c / 1550e-9  # c / 1550 nm
@@ -82,9 +82,13 @@ def n_MgLN_G(v, T=24.5, axis="e"):
 
     wvl = c / v * 1e6  # um
     f = (T - 24.5) * (T + 570.82)
-    n2 = ((a1 + b1 * f) + (a2 + b2 * f) / (wvl ** 2 - (a3 + b3 * f) ** 2)
-          + (a4 + b4 * f) / (wvl ** 2 - a5 ** 2) - a6 * wvl ** 2)
-    return n2 ** 0.5
+    n2 = (
+        (a1 + b1 * f)
+        + (a2 + b2 * f) / (wvl**2 - (a3 + b3 * f) ** 2)
+        + (a4 + b4 * f) / (wvl**2 - a5**2)
+        - a6 * wvl**2
+    )
+    return n2**0.5
 
 
 n_eff = n_MgLN_G(v_grid)
@@ -119,11 +123,15 @@ g2_poll = utils.chi2.polling_sign(n_cycles)
 chi3_eff = 5200e-24  # 5200 pm**2 / V**2
 g3 = utils.chi3.g3_spm(n_eff, a_eff, chi3_eff)
 
-mode = pynlo_connor.media.Mode(v_grid, beta, g2_v=g2,
-                               g2_inv=g2_poll,
-                               # g2_inv=None,
-                               g3_v=g3,
-                               z=0.0)
+mode = pynlo_connor.media.Mode(
+    v_grid,
+    beta,
+    g2_v=g2,
+    g2_inv=g2_poll,
+    # g2_inv=None,
+    g3_v=g3,
+    z=0.0,
+)
 
 # %% Model
 
@@ -136,7 +144,8 @@ dz = model.estimate_step_size(n=20, local_error=local_error)
 # %% Simulate
 
 pulse_out, z, a_t, a_v = model.simulate(
-    z_grid, dz=dz, local_error=local_error, n_records=100, plot=None)
+    z_grid, dz=dz, local_error=local_error, n_records=100, plot="wvl"
+)
 
 # %% Plot Results
 
@@ -152,7 +161,7 @@ ax0.plot(1e-12 * v_grid, p_v_dB[0], color="b")
 ax0.plot(1e-12 * v_grid, p_v_dB[-1], color="g")
 ax2.pcolormesh(1e-12 * v_grid, 1e3 * z, p_v_dB, vmin=-40.0, vmax=0, shading="auto")
 ax0.set_ylim(bottom=-50, top=10)
-ax2.set_xlabel('Frequency (THz)')
+ax2.set_xlabel("Frequency (THz)")
 
 p_t_dB = 10 * np.log10(np.abs(a_t) ** 2)
 p_t_dB -= p_t_dB.max()
@@ -160,10 +169,10 @@ ax1.plot(1e12 * t_grid, p_t_dB[0], color="b")
 ax1.plot(1e12 * t_grid, p_t_dB[-1], color="g")
 ax3.pcolormesh(1e12 * t_grid, 1e3 * z, p_t_dB, vmin=-40.0, vmax=0, shading="auto")
 ax1.set_ylim(bottom=-50, top=10)
-ax3.set_xlabel('Time (ps)')
+ax3.set_xlabel("Time (ps)")
 
-ax0.set_ylabel('Power (dB)')
-ax2.set_ylabel('Propagation Distance (mm)')
+ax0.set_ylabel("Power (dB)")
+ax2.set_ylabel("Propagation Distance (mm)")
 fig.tight_layout()
 fig.show()
 

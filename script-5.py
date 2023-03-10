@@ -22,7 +22,7 @@ try:
 
     on_linux = True
 except:
-    Al2O3 = np.load('convenience/freq_epsilon_data.npy')
+    Al2O3 = np.load("convenience/freq_epsilon_data.npy")
     Al2O3 = InterpolatedUnivariateSpline(Al2O3[:, 0], Al2O3[:, 1])
     on_linux = False
 
@@ -30,11 +30,11 @@ clipboard_and_style_sheet.style_sheet()
 
 
 def width(s):
-    return float(s.split('_')[0])
+    return float(s.split("_")[0])
 
 
 def depth(s):
-    return float(s.split('_')[1].split('.npy')[0])
+    return float(s.split("_")[1].split(".npy")[0])
 
 
 def mode_area(I):
@@ -42,18 +42,19 @@ def mode_area(I):
     # that is used
     # reference: https://www.rp-photonics.com/effective_mode_area.html
     # this gives an overall dimension of dA in the numerator
-    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(
-        scint.simpson(I ** 2))
-    area /= resolution ** 2
+    area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(scint.simpson(I**2))
+    area /= resolution**2
     return area
 
 
 # %%___________________________________________________________________________
 resolution = 30
-conversion = sc.c ** -2 * 1e12 ** 2 * 1e3 ** 2 * 1e-9  # already multiplied for some sim data (should be obvious)
-path = 'sim_output/07-19-2022/'
+conversion = (
+    sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9
+)  # already multiplied for some sim data (should be obvious)
+path = "sim_output/07-19-2022/"
 # path = 'sim_output/09-08-2022/'
-names = [i.name for i in os.scandir(path + 'dispersion-curves/')]
+names = [i.name for i in os.scandir(path + "dispersion-curves/")]
 
 w_limit = 1.245
 [names.remove(i) for i in names.copy() if width(i) < w_limit]
@@ -62,28 +63,24 @@ names = sorted(names, key=depth)
 names = sorted(names, key=width)
 
 # %%___________________________________________________________________________
-get_disp = lambda n: np.load(path + 'dispersion-curves/' + names[n])
-get_eps = lambda n: np.load(path + 'eps/' + names[n])
-get_field = lambda n: np.squeeze(np.load(path + 'E-fields/' + names[n]))
+get_disp = lambda n: np.load(path + "dispersion-curves/" + names[n])
+get_eps = lambda n: np.load(path + "eps/" + names[n])
+get_field = lambda n: np.squeeze(np.load(path + "E-fields/" + names[n]))
 
 
 # %%___________________________________________________________________________
 def plot_eps(n, ax=None):
     if ax is not None:
-        ax.imshow(get_eps(n)[::-1, ::-1].T, interpolation='spline36',
-                  cmap='binary')
+        ax.imshow(get_eps(n)[::-1, ::-1].T, interpolation="spline36", cmap="binary")
     else:
-        plt.imshow(get_eps(n)[::-1, ::-1].T, interpolation='spline36',
-                   cmap='binary')
+        plt.imshow(get_eps(n)[::-1, ::-1].T, interpolation="spline36", cmap="binary")
 
 
 def plot_field(n, k_index, alpha=0.9, ax=None):
     if ax is not None:
-        ax.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap='RdBu',
-                  alpha=alpha)
+        ax.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap="RdBu", alpha=alpha)
     else:
-        plt.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap='RdBu',
-                   alpha=alpha)
+        plt.imshow(get_field(n)[k_index][::-1, ::-1].T, cmap="RdBu", alpha=alpha)
 
 
 def is_guided(kx, freq):
@@ -114,23 +111,33 @@ def plot_mode(n, k_index, new_figure=True, ax=None):
     else:
         s = "NOT guided"
     if ax is not None:
-        ax.set_title(f'{np.round(width(names[n]), 3)} x '
-                     f'{np.round(depth(names[n]), 3)}' +
-                     ' $\\mathrm{\\mu m}$' '\\n' +
-                     "$\\mathrm{\\lambda = }$" + '%.2f' % wl +
-                     ' $\\mathrm{\\mu m}$' + '\n' +
-                     '$\\mathrm{A_{eff}}$ = %.3f' %
-                     mode_area(get_field(n)[k_index]) +
-                     ' $\\mathrm{\\mu m^2}$' + '\n' + s)
+        ax.set_title(
+            f"{np.round(width(names[n]), 3)} x "
+            f"{np.round(depth(names[n]), 3)}" + " $\\mathrm{\\mu m}$"
+            "\\n"
+            + "$\\mathrm{\\lambda = }$"
+            + "%.2f" % wl
+            + " $\\mathrm{\\mu m}$"
+            + "\n"
+            + "$\\mathrm{A_{eff}}$ = %.3f" % mode_area(get_field(n)[k_index])
+            + " $\\mathrm{\\mu m^2}$"
+            + "\n"
+            + s
+        )
     else:
-        plt.title(f'{np.round(width(names[n]), 3)} x '
-                  f'{np.round(depth(names[n]), 3)}' +
-                  ' $\\mathrm{\\mu m}$' '\n' +
-                  "$\\mathrm{\\lambda = }$" + '%.2f' % wl +
-                  ' $\\mathrm{\\mu m}$' + '\n' +
-                  '$\\mathrm{A_{eff}}$ = %.3f' %
-                  mode_area(get_field(n)[k_index]) +
-                  ' $\\mathrm{\\mu m^2}$' + '\n' + s)
+        plt.title(
+            f"{np.round(width(names[n]), 3)} x "
+            f"{np.round(depth(names[n]), 3)}" + " $\\mathrm{\\mu m}$"
+            "\n"
+            + "$\\mathrm{\\lambda = }$"
+            + "%.2f" % wl
+            + " $\\mathrm{\\mu m}$"
+            + "\n"
+            + "$\\mathrm{A_{eff}}$ = %.3f" % mode_area(get_field(n)[k_index])
+            + " $\\mathrm{\\mu m^2}$"
+            + "\n"
+            + s
+        )
 
 
 # %%___________________________________________________________________________
@@ -158,13 +165,13 @@ for n in range(len(names)):
     beta2 = get_disp(n)[:, 3] * conversion
     # beta2 = get_disp(n)[:, 3]
 
-    ax[0].plot(wl, beta2, 'o-')
-    ax[0].axhline(0, linestyle='--', color='k')
-    ax[0].axhline(1.55, linestyle='--', color='k')
+    ax[0].plot(wl, beta2, "o-")
+    ax[0].axhline(0, linestyle="--", color="k")
+    ax[0].axhline(1.55, linestyle="--", color="k")
     ax[0].set_ylim(-1000, 5500)
     plot_mode(n, 0, False, ax[1])
     plot_mode(n, 21, False, ax[2])
     if save:
-        plt.savefig(f'fig/{n}.png')
+        plt.savefig(f"fig/{n}.png")
     else:
-        plt.pause(.1)
+        plt.pause(0.1)
