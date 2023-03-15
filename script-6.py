@@ -12,8 +12,8 @@ import scipy.constants as sc
 import scipy.integrate as scint
 import os
 from scipy.interpolate import interp1d
-import pynlo_connor as pynlo
-from pynlo_connor import utility as utils
+import pynlo
+from pynlo import utility as utils
 import copy
 from numpy import ma
 import time
@@ -455,92 +455,112 @@ for n, i in enumerate(n_roots):
         r_short[n] = ma.masked
 
 # %%
-# plt.figure()
-# plt.plot(r_short, 'o', label="shortest dispersive wave")
-# plt.plot(r_long, 'o', label="longest dispersive wave")
-# plt.xlabel("simulationn #")
-# plt.ylabel("wavelength ($\\mathrm{\\mu m}$)")
-
-w = np.asarray([width(i) for i in names_wvgd])
-d = np.asarray([depth(i) for i in names_wvgd])
-
-step = 19
-for n in range(0, len(w), step):
-    fig, ax = plt.subplots(3, 2, figsize=np.array([7.61, 7.81]))
-    ax = ax.flatten()
-    # fig.suptitle(f"{int(w[n] * 1000)} nm etch width")
-    plot_mode(n, 1, False, ax[0])
-    plot_mode(n + step - 1, 1, False, ax[1])
-    plot_mode(n, 35, False, ax[2])
-    plot_mode(n + step - 1, 35, False, ax[3])
-    ax[-2].plot(d[n : n + step] * 1000, r_short[n : n + step], "o")
-    ax[-1].plot(d[n : n + step] * 1000, r_long[n : n + step], "o")
-    [i.set_xlabel("etch depth (nm)") for i in ax[[-2, -1]]]
-    [i.set_ylabel("wavelength ($\\mathrm{\\mu m}$)") for i in ax[[-2, -1]]]
+plt.figure()
+plt.plot(r_short, "o", label="shortest dispersive wave")
+plt.plot(r_long, "o", label="longest dispersive wave")
+plt.xlabel("simulationn #")
+plt.ylabel("wavelength ($\\mathrm{\\mu m}$)")
 
 # %%
-# def temp():
-#     n_points = 2 ** 13
-#     v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
-#     v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
-#     e_p = 300e-12
-#     t_fwhm = 50e-15
-#     pulse = instantiate_pulse(n_points=n_points,
-#                               v_min=v_min,
-#                               v_max=v_max,
-#                               v0=sc.c / 1550e-9,  # this time 1550 not 1560!
-#                               e_p=e_p,
-#                               t_fwhm=t_fwhm)
-#     mode = load_waveguide(pulse, 125)
-#     pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=250)
-#     return pulse_out, mode, z, a_t, a_v
-#
-#
-# t1 = time.time()
-# pulse_out, mode, z, a_t, a_v = temp()
-# t2 = time.time()
-# print("total calc time is", t2 - t1)
-#
-# p_v = abs(a_v) ** 2
-# p_v /= p_v.max()
-# p_v_dB = 10 * np.log10(p_v)
-# p_t = abs(a_t) ** 2
-# p_t /= p_t.max()
-# wl = sc.c * 1e6 / pulse_out.v_grid
-#
-# # %%
-# plt.figure()
-# plt.pcolormesh(wl, z * 1e3, p_v_dB, vmin=-40, vmax=0, cmap='jet')
-# if aliasing_av(a_v):
-#     plt.ylim(0, z[aliasing_av(a_v)[0]] * 1e3 + 1)
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylabel("propagation distance (mm)")
-#
-# # %%
+# w = np.asarray([width(i) for i in names_wvgd])
+# d = np.asarray([depth(i) for i in names_wvgd])
+
+# step = 19
+# for n in range(0, len(w), step):
+#     fig, ax = plt.subplots(3, 2, figsize=np.array([7.61, 7.81]))
+#     ax = ax.flatten()
+#     # fig.suptitle(f"{int(w[n] * 1000)} nm etch width")
+#     plot_mode(n, 1, False, ax[0])
+#     plot_mode(n + step - 1, 1, False, ax[1])
+#     plot_mode(n, 35, False, ax[2])
+#     plot_mode(n + step - 1, 35, False, ax[3])
+#     ax[-2].plot(d[n : n + step] * 1000, r_short[n : n + step], "o")
+#     ax[-1].plot(d[n : n + step] * 1000, r_long[n : n + step], "o")
+#     [i.set_xlabel("etch depth (nm)") for i in ax[[-2, -1]]]
+#     [i.set_ylabel("wavelength ($\\mathrm{\\mu m}$)") for i in ax[[-2, -1]]]
+
+
+# %%
+def temp():
+    n_points = 2**13
+    v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
+    v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
+    e_p = 100e-12
+    t_fwhm = 50e-15
+    pulse = instantiate_pulse(
+        n_points=n_points,
+        v_min=v_min,
+        v_max=v_max,
+        v0=sc.c / 1550e-9,  # this time 1550 not 1560!
+        e_p=e_p,
+        t_fwhm=t_fwhm,
+    )
+    # mode = load_waveguide(pulse, 125)
+    mode = load_waveguide(pulse, 13)
+    pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=250)
+    return pulse_out, mode, z, a_t, a_v
+
+
+t1 = time.time()
+pulse_out, mode, z, a_t, a_v = temp()
+t2 = time.time()
+print("total calc time is", t2 - t1)
+
+p_v = abs(a_v) ** 2
+p_v /= p_v.max()
+p_v_dB = 10 * np.log10(p_v)
+p_t = abs(a_t) ** 2
+p_t /= p_t.max()
+wl = sc.c * 1e6 / pulse_out.v_grid
+
+# %%
+plt.figure()
+plt.pcolormesh(wl, z * 1e3, p_v_dB, vmin=-40, vmax=0, cmap="jet")
+if aliasing_av(a_v):
+    plt.ylim(0, z[aliasing_av(a_v)[0]] * 1e3 + 1)
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylabel("propagation distance (mm)")
+
+# %%
 # ind = np.argmin(abs(z * 1e3 - 5.4))
-# plt.figure()
-# plt.plot(wl, p_v_dB[ind], label="output")
-# plt.plot(wl, p_v_dB[0], label="input")
-# plt.legend(loc='best')
-# plt.ylim(ymin=-50, ymax=0)
+ind = 78
+plt.figure()
+plt.plot(wl, p_v_dB[ind], label="output")
+plt.plot(wl, p_v_dB[0], label="input")
+plt.legend(loc="best")
+plt.ylim(ymin=-50, ymax=0)
 # plt.xlim(wl.min(), wl.max())
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylabel("a.u. (dB)")
-#
-# # %%
-# plt.figure()
-# plt.plot(pulse.t_grid * 1e15, p_t[ind], label="output")
-# plt.plot(pulse.t_grid * 1e15, p_t[0], label="input")
-# plt.legend(loc='best')
-# plt.ylabel("a.u.")
-# plt.xlabel("t (fs)")
-# plt.xlim(-150, 250)
-#
-# # %%
-# dk = get_dk(mode, sc.c / 1550e-9)
-# plt.figure()
-# plt.plot(wl, dk)
-# plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# plt.ylim(-.05, .05)
-# plt.xlim(wl.min(), wl.max())
-# plt.ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
+plt.xlim(0.6, 3.5)
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylabel("a.u. (dB)")
+
+# %%
+plt.figure()
+plt.plot(pulse.t_grid * 1e15, p_t[ind], label="output")
+plt.plot(pulse.t_grid * 1e15, p_t[0], label="input")
+plt.legend(loc="best")
+plt.ylabel("a.u.")
+plt.xlabel("t (fs)")
+plt.xlim(-100, 100)
+
+# %%
+dk = get_dk(mode, sc.c / 1550e-9)
+plt.figure()
+plt.plot(wl, dk)
+plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
+plt.ylim(-0.05, 0.05)
+plt.xlim(wl.min(), wl.max())
+plt.ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
+
+# %%
+fig, ax = plt.subplots(1, 2)
+for n in range(len(p_t)):
+    [i.clear() for i in ax]
+    ax[0].plot(wl, p_v_dB[n])
+    ax[0].set_xlim(0.6, 3.5)
+    ax[0].set_ylim(-50, 0)
+    ax[1].plot(pulse.t_grid * 1e15, p_t[n])
+    ax[1].set_xlim(-250, 250)
+    fig.suptitle(n)
+    plt.savefig(f"fig/{n}.png")
+    print(n)
