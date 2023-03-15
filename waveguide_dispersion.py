@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import time
 import scipy.integrate as scint
 import scipy.constants as sc
+import geometry
 
 clipboard_and_style_sheet.style_sheet()
 
@@ -71,6 +72,20 @@ def mode_area(I, resolution):
     area = scint.simpson(scint.simpson(I)) ** 2 / scint.simpson(scint.simpson(I**2))
     area /= resolution**2
     return area
+
+
+def etch_angle_sim_wrapper(calc_dispersion):
+    def wrapper(self, *args, **kwargs):
+        self: ThinFilmWaveguide
+
+        block_waveguide = self.blk_wvgd  # save self.blk_wvgd
+        # convert -> trapezoid
+        self.blk_wvgd = geometry.convert_block_to_trapezoid(self.blk_wvgd, angle_deg=80)
+        result = calc_dispersion(self, *args, **kwargs)  # simulate
+        self.blk_wvgd = block_waveguide  # reset back to blk_wvgd
+        return result
+
+    return wrapper
 
 
 # RidgeWaveguide Class, this one is inherited by all ThinFilmWaveguide
@@ -1035,3 +1050,16 @@ class ThinFilmWaveguide(RidgeWaveguide):
             self.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt[2, 2])
 
         return self.ms.find_k(*args)
+
+    @etch_angle_sim_wrapper
+    def calc_dispersion(
+        self, wl_min, wl_max, NPTS, eps_func_wvgd=None, eps_func_sbstrt=None
+    ):
+        result = super().calc_dispersion(
+            wl_min,
+            wl_max,
+            NPTS,
+            eps_func_wvgd=eps_func_wvgd,
+            eps_func_sbstrt=eps_func_sbstrt,
+        )
+        return result
