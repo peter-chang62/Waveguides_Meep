@@ -553,14 +553,14 @@ plt.xlim(wl.min(), wl.max())
 plt.ylabel("phase mismatch (1/$\\mathrm{\\mu m}$)")
 
 # %%
-fig, ax = plt.subplots(1, 2)
-for n in range(len(p_t)):
-    [i.clear() for i in ax]
-    ax[0].plot(wl, p_v_dB[n])
-    ax[0].set_xlim(0.6, 3.5)
-    ax[0].set_ylim(-50, 0)
-    ax[1].plot(pulse.t_grid * 1e15, p_t[n])
-    ax[1].set_xlim(-250, 250)
-    fig.suptitle(n)
-    plt.savefig(f"fig/{n}.png")
-    print(n)
+# fig, ax = plt.subplots(1, 2)
+# for n in range(len(p_t)):
+#     [i.clear() for i in ax]
+#     ax[0].plot(wl, p_v_dB[n])
+#     ax[0].set_xlim(0.6, 3.5)
+#     ax[0].set_ylim(-50, 0)
+#     ax[1].plot(pulse.t_grid * 1e15, p_t[n])
+#     ax[1].set_xlim(-250, 250)
+#     fig.suptitle(n)
+#     plt.savefig(f"fig/{n}.png")
+#     print(n)
