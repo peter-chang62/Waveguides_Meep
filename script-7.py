@@ -213,6 +213,7 @@ sim = wg.ThinFilmWaveguide(
 # individual sampling (comment out if running the for loop block instead)
 res = sim.calc_dispersion(0.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # simulate
 
+# %%
 wl = 1 / res.freq
 omega = res.freq * 2 * np.pi
 conversion = sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9

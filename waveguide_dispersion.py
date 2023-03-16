@@ -76,7 +76,6 @@ def mode_area(I, resolution):
 
 def etch_angle_sim_wrapper(calc_dispersion):
     def wrapper(self, *args, **kwargs):
-        print(self, args, kwargs)
         self: ThinFilmWaveguide
 
         block_waveguide = self.blk_wvgd  # save self.blk_wvgd
