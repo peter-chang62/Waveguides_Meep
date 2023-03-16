@@ -13,3 +13,5 @@ sim_output
 .spyproject/
 
 .vscode/
+
+notebooks/.ipynb_checkpoints/

@@ -15,15 +15,11 @@ small so I don't really care.
 import meep as mp
 import numpy as np
 import copy
-import clipboard_and_style_sheet
 from meep import mpb
 import matplotlib.pyplot as plt
 import time
 import scipy.integrate as scint
-import scipy.constants as sc
 import geometry
-
-clipboard_and_style_sheet.style_sheet()
 
 
 # function defs
@@ -819,14 +815,19 @@ class ThinFilmWaveguide(RidgeWaveguide):
         film_thickness,
         substrate_medium,
         waveguide_medium,
-        resolution=64,
-        num_bands=4,
+        resolution=30,
         cell_width=2,
         cell_height=2,
+        num_bands=1,
     ):
         assert (
             etch_depth <= film_thickness
         ), "the etch depth cannot exceed the film thickness!"
+
+        assert num_bands == 1, (
+            "can technically set this but this is a waveguide"
+            " with no periodic structures, so extra bands are wasted calculations"
+        )
 
         # create a ridgewaveguide with width etch_width, and height
         # film_thickness we will add a second waveguide block for the remainder
