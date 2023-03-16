@@ -76,6 +76,7 @@ def mode_area(I, resolution):
 
 def etch_angle_sim_wrapper(calc_dispersion):
     def wrapper(self, *args, **kwargs):
+        print(self, args, kwargs)
         self: ThinFilmWaveguide
 
         block_waveguide = self.blk_wvgd  # save self.blk_wvgd
@@ -1051,7 +1052,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
 
         return self.ms.find_k(*args)
 
-    @etch_angle_sim_wrapper
+    @etch_angle_sim_wrapper  # convert -> 80 deg etch angle
     def calc_dispersion(
         self, wl_min, wl_max, NPTS, eps_func_wvgd=None, eps_func_sbstrt=None
     ):

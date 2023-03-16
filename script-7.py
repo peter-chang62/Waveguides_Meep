@@ -14,12 +14,13 @@ import materials as mtp
 import waveguide_dispersion as wg
 import os
 import geometry
-from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
+
+# from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
 import scipy.constants as sc
 import scipy.integrate as scint
 from scipy.interpolate import interp1d
-import pynlo_connor as pynlo
-from pynlo_connor import utility as utils
+import pynlo
+from pynlo import utility as utils
 import time
 
 clipboard_and_style_sheet.style_sheet()
@@ -129,8 +130,68 @@ def aliasing_av(a_v):
 
 # %% Gayer paper Sellmeier equation for ne (taken from PyNLO 1 / omega is in um
 # -> multiply by 1e3 to get to nm -> then square to go from ne to eps
+# def eps_func_wvgd(omega):
+#     return Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+
+
+# n = squrt[epsilon] so epsilon = n^2
 def eps_func_wvgd(omega):
-    return Gayer5PctSellmeier(24.5).n((1 / omega) * 1e3) ** 2
+    # omega is in inverse micron
+    um = 1e-6
+    v = omega * sc.c / um
+    return n_MgLN_G(v, T=24.5, axis="e") ** 2
+
+
+def n_MgLN_G(v, T=24.5, axis="e"):
+    """
+    Range of Validity:
+        - 500 nm to 4000 nm
+        - 20 C to 200 C
+        - 48.5 mol % Li
+        - 5 mol % Mg
+
+    Gayer, O., Sacks, Z., Galun, E. et al. Temperature and wavelength
+    dependent refractive index equations for MgO-doped congruent and
+    stoichiometric LiNbO3 . Appl. Phys. B 91, 343–348 (2008).
+
+    https://doi.org/10.1007/s00340-008-2998-2
+
+    """
+    if axis == "e":
+        a1 = 5.756  # plasmons in the far UV
+        a2 = 0.0983  # weight of UV pole
+        a3 = 0.2020  # pole in UV
+        a4 = 189.32  # weight of IR pole
+        a5 = 12.52  # pole in IR
+        a6 = 1.32e-2  # phonon absorption in IR
+        b1 = 2.860e-6
+        b2 = 4.700e-8
+        b3 = 6.113e-8
+        b4 = 1.516e-4
+    elif axis == "o":
+        a1 = 5.653  # plasmons in the far UV
+        a2 = 0.1185  # weight of UV pole
+        a3 = 0.2091  # pole in UV
+        a4 = 89.61  # weight of IR pole
+        a5 = 10.85  # pole in IR
+        a6 = 1.97e-2  # phonon absorption in IR
+        b1 = 7.941e-7
+        b2 = 3.134e-8
+        b3 = -4.641e-9
+        b4 = -2.188e-6
+
+    else:
+        raise ValueError("axis needs to be o or e")
+
+    wvl = sc.c / v * 1e6  # um
+    f = (T - 24.5) * (T + 570.82)
+    n2 = (
+        (a1 + b1 * f)
+        + (a2 + b2 * f) / (wvl**2 - (a3 + b3 * f) ** 2)
+        + (a4 + b4 * f) / (wvl**2 - a5**2)
+        - a6 * wvl**2
+    )
+    return n2**0.5
 
 
 # %% create sim instance
