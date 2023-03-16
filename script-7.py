@@ -211,10 +211,7 @@ sim = wg.ThinFilmWaveguide(
 
 # %% waveguide simulation
 # individual sampling (comment out if running the for loop block instead)
-block_waveguide = sim.blk_wvgd  # save sim.blk_wvgd
-sim.blk_wvgd = geometry.convert_block_to_trapezoid(sim.blk_wvgd)  # ->trapezoid
 res = sim.calc_dispersion(0.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # simulate
-sim.blk_wvgd = block_waveguide  # reset trapezoid back to blk_wvgd
 
 wl = 1 / res.freq
 omega = res.freq * 2 * np.pi

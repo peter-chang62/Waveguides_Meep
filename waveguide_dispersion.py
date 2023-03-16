@@ -583,19 +583,25 @@ class RidgeWaveguide:
         self.E = self.E.reshape((len(KX), self.num_bands, *self.E.shape[1:]))
         self.H = np.squeeze(np.array(self.H))
         self.H = self.H.reshape((len(KX), self.num_bands, *self.H.shape[1:]))
+
+        # the group velocity below is not correct!
         self.v_g = np.squeeze(np.array(self.v_g))
         self.v_g = self.v_g.reshape((len(KX), self.num_bands, *self.v_g.shape[1:]))
+
+        # epsilon and intensity
+        eps = self.ms.get_epsilon().copy()  # in case it's passed by pointer
+        power = abs(np.squeeze(self.E)) ** 2  # owns its own array
 
         class results:
             def __init__(self, parent):
                 parent: RidgeWaveguide
                 self.kx = np.array(KX)  # owns its own array after return call
                 self.freq = OMEGA  # owns its own array after return call
-                self.v_g = np.copy(parent.v_g)  # passed by pointer from parent
-                # float
-                self.index_sbstrt = (
+                self._index_sbstrt = (
                     parent.sbstrt_mdm.epsilon(f_center)[2, 2].real ** 0.5
                 )
+                self.eps = eps
+                self.power = power
 
             def plot_dispersion(self):
                 plt.figure()
@@ -605,7 +611,7 @@ class RidgeWaveguide:
                 ]
                 plt.plot(
                     self.kx[:, 0],
-                    self.kx[:, 0] / self.index_sbstrt,
+                    self.kx[:, 0] / self._index_sbstrt,
                     "k",
                     label="light-line substrate",
                 )
