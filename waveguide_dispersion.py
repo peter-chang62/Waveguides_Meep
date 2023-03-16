@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import time
 import scipy.integrate as scint
 import geometry
+import warnings
 
 
 # function defs
@@ -824,10 +825,13 @@ class ThinFilmWaveguide(RidgeWaveguide):
             etch_depth <= film_thickness
         ), "the etch depth cannot exceed the film thickness!"
 
-        assert num_bands == 1, (
-            "can technically set this but this is a waveguide"
-            " with no periodic structures, so extra bands are wasted calculations"
-        )
+        assert num_bands >= 1
+        if num_bands > 1:
+            msg = (
+                "can technically set this but this is a waveguide with no "
+                "periodic structures, so extra bands are wasted calculations"
+            )
+            warnings.warn(msg)
 
         # create a ridgewaveguide with width etch_width, and height
         # film_thickness we will add a second waveguide block for the remainder

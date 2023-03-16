@@ -204,9 +204,9 @@ sim = wg.ThinFilmWaveguide(
     substrate_medium=mtp.Al2O3,
     waveguide_medium=mt.LiNbO3,
     resolution=resolution,
-    num_bands=1,
     cell_width=10,
     cell_height=4,
+    num_bands=1,
 )
 
 # %% waveguide simulation
