@@ -55,7 +55,7 @@ res = TFW.calc_dispersion(
 
 # ----------------------- propagation loss calculation ------------------------
 (unguided,) = (res.freq > np.squeeze(res.kx) / res._index_sbstrt).nonzero()
-unguided = np.arange(unguided[0], unguided[-1] + 1)  # add one more
+unguided = np.arange(len(unguided) + 2)  # add a few more
 dispersion = np.c_[res.freq[unguided], np.squeeze(res.kx)[unguided]]
 
 # %% get sim
@@ -107,20 +107,23 @@ for fcen, kx in dispersion[::-1]:
         FREQ.append(re)
         DECAY.append(abs(im))
 
-# %%
-(guided,) = (res.freq < np.squeeze(res.kx) / res._index_sbstrt).nonzero()
+# %% sort stuff out
+
+# guided starts from the next one after the last in unguided
+guided = np.arange(len(res.freq))[unguided[-1] + 1 :]
 guided_freq = res.freq[guided]
 unguided_freq = res.freq[unguided]
 
 # truncate at frequencies below which loss was too high to calculate
 # index high -> low and truncate at low, then re-index low -> high
 unguided_freq = unguided_freq[::-1][: len(DECAY)][::-1]
-decay = np.zeros(len(unguided_freq))
 
 # DECAY was indexed high -> low
+decay = np.zeros(len(unguided_freq))
 decay[:] = np.asarray(DECAY)
 decay = decay[::-1]
-
 decay = np.append(decay, np.zeros(len(guided_freq)))
+
+# savable simulation data!
 N_throw = len(res.freq) - len(decay)
 arr = np.c_[res.freq[N_throw:], res.kx.flatten()[N_throw:], decay]
