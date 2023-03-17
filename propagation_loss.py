@@ -11,12 +11,12 @@ from scipy import constants as sc
 
 
 # %% dimensions
-etch_width = 2
-etch_depth = 0.7
-film_thickness = 1
+etch_width = 3
+etch_depth = 0.3
+film_thickness = 0.630
 
-wl_min = 4.0
-wl_max = 5.0
+wl_min = 3
+wl_max = 5
 
 # %% materials
 ppln = pe.materials.PPLN()
