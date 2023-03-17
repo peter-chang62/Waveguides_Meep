@@ -422,9 +422,7 @@ class RidgeWaveguide:
         ax.imshow(x[::-1, ::-1].T, cmap="RdBu", alpha=0.9)
         ax.axis(False)
         ax.set_title(
-            "Ez"
-            + "\n"
-            + "width="
+            "width="
             + "%.2f" % self.width
             + " $\\mathrm{\\mu m}$"
             + ", "
@@ -435,27 +433,37 @@ class RidgeWaveguide:
             + "$\\mathrm{A_{eff}}$ = %.3f" % area
             + " $\\mathrm{\\mu m^2}$"
         )
+        fig.tight_layout()
 
         return fig, ax  # in case you want to add additional things
 
     def calc_dispersion(
-        self, wl_min, wl_max, NPTS, eps_func_wvgd=None, eps_func_sbstrt=None
+        self,
+        wl_min=None,
+        wl_max=None,
+        NPTS=None,
+        freq_array=None,
+        eps_func_wvgd=None,
+        eps_func_sbstrt=None,
     ):
         """
         calculate waveguide dispersion
 
         Args:
-            wl_min (float):
-                shortest wavelength
-            wl_max (float):
-                longest wavelength
-            NPTS (int):
+            wl_min (float, optional):
+                shortest wavelength, either provide this or freq_array
+            wl_max (float, optional):
+                longest wavelength, either provide this or freq_array
+            NPTS (int, optional):
                 number of points to interpolate from wl_min -> wl_max
-            eps_func_wvgd (None, optional):
+                either provide this or freq_array
+            freq_array (1D array, optional):
+                frequency axis, either provide this or wl_min, wl_max, and NPTS
+            eps_func_wvgd (callable, optional):
                 a callable function that takes frequency as an input and
                 returns epsilon (n^2), default is None which uses the
                 mp.Medium instance of the waveguide to get epsilon
-            eps_func_sbstrt (None, optional):
+            eps_func_sbstrt (callable, optional):
                 a callable function that takes frequency as an input and
                 returns epsilon (n^2), default is None which uses the
                 mp.Medium instance of the substrate to get epsilon
@@ -468,6 +476,25 @@ class RidgeWaveguide:
             eps_func_wvgd or eps_func_sbstrt which will override meep's
             default epsilon calculator
         """
+        if freq_array is None:
+            assert np.all(
+                [wl_min is not None, wl_max is not None, NPTS is not None]
+            ), "if not providing a frequency axis, you need to provide wl_min, wl_max and NPTS"
+
+            # proceed with the usual
+            OMEGA = get_omega_axis(wl_min, wl_max, NPTS)
+
+        else:
+            assert isinstance(freq_array, np.ndarray)
+            assert not np.any(
+                [wl_min is not None, wl_max is not None, NPTS is not None]
+            ), "If providing a frequency axis, then don't provide wl_min, wl_max or NPTS"
+
+            wl_min = 1 / freq_array.max()
+            wl_max = 1 / freq_array.min()
+
+            OMEGA = freq_array
+
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
 
@@ -534,7 +561,6 @@ class RidgeWaveguide:
 
         print(f"_____________start iteration over Omega's ___________________")
 
-        OMEGA = get_omega_axis(wl_min, wl_max, NPTS)
         KX = []
         for n, omega in enumerate(OMEGA):
             # use the interpolated spline to provide a guess for kmag_guess,
@@ -589,11 +615,11 @@ class RidgeWaveguide:
                 parent: RidgeWaveguide
                 self.kx = np.array(KX)  # owns its own array after return call
                 self.freq = OMEGA  # owns its own array after return call
-                self._index_sbstrt = (
-                    parent.sbstrt_mdm.epsilon(f_center)[2, 2].real ** 0.5
-                )
                 self.eps = eps
                 self.power = power
+                self._index_sbstrt = [
+                    parent.sbstrt_mdm.epsilon(i)[2, 2].real ** 0.5 for i in self.freq
+                ]
 
             def plot_dispersion(self):
                 plt.figure()
@@ -968,9 +994,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
         area = mode_area(x, self.resolution[0])
         fig, ax = super().plot_mode(which_band, which_index_k, component)
         ax.set_title(
-            "Ez"
-            + "\n"
-            + "width="
+            "width="
             + "%.2f" % self.width
             + " $\\mathrm{\\mu m}$"
             + ", "
@@ -985,6 +1009,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
             + "$\\mathrm{A_{eff}}$ = %.3f" % area
             + " $\\mathrm{\\mu m^2}$"
         )
+        fig.tight_layout()
         return fig, ax  # in case you want to add additional things
 
     # _________________________________________________________________________
@@ -1060,12 +1085,19 @@ class ThinFilmWaveguide(RidgeWaveguide):
 
     @etch_angle_sim_wrapper  # convert -> 80 deg etch angle
     def calc_dispersion(
-        self, wl_min, wl_max, NPTS, eps_func_wvgd=None, eps_func_sbstrt=None
+        self,
+        wl_min=None,
+        wl_max=None,
+        NPTS=None,
+        freq_array=None,
+        eps_func_wvgd=None,
+        eps_func_sbstrt=None,
     ):
         result = super().calc_dispersion(
-            wl_min,
-            wl_max,
-            NPTS,
+            wl_min=wl_min,
+            wl_max=wl_max,
+            NPTS=NPTS,
+            freq_array=freq_array,
             eps_func_wvgd=eps_func_wvgd,
             eps_func_sbstrt=eps_func_sbstrt,
         )
