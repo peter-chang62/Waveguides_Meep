@@ -4,3 +4,9 @@ fmin = 1 / lambda_max
 fmax = 1 / lambda_min
 fcen = 0.5 * (fmin + fmax)
 df = fmax - fmin
+
+
+def f(x):
+    global y
+    y = 100
+    return x**2
