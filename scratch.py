@@ -1,12 +1,143 @@
-lambda_min = 0.7  # minimum source wavelength
-lambda_max = 1.0  # maximum source wavelength
-fmin = 1 / lambda_max
-fmax = 1 / lambda_min
-fcen = 0.5 * (fmin + fmax)
-df = fmax - fmin
+# %% package imports
+import numpy as np
+import matplotlib.pyplot as plt
+import clipboard_and_style_sheet
+from TFW_meep import waveguide_dispersion as wg
+from TFW_meep import materials as mtp
+from meep import materials as mt
+import meep as mp
+import pynlo_extras as pe
+from scipy import constants as sc
 
 
-def f(x):
-    global y
-    y = 100
-    return x**2
+# %% dimensions
+etch_width = 3
+etch_depth = 0.3
+film_thickness = 0.630
+
+wl_min = 3
+wl_max = 5
+
+# %% materials
+ppln = pe.materials.PPLN()
+
+
+def eps_func_wvgd(freq):
+    um = 1e-6
+
+    nu = freq * sc.c / um
+    return ppln.n(nu) ** 2
+
+
+substrate_medium = mtp.Al2O3
+waveguide_medium = mt.LiNbO3
+
+# %% create waveguide
+TFW = wg.ThinFilmWaveguide(
+    etch_width,
+    etch_depth,
+    film_thickness,
+    substrate_medium,
+    waveguide_medium,
+    resolution=30,
+    cell_width=8,
+    cell_height=6,
+    num_bands=1,
+)
+
+
+# %% run simulation to obtain a list of k_points the unguided modes are those
+#    that lie above the light line, which are the ones that we want to solve
+#    for propagation loss
+# res = TFW.calc_dispersion(
+#     wl_min, wl_max, 100, eps_func_wvgd=eps_func_wvgd, eps_func_sbstrt=None
+# )
+
+# (unguided,) = (res.freq > np.squeeze(res.kx) / res._index_sbstrt).nonzero()
+# unguided = np.arange(len(unguided))  # add a few more
+
+# # dispersion = np.c_[res.freq[unguided], np.squeeze(res.kx)[unguided]]
+# dispersion = np.c_[res.freq, np.squeeze(res.kx)]
+# np.save("dispersion.npy", dispersion)
+
+# ----------------------- propagation loss calculation ------------------------
+
+# %% get sim
+dispersion = np.load("dispersion.npy")
+sim = TFW.sim
+pml_layers = [
+    mp.PML(thickness=1, direction=mp.Z),
+    mp.PML(thickness=1, direction=mp.Y),
+]
+sim.boundary_layers = pml_layers
+
+# %%
+N_sim = mp.divide_parallel_processes(2)
+
+fcen, kx = dispersion[N_sim]
+
+# sources
+src = mp.GaussianSource(frequency=fcen, width=5)
+sources = [mp.Source(src, mp.Ey, center=mp.Vector3())]
+sim.sources = sources
+
+# set waveguide epsilon
+eps_wvgd = eps_func_wvgd(fcen)
+TFW.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
+TFW._blk_film.material = mp.Medium(epsilon=eps_wvgd)
+
+# set substrate epsilon
+eps_sbstrt = TFW.sbstrt_mdm.epsilon(fcen)[2, 2]
+TFW.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
+sim.geometry = TFW.geometry
+
+# harminv monitoring: offset from the symmetry plane slightly in the
+# horizontal direction
+df = 100e-3 / (1 / fcen) ** 2  # 100 nm
+h = mp.Harminv(mp.Ey, mp.Vector3(0, 0.1234, 0), fcen, df)
+
+k_point = mp.Vector3(kx, 0, 0)
+sim.k_point = k_point
+sim.run(mp.after_sources(h), until_after_sources=300)
+
+if len(h.modes) == 0:
+    pass
+else:
+    assert len(h.modes) == 1
+    (mode,) = h.modes
+    re = mode.freq
+    im = mode.decay
+
+    data = np.array([re, im])
+
+merged = mp.merge_subgroup_data(data)
+print(merged)
+
+# %% --------------------- sort stuff out -------------------------------------
+
+# guided starts from the next one after the last in unguided
+# guided = np.arange(len(res.freq))[unguided[-1] + 1 :]
+# guided_freq = res.freq[guided]
+# unguided_freq = res.freq[unguided]
+
+# # truncate at frequencies below which loss was too high to calculate
+# # index high -> low and truncate at low, then re-index low -> high
+# unguided_freq = unguided_freq[::-1][: len(DECAY)][::-1]
+
+# # DECAY was indexed high -> low
+# decay = np.zeros(len(unguided_freq))
+# decay[:] = np.asarray(DECAY)
+# decay = decay[::-1]
+# decay = np.append(decay, np.zeros(len(guided_freq)))
+
+# # savable simulation data!
+# N_throw = len(res.freq) - len(decay)
+# arr = np.c_[res.freq[N_throw:], res.kx.flatten()[N_throw:], decay]
+
+# um = 1e-6
+# v_grid = res.freq * sc.c / um
+# w_grid = v_grid * 2 * np.pi
+# b = 2 * np.pi * res.kx.flatten() * 1 / um
+# b_1 = np.gradient(b, w_grid, edge_order=2)
+
+# decay = arr[:, 2] * b_1[: len(arr)] * sc.c / um
