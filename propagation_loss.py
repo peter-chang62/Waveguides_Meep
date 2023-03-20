@@ -49,16 +49,21 @@ TFW = wg.ThinFilmWaveguide(
 # %% run simulation to obtain a list of k_points the unguided modes are those
 #    that lie above the light line, which are the ones that we want to solve
 #    for propagation loss
-res = TFW.calc_dispersion(
-    wl_min, wl_max, 19, eps_func_wvgd=eps_func_wvgd, eps_func_sbstrt=None
-)
+# res = TFW.calc_dispersion(
+#     wl_min, wl_max, 100, eps_func_wvgd=eps_func_wvgd, eps_func_sbstrt=None
+# )
+
+# (unguided,) = (res.freq > np.squeeze(res.kx) / res._index_sbstrt).nonzero()
+# unguided = np.arange(len(unguided))  # add a few more
+
+# # dispersion = np.c_[res.freq[unguided], np.squeeze(res.kx)[unguided]]
+# dispersion = np.c_[res.freq, np.squeeze(res.kx)]
+# np.save("dispersion.npy", dispersion)
 
 # ----------------------- propagation loss calculation ------------------------
-(unguided,) = (res.freq > np.squeeze(res.kx) / res._index_sbstrt).nonzero()
-unguided = np.arange(len(unguided) + 2)  # add a few more
-dispersion = np.c_[res.freq[unguided], np.squeeze(res.kx)[unguided]]
 
 # %% get sim
+dispersion = np.load("dispersion.npy")
 sim = TFW.sim
 pml_layers = [
     mp.PML(thickness=1, direction=mp.Z),
@@ -107,23 +112,34 @@ for fcen, kx in dispersion[::-1]:
         FREQ.append(re)
         DECAY.append(abs(im))
 
-# %% sort stuff out
+arr = np.c_[FREQ, DECAY]
+np.save("freq_decay.npy", arr)
+
+# %% --------------------- sort stuff out -------------------------------------
 
 # guided starts from the next one after the last in unguided
-guided = np.arange(len(res.freq))[unguided[-1] + 1 :]
-guided_freq = res.freq[guided]
-unguided_freq = res.freq[unguided]
+# guided = np.arange(len(res.freq))[unguided[-1] + 1 :]
+# guided_freq = res.freq[guided]
+# unguided_freq = res.freq[unguided]
 
-# truncate at frequencies below which loss was too high to calculate
-# index high -> low and truncate at low, then re-index low -> high
-unguided_freq = unguided_freq[::-1][: len(DECAY)][::-1]
+# # truncate at frequencies below which loss was too high to calculate
+# # index high -> low and truncate at low, then re-index low -> high
+# unguided_freq = unguided_freq[::-1][: len(DECAY)][::-1]
 
-# DECAY was indexed high -> low
-decay = np.zeros(len(unguided_freq))
-decay[:] = np.asarray(DECAY)
-decay = decay[::-1]
-decay = np.append(decay, np.zeros(len(guided_freq)))
+# # DECAY was indexed high -> low
+# decay = np.zeros(len(unguided_freq))
+# decay[:] = np.asarray(DECAY)
+# decay = decay[::-1]
+# decay = np.append(decay, np.zeros(len(guided_freq)))
 
-# savable simulation data!
-N_throw = len(res.freq) - len(decay)
-arr = np.c_[res.freq[N_throw:], res.kx.flatten()[N_throw:], decay]
+# # savable simulation data!
+# N_throw = len(res.freq) - len(decay)
+# arr = np.c_[res.freq[N_throw:], res.kx.flatten()[N_throw:], decay]
+
+# um = 1e-6
+# v_grid = res.freq * sc.c / um
+# w_grid = v_grid * 2 * np.pi
+# b = 2 * np.pi * res.kx.flatten() * 1 / um
+# b_1 = np.gradient(b, w_grid, edge_order=2)
+
+# decay = arr[:, 2] * b_1[: len(arr)] * sc.c / um
