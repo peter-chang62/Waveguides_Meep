@@ -98,10 +98,10 @@ class RidgeWaveguide:
         height,
         substrate_medium,
         waveguide_medium,
-        resolution=64,
-        num_bands=4,
-        cell_width=2,
-        cell_height=2,
+        resolution=30,
+        num_bands=1,
+        cell_width=8,
+        cell_height=6,
     ):
         self.init_finished = False
 
@@ -843,8 +843,8 @@ class ThinFilmWaveguide(RidgeWaveguide):
         substrate_medium,
         waveguide_medium,
         resolution=30,
-        cell_width=2,
-        cell_height=2,
+        cell_width=8,
+        cell_height=6,
         num_bands=1,
     ):
         assert (

@@ -25,16 +25,16 @@ substrate_medium = mtp.Al2O3
 waveguide_medium = mt.LiNbO3
 
 # %% create waveguide
-etch_width = 3
-etch_depth = 0.3
-film_thickness = 0.630
+etch_width = 1.245
+etch_depth = 0.7
+film_thickness = 1.0
 TFW = wg.ThinFilmWaveguide(
     etch_width,
     etch_depth,
     film_thickness,
     substrate_medium,
     waveguide_medium,
-    resolution=50,
+    resolution=30,
     cell_width=8,
     cell_height=6,
     num_bands=1,
@@ -64,8 +64,8 @@ pml_layers = [
     mp.PML(thickness=dpml, direction=mp.Z),
     mp.PML(thickness=dpml, direction=mp.Y),
 ]
-TFW.cell_width += dpml * 4  # extend the cell for the pml layers
-TFW.cell_height += dpml * 4
+TFW.cell_width += dpml * 2  # extend the cell for the pml layers
+TFW.cell_height += dpml * 2
 sim = TFW.sim
 sim.boundary_layers = pml_layers
 
@@ -77,15 +77,29 @@ unguided = np.load("unguided_index.npy")
 FREQ = []
 DECAY = []
 for fcen, kx in k_points[unguided][::-1]:
-    # reset
+    # ------ reset
     sim.reset_meep()
 
-    # sources
+    k_point = mp.Vector3(kx, 0, 0)
+
+    # ------ sources
     src = mp.GaussianSource(frequency=fcen, width=10)
-    sources = [mp.Source(src, mp.Ey, center=mp.Vector3())]
+    # mp.NO_DIRECTION: eig_k_point is initial guess, search direction, and sets
+    # the direction of the waveguide
+    eigenmode = mp.EigenModeSource(
+        src,
+        center=mp.Vector3(),
+        # extend the cell, not including pml layers
+        size=mp.Vector3(0, TFW.cell_width - dpml * 2, TFW.cell_height - dpml * 2),
+        direction=mp.NO_DIRECTION,
+        eig_kpoint=k_point,
+        eig_match_freq=True,
+    )
+    # sources = [mp.Source(src, mp.Ey, center=mp.Vector3())]  # point source
+    sources = [eigenmode]
     sim.sources = sources
 
-    # set waveguide epsilon
+    # ------ set waveguide epsilon
     eps_wvgd = eps_func_wvgd(fcen)
     TFW.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
     TFW._blk_film.material = mp.Medium(epsilon=eps_wvgd)
@@ -95,12 +109,11 @@ for fcen, kx in k_points[unguided][::-1]:
     TFW.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
     sim.geometry = TFW.geometry
 
-    # harminv monitoring: offset from the symmetry plane slightly in the
-    # horizontal direction
+    # ------ harminv monitoring
     df = 100e-3 / (1 / fcen) ** 2  # 100 nm
-    h = mp.Harminv(mp.Ey, mp.Vector3(0, 0.1234, 0), fcen, df)
+    h = mp.Harminv(mp.Ey, mp.Vector3(0, 0, 0), fcen, df)
 
-    k_point = mp.Vector3(kx, 0, 0)
+    # ------ run simulation
     sim.k_point = k_point
     sim.run(mp.after_sources(h), until_after_sources=300)
 
@@ -120,50 +133,63 @@ np.save("unguided_dispersion.npy", unguided_dispersion)
 
 # %% run for guided frequencies, index from low v to high v, truncating when
 #    the loss is sufficiently low
-# FREQ = []
-# DECAY = []
-# for fcen, kx in k_points[unguided[-1] + 1 :]:
-#     # reset
-#     sim.reset_meep()
+FREQ = []
+DECAY = []
+for fcen, kx in k_points[unguided[-1] + 1 :]:
+    # ------ reset
+    sim.reset_meep()
 
-#     # sources
-#     src = mp.GaussianSource(frequency=fcen, width=10)
-#     sources = [mp.Source(src, mp.Ey, center=mp.Vector3())]
-#     sim.sources = sources
+    k_point = mp.Vector3(kx, 0, 0)
 
-#     # set waveguide epsilon
-#     eps_wvgd = eps_func_wvgd(fcen)
-#     TFW.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
-#     TFW._blk_film.material = mp.Medium(epsilon=eps_wvgd)
+    # ------ sources
+    src = mp.GaussianSource(frequency=fcen, width=10)
+    # mp.NO_DIRECTION: eig_k_point is initial guess, search direction, and sets
+    # the direction of the waveguide
+    eigenmode = mp.EigenModeSource(
+        src,
+        center=mp.Vector3(),
+        # extend the cell, not including pml layers
+        size=mp.Vector3(0, TFW.cell_width - dpml * 2, TFW.cell_height - dpml * 2),
+        direction=mp.NO_DIRECTION,
+        eig_kpoint=k_point,
+        eig_match_freq=True,
+    )
+    # sources = [mp.Source(src, mp.Ey, center=mp.Vector3())]  # point source
+    sources = [eigenmode]
+    sim.sources = sources
 
-#     # set substrate epsilon
-#     eps_sbstrt = TFW.sbstrt_mdm.epsilon(fcen)[2, 2]
-#     TFW.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
-#     sim.geometry = TFW.geometry
+    # ------ set waveguide epsilon
+    eps_wvgd = eps_func_wvgd(fcen)
+    TFW.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
+    TFW._blk_film.material = mp.Medium(epsilon=eps_wvgd)
 
-#     # harminv monitoring: offset from the symmetry plane slightly in the
-#     # horizontal direction
-#     df = 100e-3 / (1 / fcen) ** 2  # 100 nm
-#     h = mp.Harminv(mp.Ey, mp.Vector3(0, 0.1234, 0), fcen, df)
+    # ------ set substrate epsilon
+    eps_sbstrt = TFW.sbstrt_mdm.epsilon(fcen)[2, 2]
+    TFW.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
+    sim.geometry = TFW.geometry
 
-#     k_point = mp.Vector3(kx, 0, 0)
-#     sim.k_point = k_point
-#     sim.run(mp.after_sources(h), until_after_sources=300)
+    # ------ harminv monitoring
+    df = 100e-3 / (1 / fcen) ** 2  # 100 nm
+    h = mp.Harminv(mp.Ey, mp.Vector3(0, 0, 0), fcen, df)
 
-#     # for propagation loss, I work close to the cut off frequency, there
-#     # shouldn't be other modes close by
-#     assert len(h.modes) == 1
-#     (mode,) = h.modes
-#     re = mode.freq
-#     im = abs(mode.decay)
-#     FREQ.append(re)
-#     DECAY.append(im)
+    # ------ run simulation
+    sim.k_point = k_point
+    sim.run(mp.after_sources(h), until_after_sources=300)
 
-#     if im <= 1e-5:
-#         break
+    # for propagation loss, I work close to the cut off frequency, there
+    # shouldn't be other modes close by
+    assert len(h.modes) == 1
+    (mode,) = h.modes
+    re = mode.freq
+    im = abs(mode.decay)
+    FREQ.append(re)
+    DECAY.append(im)
 
-# guided_dispersion = np.c_[FREQ, DECAY]
-# np.save("guided_dispersion.npy", guided_dispersion)
+    if im <= 1e-5:
+        break
+
+guided_dispersion = np.c_[FREQ, DECAY]
+np.save("guided_dispersion.npy", guided_dispersion)
 
 # dispersion = np.vstack([unguided_dispersion[::-1], guided_dispersion])
 # np.save("dispersion.npy", dispersion)
