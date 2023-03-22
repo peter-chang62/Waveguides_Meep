@@ -34,7 +34,7 @@ TFW = wg.ThinFilmWaveguide(
     film_thickness,
     substrate_medium,
     waveguide_medium,
-    resolution=30,
+    resolution=50,
     cell_width=8,
     cell_height=6,
     num_bands=1,
