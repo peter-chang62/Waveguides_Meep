@@ -64,8 +64,8 @@ pml_layers = [
     mp.PML(thickness=dpml, direction=mp.Z),
     mp.PML(thickness=dpml, direction=mp.Y),
 ]
-TFW.cell_width += dpml * 2  # extend the cell for the pml layers
-TFW.cell_height += dpml * 2
+TFW.cell_width += dpml * 4  # extend the cell for the pml layers
+TFW.cell_height += dpml * 4
 sim = TFW.sim
 sim.boundary_layers = pml_layers
 
@@ -74,55 +74,9 @@ unguided = np.load("unguided_index.npy")
 
 # %% run for unguided frequencies, index from high v to low v, truncating when
 #    the loss is too high
-# FREQ = []
-# DECAY = []
-# for fcen, kx in k_points[unguided][::-1]:
-#     # reset
-#     sim.reset_meep()
-
-#     # sources
-#     src = mp.GaussianSource(frequency=fcen, width=10)
-#     sources = [mp.Source(src, mp.Ey, center=mp.Vector3())]
-#     sim.sources = sources
-
-#     # set waveguide epsilon
-#     eps_wvgd = eps_func_wvgd(fcen)
-#     TFW.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
-#     TFW._blk_film.material = mp.Medium(epsilon=eps_wvgd)
-
-#     # set substrate epsilon
-#     eps_sbstrt = TFW.sbstrt_mdm.epsilon(fcen)[2, 2]
-#     TFW.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
-#     sim.geometry = TFW.geometry
-
-#     # harminv monitoring: offset from the symmetry plane slightly in the
-#     # horizontal direction
-#     df = 100e-3 / (1 / fcen) ** 2  # 100 nm
-#     h = mp.Harminv(mp.Ey, mp.Vector3(0, 0.1234, 0), fcen, df)
-
-#     k_point = mp.Vector3(kx, 0, 0)
-#     sim.k_point = k_point
-#     sim.run(mp.after_sources(h), until_after_sources=300)
-
-#     if len(h.modes) == 0:
-#         break
-#     else:
-#         # for propagation loss, I work close to the cut off frequency, there
-#         # shouldn't be other modes close by
-#         assert len(h.modes) == 1
-#         (mode,) = h.modes
-#         re = mode.freq
-#         im = abs(mode.decay)
-#         FREQ.append(re)
-#         DECAY.append(im)
-# unguided_dispersion = np.c_[FREQ, DECAY]
-# np.save("unguided_dispersion.npy", unguided_dispersion)
-
-# %% run for guided frequencies, index from low v to high v, truncating when
-#    the loss is sufficiently low
 FREQ = []
 DECAY = []
-for fcen, kx in k_points[unguided[-1] + 1 :]:
+for fcen, kx in k_points[unguided][::-1]:
     # reset
     sim.reset_meep()
 
@@ -150,20 +104,66 @@ for fcen, kx in k_points[unguided[-1] + 1 :]:
     sim.k_point = k_point
     sim.run(mp.after_sources(h), until_after_sources=300)
 
-    # for propagation loss, I work close to the cut off frequency, there
-    # shouldn't be other modes close by
-    assert len(h.modes) == 1
-    (mode,) = h.modes
-    re = mode.freq
-    im = abs(mode.decay)
-    FREQ.append(re)
-    DECAY.append(im)
-
-    if im <= 1e-5:
+    if len(h.modes) == 0:
         break
+    else:
+        # for propagation loss, I work close to the cut off frequency, there
+        # shouldn't be other modes close by
+        assert len(h.modes) == 1
+        (mode,) = h.modes
+        re = mode.freq
+        im = abs(mode.decay)
+        FREQ.append(re)
+        DECAY.append(im)
+unguided_dispersion = np.c_[FREQ, DECAY]
+np.save("unguided_dispersion.npy", unguided_dispersion)
 
-guided_dispersion = np.c_[FREQ, DECAY]
-np.save("guided_dispersion.npy", guided_dispersion)
+# %% run for guided frequencies, index from low v to high v, truncating when
+#    the loss is sufficiently low
+# FREQ = []
+# DECAY = []
+# for fcen, kx in k_points[unguided[-1] + 1 :]:
+#     # reset
+#     sim.reset_meep()
+
+#     # sources
+#     src = mp.GaussianSource(frequency=fcen, width=10)
+#     sources = [mp.Source(src, mp.Ey, center=mp.Vector3())]
+#     sim.sources = sources
+
+#     # set waveguide epsilon
+#     eps_wvgd = eps_func_wvgd(fcen)
+#     TFW.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
+#     TFW._blk_film.material = mp.Medium(epsilon=eps_wvgd)
+
+#     # set substrate epsilon
+#     eps_sbstrt = TFW.sbstrt_mdm.epsilon(fcen)[2, 2]
+#     TFW.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
+#     sim.geometry = TFW.geometry
+
+#     # harminv monitoring: offset from the symmetry plane slightly in the
+#     # horizontal direction
+#     df = 100e-3 / (1 / fcen) ** 2  # 100 nm
+#     h = mp.Harminv(mp.Ey, mp.Vector3(0, 0.1234, 0), fcen, df)
+
+#     k_point = mp.Vector3(kx, 0, 0)
+#     sim.k_point = k_point
+#     sim.run(mp.after_sources(h), until_after_sources=300)
+
+#     # for propagation loss, I work close to the cut off frequency, there
+#     # shouldn't be other modes close by
+#     assert len(h.modes) == 1
+#     (mode,) = h.modes
+#     re = mode.freq
+#     im = abs(mode.decay)
+#     FREQ.append(re)
+#     DECAY.append(im)
+
+#     if im <= 1e-5:
+#         break
+
+# guided_dispersion = np.c_[FREQ, DECAY]
+# np.save("guided_dispersion.npy", guided_dispersion)
 
 # dispersion = np.vstack([unguided_dispersion[::-1], guided_dispersion])
 # np.save("dispersion.npy", dispersion)
