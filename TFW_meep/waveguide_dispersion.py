@@ -542,21 +542,52 @@ class RidgeWaveguide:
 
         start = time.time()
 
+        # =============== old method to get initial guess for k ===============
         # I just use the fundamental band for the interpolation (
         # which_band=1), I just interpolate over 10 pts, if using the
         # user-provided NPTS, we might get an overkill of data points, or not
         # enough
-        num_bands = self.num_bands  # store self.num_bands
-        self.num_bands = 1  # set the mode-solver to only calculate one band
-        # wl_min * 0.5: interpolation will cover close to wl_min
-        res = self._calc_w_from_k(wl_min * 0.5, wl_max, 10)
-        self.num_bands = num_bands  # set num_bands back to what it was before
+        # num_bands = self.num_bands  # store self.num_bands
+        # self.num_bands = 1  # set the mode-solver to only calculate one band
+        # # wl_min * 0.5: interpolation will cover close to wl_min
+        # res = self._calc_w_from_k(wl_min * 0.5, wl_max, 10)
+        # self.num_bands = num_bands  # set num_bands back to what it was before
 
-        z = np.polyfit(res.freq[:, 0], res.kx, deg=1)
-        spl = np.poly1d(z)  # straight up linear fit, great idea!
-        # spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0) # HORRIBLE IDEA!
+        # z = np.polyfit(res.freq[:, 0], res.kx, deg=1)
+        # spl = np.poly1d(z)  # straight up linear fit, great idea!
+        # # spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0) # HORRIBLE IDEA!
+        # =====================================================================
 
-        # fields were stored by _calc_w_from_k
+        # ======================= new simpler method ==========================
+        if eps_func_wvgd is not None:
+
+            def index(freq):
+                # epsilon = n^2
+                return eps_func_wvgd(freq).real ** 0.5
+
+        else:
+
+            def index(freq):
+                # epsilon = n^2
+                return self.wvgd_mdm.epsilon(freq)[2, 2].real ** 0.5
+
+        spl = lambda freq: index(freq) * freq
+
+        def band_func1(ms, which_band):
+            return store_fields(ms, which_band, self)
+
+        def band_func2(ms, which_band):
+            return store_group_velocity(ms, which_band, self)
+
+        self.band_funcs = [
+            band_func1,
+            band_func2,
+            mpb.display_yparities,
+            mpb.display_zparities,
+        ]
+        # =====================================================================
+
+        # initialize fields list
         self._initialize_E_and_H_lists()
 
         print(f"_____________start iteration over Omega's ___________________")

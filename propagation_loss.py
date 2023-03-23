@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import clipboard_and_style_sheet
 from TFW_meep import waveguide_dispersion as wg
 from TFW_meep import materials as mtp
+from TFW_meep import geometry
 from meep import materials as mt
 import meep as mp
 import pynlo_extras as pe
@@ -25,7 +26,7 @@ substrate_medium = mtp.Al2O3
 waveguide_medium = mt.LiNbO3
 
 # %% create waveguide
-etch_width = 1.245
+etch_width = 1.65
 etch_depth = 0.7
 film_thickness = 1.0
 TFW = wg.ThinFilmWaveguide(
@@ -45,16 +46,16 @@ TFW = wg.ThinFilmWaveguide(
 #    for propagation loss. You might want to run this simulation separately
 #    because MPB is not meant to be called with multiple processes using
 #    mpirun (it'll take longer!)
-# wl_min = 3
-# wl_max = 5
-# res = TFW.calc_dispersion(
-#     wl_min, wl_max, 100, eps_func_wvgd=eps_func_wvgd, eps_func_sbstrt=None
-# )
+wl_min = 3
+wl_max = 5
+res = TFW.calc_dispersion(
+    wl_min, wl_max, 100, eps_func_wvgd=eps_func_wvgd, eps_func_sbstrt=None
+)
 
-# (unguided,) = (res.freq > np.squeeze(res.kx) / res._index_sbstrt).nonzero()
-# k_points = np.c_[res.freq, np.squeeze(res.kx)]
-# np.save("k_points.npy", k_points)
-# np.save("unguided_index.npy", unguided)
+(unguided,) = (res.freq > np.squeeze(res.kx) / res._index_sbstrt).nonzero()
+k_points = np.c_[res.freq, np.squeeze(res.kx)]
+np.save("k_points.npy", k_points)
+np.save("unguided_index.npy", unguided)
 
 # ----------------------- propagation loss calculation ------------------------
 
@@ -66,6 +67,12 @@ pml_layers = [
 ]
 TFW.cell_width += dpml * 2  # extend the cell for the pml layers
 TFW.cell_height += dpml * 2
+
+# make sure to account for the etch angle! No wonder your frequencies weren't
+# matching up that well between MPB and Harminv!
+blk_wvgd = TFW.blk_wvgd
+TFW.blk_wvgd = geometry.convert_block_to_trapezoid(TFW.blk_wvgd, angle_deg=80)
+
 sim = TFW.sim
 sim.boundary_layers = pml_layers
 
@@ -89,9 +96,14 @@ for fcen, kx in k_points[unguided][::-1]:
     eigenmode = mp.EigenModeSource(
         src,
         center=mp.Vector3(),
-        # extend the cell, not including pml layers
-        size=mp.Vector3(0, TFW.cell_width - dpml * 2, TFW.cell_height - dpml * 2),
+        # the source extends the cell, not including pml layers
+        size=mp.Vector3(
+            0,
+            TFW.cell_width - dpml * 2 - 1,
+            TFW.cell_height - dpml * 2 - 1,
+        ),
         direction=mp.NO_DIRECTION,
+        eig_band=1,  # maybe it wasn't using the first band?
         eig_kpoint=k_point,
         eig_match_freq=True,
     )
@@ -104,7 +116,7 @@ for fcen, kx in k_points[unguided][::-1]:
     TFW.blk_wvgd.material = mp.Medium(epsilon=eps_wvgd)
     TFW._blk_film.material = mp.Medium(epsilon=eps_wvgd)
 
-    # set substrate epsilon
+    # ------ set substrate epsilon
     eps_sbstrt = TFW.sbstrt_mdm.epsilon(fcen)[2, 2]
     TFW.blk_sbstrt.material = mp.Medium(epsilon=eps_sbstrt)
     sim.geometry = TFW.geometry
@@ -148,9 +160,14 @@ for fcen, kx in k_points[unguided[-1] + 1 :]:
     eigenmode = mp.EigenModeSource(
         src,
         center=mp.Vector3(),
-        # extend the cell, not including pml layers
-        size=mp.Vector3(0, TFW.cell_width - dpml * 2, TFW.cell_height - dpml * 2),
+        # the source extends the cell, not including pml layers
+        size=mp.Vector3(
+            0,
+            TFW.cell_width - dpml * 2 - 1,
+            TFW.cell_height - dpml * 2 - 1,
+        ),
         direction=mp.NO_DIRECTION,
+        eig_band=1,  # maybe it wasn't using the first band?
         eig_kpoint=k_point,
         eig_match_freq=True,
     )
@@ -190,6 +207,3 @@ for fcen, kx in k_points[unguided[-1] + 1 :]:
 
 guided_dispersion = np.c_[FREQ, DECAY]
 np.save("guided_dispersion.npy", guided_dispersion)
-
-# dispersion = np.vstack([unguided_dispersion[::-1], guided_dispersion])
-# np.save("dispersion.npy", dispersion)
