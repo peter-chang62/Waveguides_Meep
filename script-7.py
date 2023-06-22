@@ -8,13 +8,9 @@ outputs. You can make small adjustment to parameters here
 import numpy as np
 import matplotlib.pyplot as plt
 import clipboard_and_style_sheet
-import meep as mp
 import meep.materials as mt
-import materials as mtp
-import waveguide_dispersion as wg
-import os
-import geometry
-
+from TFW_meep import materials as mtp
+from TFW_meep import waveguide_dispersion as wg
 # from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
 import scipy.constants as sc
 import scipy.integrate as scint
