@@ -7,19 +7,17 @@ outputs. You can make small adjustment to parameters here
 # %% package imports
 import numpy as np
 import matplotlib.pyplot as plt
-import clipboard_and_style_sheet
+import clipboard
 import meep.materials as mt
 from TFW_meep import materials as mtp
 from TFW_meep import waveguide_dispersion as wg
-# from pynlo.media.crystals.XTAL_PPLN import Gayer5PctSellmeier
 import scipy.constants as sc
 import scipy.integrate as scint
 from scipy.interpolate import interp1d
 import pynlo
 from pynlo import utility as utils
 import time
-
-clipboard_and_style_sheet.style_sheet()
+from scipy.interpolate import UnivariateSpline
 
 # %% global variables
 resolution = 30
@@ -49,8 +47,12 @@ def mode_area(I):
 
 def instantiate_pulse(n_points, v_min, v_max, e_p=300e-3 * 1e-9, t_fwhm=50e-15):
     v0 = sc.c / 1560e-9  # sc.c / 1550 nm
-    pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
-    pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
+    # pulse = pynlo.light.Pulse.Sech(n_points, v_min, v_max, v0, e_p, t_fwhm)
+    # pulse.rtf_grids(n_harmonic=2, update=True)  # anti-aliasing
+
+    pulse = pynlo.light.Pulse.Sech(
+        n_points, v_min, v_max, v0, e_p, t_fwhm, 10e-12, alias=2
+    )
     return pulse
 
 
@@ -63,7 +65,7 @@ def load_waveguide(pulse, res, sim):
     k = b * 1e6 / (2 * np.pi)  # 1/m
     nu = sc.c / (wl * 1e-6)
     n = sc.c * k / nu
-    n_wvgd = interp1d(nu, n, kind="cubic", bounds_error=True)
+    n_wvgd = interp1d(nu, n, kind="cubic", bounds_error=False, fill_value=0)
     n_eff = n_wvgd(v_grid)
     beta = n_eff * 2 * np.pi * v_grid / sc.c  # n * w / sc.c
 
@@ -80,22 +82,24 @@ def load_waveguide(pulse, res, sim):
     chi3_eff = 5200e-24
     g3 = utils.chi3.g3_spm(n_eff, a_eff, chi3_eff)
 
-    mode = pynlo.media.Mode(
-        v_grid=v_grid, beta_v=beta, g2_v=g2, g2_inv=None, g3_v=g3, z=0.0
-    )
+    mode = pynlo.media.Mode(v_grid, beta, g2=g2, g3=g3)
     return mode
 
 
 def simulate(pulse, mode, length=3e-3, npts=100):
-    model = pynlo.model.SM_UPE(pulse, mode)
+    # model = pynlo.model.SM_UPE(pulse, mode)
+    model = pynlo.model.UPE(pulse, mode)
     local_error = 1e-6
     dz = model.estimate_step_size(n=20, local_error=local_error)
 
     z_grid = np.linspace(0, length, npts)
-    pulse_out, z, a_t, a_v = model.simulate(
+    # pulse_out, z, a_t, a_v = model.simulate(
+    #     z_grid, dz=dz, local_error=local_error, n_records=None, plot=None
+    # )
+    sim = model.simulate(
         z_grid, dz=dz, local_error=local_error, n_records=None, plot=None
     )
-    return pulse_out, z, a_t, a_v
+    return sim
 
 
 def aliasing_av(a_v):
@@ -190,7 +194,7 @@ def n_MgLN_G(v, T=24.5, axis="e"):
     return n2**0.5
 
 
-# %% create sim instance
+# %% ----- create sim instance ------------------------------------------------
 etch_width = 1.245
 etch_depth = 0.7
 sim = wg.ThinFilmWaveguide(
@@ -205,11 +209,10 @@ sim = wg.ThinFilmWaveguide(
     num_bands=1,
 )
 
-# %% waveguide simulation
+# %% ----- waveguide simulation -----------------------------------------------
 # individual sampling (comment out if running the for loop block instead)
 res = sim.calc_dispersion(0.4, 5, 100, eps_func_wvgd=eps_func_wvgd)  # simulate
 
-# %%
 wl = 1 / res.freq
 omega = res.freq * 2 * np.pi
 conversion = sc.c**-2 * 1e12**2 * 1e3**2 * 1e-9
@@ -217,33 +220,36 @@ beta = res.kx.flatten() * 2 * np.pi
 beta1 = np.gradient(beta, omega, edge_order=2)
 beta2 = np.gradient(beta1, omega, edge_order=2) * conversion
 
-# %% PyNLO simulation
-n_points = 2**13
+# %% ----- PyNLO simulation ---------------------------------------------------
+# n_points = 2**13
+n_points = 256
 v_min = sc.c / ((5000 - 10) * 1e-9)  # sc.c / 5000 nm
-v_max = sc.c / ((400 + 10) * 1e-9)  # sc.c / 400 nm
-e_p = 300e-3 * 1e-9
+v_max = sc.c / ((700 + 10) * 1e-9)  # sc.c / 400 nm
+e_p = 100e-12
 t_fwhm = 50e-15
 pulse = instantiate_pulse(
     n_points=n_points, v_min=v_min, v_max=v_max, e_p=e_p, t_fwhm=t_fwhm
 )
 mode = load_waveguide(pulse, res, sim)
-pulse_out, z, a_t, a_v = simulate(pulse, mode, length=10e-3, npts=500)
+sim_wvgd = simulate(pulse, mode, length=10e-3, npts=100)
+pulse_out, z, a_t, a_v = sim_wvgd.pulse_out, sim_wvgd.z, sim_wvgd.a_t, sim_wvgd.a_v
 wl_grid = sc.c / pulse.v_grid
 ind_alias = aliasing_av(a_v)
 
 frep = 1e9
 power = (
-    e_p_in_window(
-        wl_grid=wl_grid, dv=np.diff(pulse.v_grid)[0], a_v=a_v, wl_ll=3e-6, wl_ul=5e-6
-    )
-    * frep
+    e_p_in_window(wl_grid=wl_grid, dv=pulse.dv, a_v=a_v, wl_ll=3e-6, wl_ul=5e-6) * frep
 )
 
-# %% plotting
-plt.figure()
-plt.plot(wl, beta2, "o-")
-plt.xlabel("wavelength ($\\mathrm{\\mu m}$)")
-plt.ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
+# %%  ----- plotting ----------------------------------------------------------
+fig, ax = plt.subplots(1, 1)
+# ax.plot(wl[:-10], beta2[:-10], "o")
+s = UnivariateSpline(wl[wl > 0.6][::-1], beta2[wl > 0.6][::-1], s=0)
+_ = np.linspace(wl[wl > 0.6].min(), wl[wl > 0.6].max(), 1000)
+ax.plot(_, s(_), linewidth=2)
+ax.set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
+ax.set_ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
+fig.tight_layout()
 
 fig, ax = sim.plot_mode(0, np.argmin(abs(wl - 3.5)))
 ax.title.set_text(

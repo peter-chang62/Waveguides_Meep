@@ -6,7 +6,7 @@ This script runs all the dispersion curves through PyNLO"""
 # %% package imports
 import numpy as np
 import matplotlib.pyplot as plt
-import clipboard_and_style_sheet
+import clipboard
 from scipy.interpolate import InterpolatedUnivariateSpline
 import scipy.constants as sc
 import scipy.integrate as scint
@@ -26,8 +26,6 @@ except ImportError:
     Al2O3 = np.load("convenience/freq_epsilon_data.npy")
     Al2O3 = InterpolatedUnivariateSpline(Al2O3[:, 0], Al2O3[:, 1])
     on_linux = False
-
-clipboard_and_style_sheet.style_sheet()
 
 
 # %%
