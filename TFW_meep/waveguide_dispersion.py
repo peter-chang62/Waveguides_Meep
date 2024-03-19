@@ -21,6 +21,9 @@ import time
 import scipy.integrate as scint
 from TFW_meep import geometry
 import warnings
+from tqdm import tqdm
+
+mpb.verbosity(0)
 
 
 # function defs
@@ -102,11 +105,14 @@ class RidgeWaveguide:
         num_bands=1,
         cell_width=8,
         cell_height=6,
+        z_offset_wvgd=0,
     ):
         self.init_finished = False
 
         # create the lattice (cell)
         self.lattice = mp.Lattice(size=mp.Vector3(0, cell_width, cell_height))
+
+        self._z_offset_wvgd = z_offset_wvgd
 
         # create the waveguide and the substrate
         # the substrate dimensions are calculated from the waveguide and
@@ -143,6 +149,18 @@ class RidgeWaveguide:
         self.band_funcs = []
         self.run = self.ms.run
         self.init_finished = True
+
+    @property
+    def z_offset_wvgd(self):
+        return self._z_offset_wvgd
+
+    @z_offset_wvgd.setter
+    def z_offset_wvgd(self, val):
+        assert 0 <= val <= self.cell_height / 2 - self.height / 2
+
+        self._z_offset_wvgd = val
+        self.redef_sbstrt_dim()
+        self.redef_sim()
 
     def redef_sim(self):
         """
@@ -193,17 +211,18 @@ class RidgeWaveguide:
 
         self.blk_sbstrt.size.z = self._hght_sbsrt
         self.blk_sbstrt.center.z = -self._z_offst_sbstrt
+        self.blk_wvgd.center.z = self.z_offset_wvgd
 
     @property
     def _hght_sbsrt(self):
         # calculate the appropriate height of the substrate
-        return (self.cell_height / 2) - (self.height / 2)
+        return (self.cell_height / 2) - (self.height / 2) + self.z_offset_wvgd
 
     @property
     def _z_offst_sbstrt(self):
         # calculate the appropriate vertical offset of the substrate
         # to place it directly beneath the waveguide
-        return (self._hght_sbsrt / 2) + (self.height / 2)
+        return (self._hght_sbsrt / 2) + (self.height / 2) - self.z_offset_wvgd
 
     @property
     def width(self):
@@ -590,10 +609,10 @@ class RidgeWaveguide:
         # initialize fields list
         self._initialize_E_and_H_lists()
 
-        print(f"_____________start iteration over Omega's ___________________")
+        print(f"------------ start iteration over Omega's -------------------")
 
         KX = []
-        for n, omega in enumerate(OMEGA):
+        for n, omega in enumerate(tqdm(OMEGA)):
             # use the interpolated spline to provide a guess for kmag_guess,
             # and pass that to run find_k the material epsilon is already
             # changed for each omega inside find_k
@@ -614,19 +633,20 @@ class RidgeWaveguide:
             )
             KX.append(kx)
 
-            # delete ________________________ this is a curiosity! ____________
+            # delete ------------------------ this is a curiosity! ------------
             # to fix this, I now set epsilon to epsilon[2, 2] (ne component)
             # eps = self.ms.get_epsilon()
             # eps_z = self.wvgd_mdm.epsilon(omega)[2, 2]
             # if abs(eps - eps_z).min() < 1e-8:
             #     print(True)
-            # delete __________________________________________________________
+            # delete ----------------------------------------------------------
 
-            print(f"____________________{len(OMEGA) - n}______________________")
+            # print(f"------------------ {len(OMEGA) - n} ---------------------")
+
         stop = time.time()
         print(f"finished in {(stop - start) / 60} minutes")
 
-        # ____________________________ Done ___________________________________
+        # ---------------------------- Done -----------------------------------
 
         self.E = np.squeeze(np.array(self.E))
         self.E = self.E.reshape((len(KX), self.num_bands, *self.E.shape[1:]))
@@ -718,7 +738,7 @@ class RidgeWaveguide:
         self.ms.k_points = k_points
         self.run(*self.band_funcs)
 
-        # ______________________ Done _________________________________________
+        # ---------------------- Done -----------------------------------------
 
         self.E = np.squeeze(np.array(self.E))
         self.E = self.E.reshape((len(k_points), self.num_bands, *self.E.shape[1:]))
@@ -876,6 +896,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
         resolution=30,
         cell_width=8,
         cell_height=6,
+        z_offset_wvgd=0,
         num_bands=1,
     ):
         assert (
@@ -902,6 +923,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
             num_bands,
             cell_width,
             cell_height,
+            z_offset_wvgd,
         )
 
         # calculate the remaining film thickness after the etch depth and add a
@@ -934,7 +956,9 @@ class ThinFilmWaveguide(RidgeWaveguide):
         super().redef_sbstrt_dim()
         blk_film_thickness = self.film_thickness - self.etch_depth
         self._blk_film.size.z = blk_film_thickness
-        self._blk_film.center.z = -(self.film_thickness - blk_film_thickness) / 2
+        self._blk_film.center.z = (
+            -(self.film_thickness - blk_film_thickness) / 2 + self.z_offset_wvgd
+        )
 
     @property
     def film_thickness(self):
@@ -967,7 +991,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
             f"film_thickness = {height} "
         )
 
-        # ________________ copied over from RidgeWaveguide ____________________
+        # ---------------- copied over from RidgeWaveguide --------------------
         # set the height of the waveguide
         self.blk_wvgd.size.z = height
         self.redef_sbstrt_dim()

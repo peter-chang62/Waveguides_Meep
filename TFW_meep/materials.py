@@ -9,7 +9,7 @@ um_scale = 1.0
 # conversion factor for eV to 1/μm [=1/hc]
 eV_um_scale = um_scale / 1.23984193
 
-# ------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Sapphire (Al2O3) from Malitson and Dodge 1972
 # ref: https://refractiveindex.info/?shelf=main&book=Al2O3&page=Malitson-o
 # ref: https://refractiveindex.info/?shelf=main&book=Al2O3&page=Malitson-e
