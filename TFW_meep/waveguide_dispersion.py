@@ -649,13 +649,20 @@ class RidgeWaveguide:
         # ---------------------------- Done -----------------------------------
 
         self.E = np.squeeze(np.array(self.E))
-        self.E = self.E.reshape((len(KX), self.num_bands, *self.E.shape[1:]))
+        self.E = self.E.reshape(
+            (len(KX), self.num_bands, *self.E.shape[1 if len(KX) > 1 else 0 :])
+        )
+
         self.H = np.squeeze(np.array(self.H))
-        self.H = self.H.reshape((len(KX), self.num_bands, *self.H.shape[1:]))
+        self.H = self.H.reshape(
+            (len(KX), self.num_bands, *self.H.shape[1 if len(KX) > 1 else 0 :])
+        )
 
         # the group velocity below is not correct!
         self.v_g = np.squeeze(np.array(self.v_g))
-        self.v_g = self.v_g.reshape((len(KX), self.num_bands, *self.v_g.shape[1:]))
+        self.v_g = self.v_g.reshape(
+            (len(KX), self.num_bands, *self.v_g.shape[1 if len(KX) > 1 else 0 :])
+        )
 
         # epsilon and intensity
         eps = self.ms.get_epsilon().copy()  # in case it's passed by pointer
@@ -741,12 +748,28 @@ class RidgeWaveguide:
         # ---------------------- Done -----------------------------------------
 
         self.E = np.squeeze(np.array(self.E))
-        self.E = self.E.reshape((len(k_points), self.num_bands, *self.E.shape[1:]))
+        self.E = self.E.reshape(
+            (
+                len(k_points),
+                self.num_bands,
+                *self.E.shape[1 if len(k_points) > 1 else 0 :],
+            )
+        )
         self.H = np.squeeze(np.array(self.H))
-        self.H = self.H.reshape((len(k_points), self.num_bands, *self.H.shape[1:]))
+        self.H = self.H.reshape(
+            (
+                len(k_points),
+                self.num_bands,
+                *self.H.shape[1 if len(k_points) > 1 else 0 :],
+            )
+        )
         self.v_g = np.squeeze(np.array(self.v_g))
         self.v_g = self.v_g.reshape(
-            (len(k_points), self.num_bands, *self.v_g.shape[1:])
+            (
+                len(k_points),
+                self.num_bands,
+                *self.v_g.shape[1 if len(k_points) > 1 else 0 :],
+            )
         )
 
         class results:
@@ -904,12 +927,6 @@ class ThinFilmWaveguide(RidgeWaveguide):
         ), "the etch depth cannot exceed the film thickness!"
 
         assert num_bands >= 1
-        if num_bands > 1:
-            msg = (
-                "can technically set this but this is a waveguide with no "
-                "periodic structures, so extra bands are wasted calculations"
-            )
-            warnings.warn(msg)
 
         # create a ridgewaveguide with width etch_width, and height
         # film_thickness we will add a second waveguide block for the remainder
