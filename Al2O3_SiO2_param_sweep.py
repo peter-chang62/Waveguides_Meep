@@ -2,21 +2,21 @@
 sweep etch depth, etch width, and film thickness. save dispersion and mode area
 for each one. Run this script to calculate Al2O3 and again to calculate SiO2
 (switch out the relevant commented lines).
+
+once run, don't change the frequency and waveguide width, unless you also
+change it in plotting_Al2O3_SiO2_param_sweep.py
 """
 
 # %% ----- package imports
 import numpy as np
 import matplotlib.pyplot as plt
+import clipboard
 import meep as mp
 from meep import materials as mt
 from TFW_meep import materials as mtp
 from TFW_meep import waveguide_dispersion as wg
 import scipy.constants as sc
-from TFW_meep import geometry
-from scipy.interpolate import UnivariateSpline
-import copy
 from scipy.constants import c
-import clipboard
 from tqdm import tqdm
 
 
@@ -82,9 +82,9 @@ def n_MgLN_G(v, T=24.5, axis="e"):
 
 
 # %% ----- create sim instance ------------------------------------------------
-etch_width = 1.3
-etch_depth = 0.2
-LiN_thickness = 0.4
+etch_width = 0.5
+etch_depth = 0.1
+LiN_thickness = 1.0
 resolution = 20
 sim = wg.ThinFilmWaveguide(
     etch_width=etch_width,
@@ -103,7 +103,7 @@ sim = wg.ThinFilmWaveguide(
 # %% ----- waveguide simulation -----------------------------------------------
 step = 0.1
 # for film_thickness in np.arange(0.6, 1.0 + step, step):
-film_thickness = 1.0
+film_thickness = 0.4
 size_d = np.arange(0.1, film_thickness + step, step).size
 size_w = np.arange(0.5, 2.0 + step, step).size
 data = np.zeros((size_d, size_w, 101, 2))
@@ -128,15 +128,12 @@ for n_d, etch_depth in enumerate(tqdm(np.arange(0.1, film_thickness + step, step
 
         omega = res.freq * 2 * np.pi * c / um
         beta = res.kx.flatten() * 2 * np.pi / um
-        beta1 = np.gradient(beta, omega, edge_order=2)
-        beta2 = np.gradient(beta1, omega, edge_order=2)
-
         area = np.zeros(res.freq.size)
         for n_f in range(res.freq.size):
             x = sim.E[n_f][0][:, :, mp.Ey].__abs__() ** 2
             area[n_f] = wg.mode_area(x, sim.resolution[0])
 
-        data[n_d, n_w] = np.c_[area, beta2]
+        data[n_d, n_w] = np.c_[area, beta]
 
 np.save(
     f"sim_output/02-23-2024/Al2O3/{film_thickness}_t_{0.1}_dstart_{0.1}_dstep_"
@@ -144,21 +141,3 @@ np.save(
     + f"{0.5}_wstart_{2.0}_wend_{0.1}_wstep.npy",
     data,
 )
-
-# %% ----- save results -------------------------------------------------------
-# np.save(
-#     f"sim_output/02-23-2024/{np.round(etch_depth, 3)}_d_{np.round(etch_width, 3)}_w_{np.round(sim.height, 3)}_h",
-#     np.c_[res.freq, beta2 / (ps**2 / km)],
-# )
-
-# %% ----- plotting -----------------------------------------------------------
-# wl = 1 / res.freq
-# fig, ax = plt.subplots(1, 1)
-# ax.plot(wl[:], beta2[:] / (ps**2 / km), "o")
-# s = UnivariateSpline(wl[::-1], beta2[::-1] / (ps**2 / km), s=0)
-# _ = np.linspace(wl.min(), wl.max(), 1000)
-# ax.plot(_, s(_), linewidth=2)
-# ax.set_xlabel("wavelength ($\\mathrm{\\mu m}$)")
-# ax.set_ylabel("$\\mathrm{\\beta_2 \\; (ps^2/km})$")
-# ax.set_title(str(np.round((sim.height - sim.etch_depth) * 1e3, 3)) + " nm slab")
-# fig.tight_layout()

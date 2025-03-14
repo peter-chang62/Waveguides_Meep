@@ -74,9 +74,14 @@ def etch_angle_sim_wrapper(calc_dispersion):
     def wrapper(self, *args, **kwargs):
         self: ThinFilmWaveguide
 
+        assert "etch_angle" in kwargs, "must provide etch_angle as a keyword argument"
+
         block_waveguide = self.blk_wvgd  # save self.blk_wvgd
         # convert -> trapezoid
-        self.blk_wvgd = geometry.convert_block_to_trapezoid(self.blk_wvgd, angle_deg=80)
+        self.blk_wvgd = geometry.convert_block_to_trapezoid(
+            self.blk_wvgd,
+            angle_deg=kwargs["etch_angle"],
+        )
         result = calc_dispersion(self, *args, **kwargs)  # simulate
         self.blk_wvgd = block_waveguide  # reset back to blk_wvgd
         return result
@@ -1164,6 +1169,7 @@ class ThinFilmWaveguide(RidgeWaveguide):
         freq_array=None,
         eps_func_wvgd=None,
         eps_func_sbstrt=None,
+        **kwargs,
     ):
         result = super().calc_dispersion(
             wl_min=wl_min,
