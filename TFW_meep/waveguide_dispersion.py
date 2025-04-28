@@ -623,7 +623,7 @@ class RidgeWaveguide:
             # changed for each omega inside find_k
             kmag_guess = float(spl(omega))
             kx = self.find_k(
-                mp.NO_PARITY,
+                mp.NO_PARITY,  # likely ODD_Y
                 omega,
                 1,
                 self.num_bands,
