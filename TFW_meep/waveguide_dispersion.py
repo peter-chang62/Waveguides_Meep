@@ -655,18 +655,30 @@ class RidgeWaveguide:
 
         self.E = np.squeeze(np.array(self.E))
         self.E = self.E.reshape(
-            (len(KX), self.num_bands, *self.E.shape[1 if len(KX) > 1 else 0 :])
+            (
+                len(KX),
+                self.num_bands,
+                *self.E.shape[1 if (len(KX) > 1 or self.num_bands > 1) else 0 :],
+            )
         )
 
         self.H = np.squeeze(np.array(self.H))
         self.H = self.H.reshape(
-            (len(KX), self.num_bands, *self.H.shape[1 if len(KX) > 1 else 0 :])
+            (
+                len(KX),
+                self.num_bands,
+                *self.H.shape[1 if (len(KX) > 1 or self.num_bands > 1) else 0 :],
+            )
         )
 
         # the group velocity below is not correct!
         self.v_g = np.squeeze(np.array(self.v_g))
         self.v_g = self.v_g.reshape(
-            (len(KX), self.num_bands, *self.v_g.shape[1 if len(KX) > 1 else 0 :])
+            (
+                len(KX),
+                self.num_bands,
+                *self.v_g.shape[1 if (len(KX) > 1 or self.num_bands > 1) else 0 :],
+            )
         )
 
         # epsilon and intensity
@@ -757,7 +769,7 @@ class RidgeWaveguide:
             (
                 len(k_points),
                 self.num_bands,
-                *self.E.shape[1 if len(k_points) > 1 else 0 :],
+                *self.E.shape[1 if (len(k_points) > 1 or self.num_bands > 1) else 0 :],
             )
         )
         self.H = np.squeeze(np.array(self.H))
@@ -765,7 +777,7 @@ class RidgeWaveguide:
             (
                 len(k_points),
                 self.num_bands,
-                *self.H.shape[1 if len(k_points) > 1 else 0 :],
+                *self.H.shape[1 if (len(k_points) > 1 or self.num_bands > 1) else 0 :],
             )
         )
         self.v_g = np.squeeze(np.array(self.v_g))
@@ -773,7 +785,9 @@ class RidgeWaveguide:
             (
                 len(k_points),
                 self.num_bands,
-                *self.v_g.shape[1 if len(k_points) > 1 else 0 :],
+                *self.v_g.shape[
+                    1 if (len(k_points) > 1 or self.num_bands > 1) else 0 :
+                ],
             )
         )
 
