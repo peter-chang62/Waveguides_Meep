@@ -566,23 +566,6 @@ class RidgeWaveguide:
 
         start = time.time()
 
-        # =============== old method to get initial guess for k ===============
-        # I just use the fundamental band for the interpolation (
-        # which_band=1), I just interpolate over 10 pts, if using the
-        # user-provided NPTS, we might get an overkill of data points, or not
-        # enough
-        # num_bands = self.num_bands  # store self.num_bands
-        # self.num_bands = 1  # set the mode-solver to only calculate one band
-        # # wl_min * 0.5: interpolation will cover close to wl_min
-        # res = self._calc_w_from_k(wl_min * 0.5, wl_max, 10)
-        # self.num_bands = num_bands  # set num_bands back to what it was before
-
-        # z = np.polyfit(res.freq[:, 0], res.kx, deg=1)
-        # spl = np.poly1d(z)  # straight up linear fit, great idea!
-        # # spl = UnivariateSpline(res.freq[:, 0], res.kx, s=0) # HORRIBLE IDEA!
-        # =====================================================================
-
-        # ======================= new simpler method ==========================
         if eps_func_wvgd is not None:
 
             def index(freq):
@@ -714,7 +697,7 @@ class RidgeWaveguide:
 
         return results(self)
 
-    def _calc_w_from_k(self, wl_min, wl_max, NPTS):
+    def calc_w_from_k(self, wl_min, wl_max, NPTS):
         """
         Calculates frequency as a function of k-vector. This is the inverse of
         what we ultimately wish to do, which is to calculate k-vector as a
@@ -733,8 +716,6 @@ class RidgeWaveguide:
             object:
                 result instance
         """
-        # calc_dispersion calls _calc_w_from_k before going on to calculate
-        # anything else, so moving this here should be fine
 
         # re-initialize E and H to empty lists and
         # create the list to pass to *band_funcs
