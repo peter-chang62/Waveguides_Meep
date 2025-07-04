@@ -186,13 +186,12 @@ class RidgeWaveguide:
 
     def redef_ms(self):
         """
-        when I look at relevant parameters in self.ms (
-        self.ms.geometry_lattice for example) the dimensions are up to date,
+        when I look at relevant parameters in self.ms
+        (self.ms.geometry_lattice for example) the dimensions are up to date,
         but the epsilon grid is only partially updated when I run the
-        simulation. I can, however, re-instantiate self.ms without issue
-        since all the parameters in the currently existing self.ms are
-        correct. So, that is what I do here. I've verified that this works
-        correctly
+        simulation. I can, however, re-instantiate self.ms without issue since
+        all the parameters in the currently existing self.ms are correct. So,
+        that is what I do here. I've verified that this works correctly
 
         This is basically copied over from __init__
         """
@@ -522,50 +521,6 @@ class RidgeWaveguide:
         # make sure all geometric and material parameters are up to date
         self.redef_ms()
 
-        # ---------------------------------------------------------------------
-        # MPB's find_k functions uses Newton's method which needs bounds and an
-        # initial guess that is somewhat close to the real answer (order
-        # magnitude). We expect materials to have weak dispersion, and so I set
-        # epsilon to epsilon( f_center), and solve for waveguide dispersion
-        # omega(k). From there, I interpolate to get a k(omega) that can be
-        # used to extrapolate out and provide good gueses for kmag_guess
-        # ---------------------------------------------------------------------
-
-        k_min, k_max = 1 / wl_max, 1 / wl_min
-        f_center = (k_max - k_min) / 2 + k_min
-
-        # ---------------------------------------------------------------------
-
-        # if eps_func_wvgd is not provided, then set the material epsilon via
-        # calling the usual mp.Medium().epsilon otherwise, you can set epsilon
-        # to something you provide. The use case for this is that MEEP
-        # materials can only use the simple Sellmeier equation, but sometimes
-        # you would like to use the extended formulas that are more accurate
-        # over broad bandwidths or at your particular experiment temperature.
-        # originally this was:
-        #
-        #   self.blk_wvgd.material = mp.Medium(
-        #       epsilon=self.wvgd_mdm.epsilon(f_center)[2, 2])
-        #   self.blk_sbstrt.material = mp.Medium(
-        #       epsilon=self.sbstrt_mdm.epsilon(f_center)[2, 2])
-
-        if eps_func_wvgd is None:
-            self.blk_wvgd.material = mp.Medium(
-                epsilon=self.wvgd_mdm.epsilon(f_center)[2, 2]
-            )
-        else:
-            self.blk_wvgd.material = mp.Medium(epsilon=eps_func_wvgd(f_center))
-
-        if eps_func_sbstrt is None:
-            self.blk_sbstrt.material = mp.Medium(
-                epsilon=self.sbstrt_mdm.epsilon(f_center)[2, 2]
-            )
-        else:
-            self.blk_sbstrt.material = mp.Medium(epsilon=eps_func_sbstrt(f_center))
-        # ---------------------------------------------------------------------
-
-        start = time.time()
-
         if eps_func_wvgd is not None:
 
             def index(freq):
@@ -600,10 +555,10 @@ class RidgeWaveguide:
         print(f"------------ start iteration over Omega's -------------------")
 
         KX = []
+        start = time.time()
         for n, omega in enumerate(tqdm(OMEGA)):
-            # use the interpolated spline to provide a guess for kmag_guess,
-            # and pass that to run find_k the material epsilon is already
-            # changed for each omega inside find_k
+            # The material epsilon is already changed for each omega inside
+            # find_k
             kmag_guess = float(spl(omega))
             kx = self.find_k(
                 mp.NO_PARITY,  # likely ODD_Y
@@ -620,16 +575,6 @@ class RidgeWaveguide:
                 eps_func_sbstrt=eps_func_sbstrt,
             )
             KX.append(kx)
-
-            # delete ------------------------ this is a curiosity! ------------
-            # to fix this, I now set epsilon to epsilon[2, 2] (ne component)
-            # eps = self.ms.get_epsilon()
-            # eps_z = self.wvgd_mdm.epsilon(omega)[2, 2]
-            # if abs(eps - eps_z).min() < 1e-8:
-            #     print(True)
-            # delete ----------------------------------------------------------
-
-            # print(f"------------------ {len(OMEGA) - n} ---------------------")
 
         stop = time.time()
         print(f"finished in {(stop - start) / 60} minutes")
@@ -699,10 +644,7 @@ class RidgeWaveguide:
 
     def calc_w_from_k(self, wl_min, wl_max, NPTS):
         """
-        Calculates frequency as a function of k-vector. This is the inverse of
-        what we ultimately wish to do, which is to calculate k-vector as a
-        function of frequency. I call this function first so I can get initial
-        guesses for k-vectors when calling self.find_k()
+        Calculates frequency as a function of k-vector
 
         Args:
             wl_min (float):
@@ -806,8 +748,8 @@ class RidgeWaveguide:
     # -------------------------------------------------------------------------
     # this was originally meant to take the same arguments as find_k() from
     # mpb.ModeSolver(). However, I've now added eps_func_wvgd and
-    # eps_func_sbstrt *make sure that if you decide to use these, that you pass
-    # them in as kwargs!!* Otherwise they'll be interpreted as part of
+    # eps_func_sbstrt. *Make sure that if you decide to use these, that you
+    # pass them in as kwargs.* Otherwise they'll be interpreted as part of
     # band_funcs (not to worry too much, you'll just get an error and then
     # it'll be obvious what you did wrong)
     # -------------------------------------------------------------------------
@@ -1087,8 +1029,8 @@ class ThinFilmWaveguide(RidgeWaveguide):
     # -------------------------------------------------------------------------
     # this was originally meant to take the same arguments as find_k() from
     # mpb.ModeSolver(). However, I've now added eps_func_wvgd and
-    # eps_func_sbstrt *make sure that if you decide to use these, that you pass
-    # them in as kwargs!!* Otherwise they'll be interpreted as part of
+    # eps_func_sbstrt. *Make sure that if you decide to use these, that you pass
+    # them in as kwargs.* Otherwise they'll be interpreted as part of
     # band_funcs (not to worry too much, you'll just get an error and then
     # it'll be obvious what you did wrong)
     # -------------------------------------------------------------------------
